@@ -548,6 +548,24 @@
     <div id="notif-next" style="font-size:12px;color:var(--text-muted);display:none"></div>
     <button class="apply-btn" id="notif-test-btn" onclick="testNotification()" style="display:none">Probar ahora</button>
   </div>
+
+  <div class="settings-card" style="margin-bottom:16px">
+    <h3>💾 Datos</h3>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">Exportar backup (JSON)</div>
+        <div class="settings-sublabel">Hábitos, historial completo y ajustes</div>
+      </div>
+      <button class="apply-btn" onclick="exportJSON()">Exportar</button>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">Exportar historial (CSV)</div>
+        <div class="settings-sublabel">Abre en Excel o Google Sheets</div>
+      </div>
+      <button class="apply-btn" onclick="exportCSV()">Exportar</button>
+    </div>
+  </div>
 </section>
 
 <!-- NAV -->
@@ -1241,6 +1259,32 @@
     } else {
       nextEl.style.display = 'none';
     }
+  }
+
+  // ── EXPORT ──
+  function triggerDownload(content, filename, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement('a'), { href: url, download: filename });
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportJSON() {
+    const data = { exportDate: new Date().toISOString(), habits, records, settings: loadSettings() };
+    triggerDownload(JSON.stringify(data, null, 2), `habit-tracker-${todayKey()}.json`, 'application/json');
+    showToast('Backup exportado');
+  }
+
+  function exportCSV() {
+    const days = getDaysSinceStart().reverse(); // cronológico
+    const header = ['Fecha', ...habits.map(h => `${h.emoji} ${h.label}`)].join(',');
+    const rows = days.map(key => {
+      const rec = records[key] || {};
+      return [key, ...habits.map(h => rec[h.id] ? '1' : '0')].join(',');
+    });
+    triggerDownload([header, ...rows].join('\n'), `habit-tracker-${todayKey()}.csv`, 'text/csv');
+    showToast('CSV exportado');
   }
 
   // ── INIT ──
