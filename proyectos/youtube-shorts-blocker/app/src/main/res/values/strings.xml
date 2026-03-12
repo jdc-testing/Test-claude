@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Bloqueador de Shorts</string>
+    <string name="accessibility_service_description">Detecta cuando YouTube Shorts está activo y navega hacia atrás automáticamente. Solo monitorea la app de YouTube, sin acceder a datos personales.</string>
+
+    <string name="status_active">Protección activa</string>
+    <string name="status_active_desc">El servicio está funcionando. Los YouTube Shorts se bloquean automáticamente.</string>
+    <string name="status_inactive">Protección inactiva</string>
+    <string name="status_inactive_desc">Activá el servicio de accesibilidad para empezar a bloquear los Shorts.</string>
+
+    <string name="btn_activate">Activar protección</string>
+    <string name="btn_open_settings">Abrir configuración</string>
+
+    <string name="how_it_works_title">¿Cómo funciona?</string>
+    <string name="how_it_works_text">Cuando abrís la pestaña Shorts en YouTube, la app detecta el cambio de pantalla y automáticamente vuelve atrás. Los videos normales de YouTube no se ven afectados.</string>
+
+    <string name="steps_title">Pasos para activar</string>
+    <string name="step_1">1. Tocá "Activar protección" abajo</string>
+    <string name="step_2">2. Buscá "Bloqueador de Shorts" en la lista</string>
+    <string name="step_3">3. Activá el servicio y confirmá</string>
+    <string name="step_4">4. Volvé a esta app — ¡listo!</string>
+</resources>
