@@ -225,6 +225,12 @@
       margin-top: 5px;
       font-size: 10px; color: var(--text-muted);
     }
+    .chart-counts {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      margin-top: 10px; font-size: 13px; font-weight: 600;
+    }
+    .count-done { color: var(--accent); }
+    .count-fail { color: var(--danger); }
 
     /* ── MANAGE SCREEN ── */
     .manage-header {
@@ -410,6 +416,7 @@
   let habits = [];
   let records = {};
   let chartFilter = 'week';
+  const START_DATE = new Date(2026, 2, 1); // 1 de marzo de 2026
 
   const DEFAULT_HABITS = [
     { id: 'creatine', label: 'Tomar creatina', emoji: '💊' },
@@ -487,12 +494,12 @@
     return streak;
   }
 
-  function getLast30Days() {
+  function getDaysSinceStart() {
     const days = [];
-    const d = new Date();
-    for (let i = 0; i < 30; i++) {
-      days.push(d.toISOString().slice(0, 10));
-      d.setDate(d.getDate() - 1);
+    const current = new Date();
+    while (current >= START_DATE) {
+      days.push(current.toISOString().slice(0, 10));
+      current.setDate(current.getDate() - 1);
     }
     return days;
   }
@@ -549,7 +556,7 @@
 
   // ── RENDER: HISTORY ──
   function renderHistory() {
-    const days = getLast30Days();
+    const days = getDaysSinceStart();
     const list = document.getElementById('history-list');
 
     const rows = days.map(key => {
@@ -585,22 +592,31 @@
   function getChartData(habitId) {
     const now = new Date();
     let points = [];
+    let doneDays = 0, totalDays = 0;
 
     if (chartFilter === 'week') {
       for (let i = 6; i >= 0; i--) {
         const d = new Date(now);
         d.setDate(d.getDate() - i);
+        if (d < START_DATE) continue;
         const key = d.toISOString().slice(0, 10);
         const label = d.toLocaleDateString('es-ES', { weekday: 'short' });
-        points.push({ label, value: records[key]?.[habitId] ? 1 : 0 });
+        const val = records[key]?.[habitId] ? 1 : 0;
+        points.push({ label, value: val });
+        totalDays++;
+        if (val) doneDays++;
       }
     } else if (chartFilter === 'month') {
       for (let i = 29; i >= 0; i--) {
         const d = new Date(now);
         d.setDate(d.getDate() - i);
+        if (d < START_DATE) continue;
         const key = d.toISOString().slice(0, 10);
         const label = i === 0 ? 'hoy' : d.toLocaleDateString('es-ES', { day: 'numeric' });
-        points.push({ label, value: records[key]?.[habitId] ? 1 : 0 });
+        const val = records[key]?.[habitId] ? 1 : 0;
+        points.push({ label, value: val });
+        totalDays++;
+        if (val) doneDays++;
       }
     } else { // year — group by month (last 12)
       for (let m = 11; m >= 0; m--) {
@@ -613,17 +629,21 @@
         for (let d = 1; d <= daysInMonth; d++) {
           const day = new Date(year, month, d);
           if (day > now) break;
+          if (day < START_DATE) continue;
           const key = day.toISOString().slice(0, 10);
           total++;
           if (records[key]?.[habitId]) done++;
         }
-        points.push({ label, value: total > 0 ? done / total : 0 });
+        doneDays += done;
+        totalDays += total;
+        if (total > 0) points.push({ label, value: done / total });
+        else points.push({ label, value: 0 });
       }
     }
 
     const sum = points.reduce((acc, p) => acc + p.value, 0);
     const avg = points.length > 0 ? Math.round((sum / points.length) * 100) : 0;
-    return { points, avg };
+    return { points, avg, doneDays, totalDays };
   }
 
   function renderCharts() {
@@ -639,7 +659,8 @@
     });
 
     list.innerHTML = habits.map(h => {
-      const { points, avg } = getChartData(h.id);
+      const { points, avg, doneDays, totalDays } = getChartData(h.id);
+      const notDoneDays = totalDays - doneDays;
 
       const bars = points.map(p => {
         const heightPct = Math.max(p.value * 100, p.value > 0 ? 6 : 0);
@@ -668,6 +689,10 @@
           </div>
           <div class="chart-bars">${bars}</div>
           ${xLabels}
+          <div class="chart-counts">
+            <span class="count-done">✓ ${doneDays} día${doneDays !== 1 ? 's' : ''} cumplido</span>
+            <span class="count-fail">✗ ${notDoneDays} día${notDoneDays !== 1 ? 's' : ''} no cumplido</span>
+          </div>
         </div>`;
     }).join('');
   }
@@ -707,6 +732,16 @@
   }
 
   function toggleHistoryHabit(dateKey, habitId) {
+    if (dateKey !== todayKey()) {
+      const habit = habits.find(h => h.id === habitId);
+      const dayRecord = records[dateKey] || {};
+      const wasDone = !!dayRecord[habitId];
+      const currentState = wasDone ? '✓ Cumplido' : '✗ No cumplido';
+      const newState     = wasDone ? '✗ No cumplido' : '✓ Cumplido';
+      const formattedDay = formatDate(dateKey);
+      const msg = `¿Estás seguro de que quieres editar este día?\n\n📅 Día: ${formattedDay.charAt(0).toUpperCase() + formattedDay.slice(1)}\n${habit.emoji} Hábito: ${habit.label}\n\n${currentState} → ${newState}`;
+      if (!confirm(msg)) return;
+    }
     toggleHabit(habitId, dateKey);
     renderHistory();
   }
@@ -728,10 +763,12 @@
 
   function deleteHabit(habitId) {
     const habit = habits.find(h => h.id === habitId);
+    if (!habit) return;
+    if (!confirm(`¿Estás seguro de que quieres eliminar "${habit.label}"?\nSe perderá todo su historial.`)) return;
     habits = habits.filter(h => h.id !== habitId);
     saveHabits();
     renderManage();
-    if (habit) showToast(`"${habit.label}" eliminado`);
+    showToast(`"${habit.label}" eliminado`);
   }
 
   // ── NAVIGATION ──
