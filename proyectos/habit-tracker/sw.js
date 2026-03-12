@@ -1,4 +1,4 @@
-const CACHE_NAME = 'habit-tracker-v2';
+const CACHE_NAME = 'habit-tracker-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -25,10 +25,18 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+// Network first: siempre intenta red para tener la versión más reciente.
+// Si no hay conexión, usa la caché para que la app siga funcionando offline.
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(cached => cached || fetch(event.request))
-      .catch(() => caches.match('./index.html'))
+    fetch(event.request)
+      .then(response => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        return response;
+      })
+      .catch(() =>
+        caches.match(event.request).then(cached => cached || caches.match('./index.html'))
+      )
   );
 });
