@@ -162,7 +162,7 @@
       transition: transform 0.1s ease, background 0.15s ease;
     }
     .habit-dot:active { transform: scale(0.82); }
-    .habit-dot.done { background: var(--accent-light); }
+    .habit-dot.done { background: #43a047; }
     .history-hint {
       font-size: 12px; color: var(--text-muted);
       padding: 0 20px 10px;
@@ -257,6 +257,59 @@
       -webkit-tap-highlight-color: transparent;
     }
     .delete-btn:active { background: #ffebee; }
+
+    /* ── REORDER BUTTONS ── */
+    .reorder-btns {
+      display: flex; flex-direction: column; gap: 2px; margin-right: 2px;
+    }
+    .reorder-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted); font-size: 14px; line-height: 1;
+      padding: 2px 6px; border-radius: 6px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .reorder-btn:active { background: var(--accent-light); color: var(--accent); }
+    .reorder-btn:disabled { opacity: 0.2; cursor: default; }
+
+    /* ── CONFIRM MODAL ── */
+    #confirm-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none; align-items: center; justify-content: center;
+      z-index: 200; padding: 24px;
+    }
+    #confirm-box {
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 24px 20px 18px;
+      width: 100%; max-width: 340px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    }
+    #confirm-title {
+      font-size: 16px; font-weight: 700; margin-bottom: 8px;
+    }
+    #confirm-msg {
+      font-size: 14px; color: var(--text-muted);
+      line-height: 1.5; margin-bottom: 20px; white-space: pre-line;
+    }
+    .confirm-btns {
+      display: flex; gap: 10px;
+    }
+    .confirm-btn {
+      flex: 1; padding: 12px; border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .confirm-btn-cancel {
+      background: var(--bg); color: var(--text-muted);
+    }
+    .confirm-btn-ok {
+      background: var(--danger); color: white;
+    }
+    .confirm-btn-ok.safe {
+      background: var(--accent);
+    }
 
     /* ── ADD FORM ── */
     .add-form {
@@ -410,6 +463,18 @@
 </nav>
 
 <div id="toast"></div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <div id="confirm-title"></div>
+    <div id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button class="confirm-btn confirm-btn-cancel" id="confirm-cancel">Cancelar</button>
+      <button class="confirm-btn confirm-btn-ok"    id="confirm-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
 
 <script>
   // ── STATE ──
@@ -711,10 +776,14 @@
     if (count === 0) {
       list.innerHTML = `<div class="empty-state"><div class="icon">🌱</div><p>Aún no tienes hábitos.</p></div>`;
     } else {
-      list.innerHTML = habits.map(h => `
+      list.innerHTML = habits.map((h, i) => `
         <div class="manage-row">
           <span class="manage-emoji">${h.emoji}</span>
           <span class="manage-label">${h.label}</span>
+          <div class="reorder-btns">
+            <button class="reorder-btn" onclick="moveHabit(${i}, -1)" ${i === 0 ? 'disabled' : ''} title="Subir">▲</button>
+            <button class="reorder-btn" onclick="moveHabit(${i},  1)" ${i === count - 1 ? 'disabled' : ''} title="Bajar">▼</button>
+          </div>
           <button class="delete-btn" onclick="deleteHabit('${h.id}')" title="Eliminar">✕</button>
         </div>`
       ).join('');
@@ -739,8 +808,13 @@
       const currentState = wasDone ? '✓ Cumplido' : '✗ No cumplido';
       const newState     = wasDone ? '✗ No cumplido' : '✓ Cumplido';
       const formattedDay = formatDate(dateKey);
-      const msg = `¿Estás seguro de que quieres editar este día?\n\n📅 Día: ${formattedDay.charAt(0).toUpperCase() + formattedDay.slice(1)}\n${habit.emoji} Hábito: ${habit.label}\n\n${currentState} → ${newState}`;
-      if (!confirm(msg)) return;
+      customConfirm(
+        'Editar día anterior',
+        `📅 ${formattedDay.charAt(0).toUpperCase() + formattedDay.slice(1)}\n${habit.emoji} ${habit.label}\n\n${currentState} → ${newState}`,
+        () => { toggleHabit(habitId, dateKey); renderHistory(); },
+        true
+      );
+      return;
     }
     toggleHabit(habitId, dateKey);
     renderHistory();
@@ -764,12 +838,46 @@
   function deleteHabit(habitId) {
     const habit = habits.find(h => h.id === habitId);
     if (!habit) return;
-    if (!confirm(`¿Estás seguro de que quieres eliminar "${habit.label}"?\nSe perderá todo su historial.`)) return;
-    habits = habits.filter(h => h.id !== habitId);
+    customConfirm(
+      `Eliminar "${habit.label}"`,
+      'Se eliminará el hábito y se perderá todo su historial.',
+      () => {
+        habits = habits.filter(h => h.id !== habitId);
+        saveHabits();
+        renderManage();
+        showToast(`"${habit.label}" eliminado`);
+      }
+    );
+  }
+
+  function moveHabit(idx, dir) {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= habits.length) return;
+    [habits[idx], habits[newIdx]] = [habits[newIdx], habits[idx]];
     saveHabits();
     renderManage();
-    showToast(`"${habit.label}" eliminado`);
   }
+
+  // ── CUSTOM CONFIRM ──
+  function customConfirm(title, msg, onOk, safe = false) {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').textContent   = msg;
+    const okBtn = document.getElementById('confirm-ok');
+    okBtn.className = 'confirm-btn confirm-btn-ok' + (safe ? ' safe' : '');
+    document.getElementById('confirm-overlay').style.display = 'flex';
+    okBtn.onclick = () => {
+      document.getElementById('confirm-overlay').style.display = 'none';
+      onOk();
+    };
+  }
+
+  document.getElementById('confirm-cancel').onclick = () => {
+    document.getElementById('confirm-overlay').style.display = 'none';
+  };
+  document.getElementById('confirm-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('confirm-overlay'))
+      document.getElementById('confirm-overlay').style.display = 'none';
+  });
 
   // ── NAVIGATION ──
   let currentScreen = 'today';
