@@ -2,6 +2,8 @@ package com.jdc.youtubeshortsblocker
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.os.Handler
+import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
@@ -14,6 +16,9 @@ class ShortsBlockerService : AccessibilityService() {
             "shorts", "reel", "shortspivot", "reelwatch", "shortslandingfragment"
         )
     }
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var pendingCheck: Runnable? = null
 
     override fun onServiceConnected() {
         isRunning = true
@@ -40,7 +45,7 @@ class ShortsBlockerService : AccessibilityService() {
             return
         }
 
-        // Detección 2: el usuario hizo click en el tab "Shorts"
+        // Detección 2: click en algo etiquetado explícitamente como Shorts
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
             val clickedText = event.text.joinToString(" ").lowercase()
             val clickedDesc = event.contentDescription?.toString()?.lowercase() ?: ""
@@ -48,9 +53,26 @@ class ShortsBlockerService : AccessibilityService() {
                 performGlobalAction(GLOBAL_ACTION_BACK)
                 return
             }
+            // Cualquier click en YouTube puede ser un Short desde el feed:
+            // programar un chequeo retrasado para cuando la transición termine
+            scheduleDelayedCheck()
         }
 
-        // Detección 3: árbol de UI — tab Shorts activo o seleccionado
+        // Detección 3: chequeo inmediato del árbol de UI
+        checkShortsUI()
+    }
+
+    /**
+     * Programa un chequeo 300ms después de un click,
+     * para cuando la pantalla de Shorts ya haya cargado.
+     */
+    private fun scheduleDelayedCheck() {
+        pendingCheck?.let { handler.removeCallbacks(it) }
+        pendingCheck = Runnable { checkShortsUI() }
+        handler.postDelayed(pendingCheck!!, 300)
+    }
+
+    private fun checkShortsUI() {
         val root = rootInActiveWindow ?: return
         try {
             if (isShortsTabActive(root)) {
@@ -66,7 +88,6 @@ class ShortsBlockerService : AccessibilityService() {
         for (node in nodes) {
             try {
                 if (node.isSelected || node.isChecked || node.isFocused) return true
-                // Verificar hasta 3 niveles de padres
                 var parent: AccessibilityNodeInfo? = node.parent
                 var depth = 0
                 while (parent != null && depth < 3) {
