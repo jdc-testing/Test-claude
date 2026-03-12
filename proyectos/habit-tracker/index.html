@@ -152,12 +152,79 @@
     .history-count { font-size: 13px; color: var(--text-muted); }
     .history-dots { display: flex; gap: 6px; flex-wrap: wrap; }
     .habit-dot {
-      width: 28px; height: 28px; border-radius: 50%;
+      width: 32px; height: 32px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
+      font-size: 15px;
       background: var(--border);
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s ease, background 0.15s ease;
     }
+    .habit-dot:active { transform: scale(0.82); }
     .habit-dot.done { background: var(--accent-light); }
+    .history-hint {
+      font-size: 12px; color: var(--text-muted);
+      padding: 0 20px 10px;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* ── CHARTS ── */
+    .chart-filters {
+      display: flex; gap: 8px;
+      padding: 14px 20px 12px;
+    }
+    .filter-btn {
+      flex: 1; padding: 9px 4px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      font-family: inherit; font-size: 14px; font-weight: 600;
+      cursor: pointer; color: var(--text-muted);
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.15s ease;
+    }
+    .filter-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-light);
+    }
+    .charts-list {
+      padding: 0 20px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .chart-card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 14px 16px 16px;
+    }
+    .chart-header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 12px;
+    }
+    .chart-habit-name {
+      font-size: 15px; font-weight: 600;
+    }
+    .chart-avg {
+      font-size: 22px; font-weight: 700; color: var(--accent);
+    }
+    .chart-avg-label {
+      font-size: 12px; color: var(--text-muted); margin-top: 1px; text-align: right;
+    }
+    .chart-bars {
+      display: flex; align-items: flex-end;
+      height: 52px; gap: 2px;
+    }
+    .chart-bar {
+      flex: 1; min-width: 1px;
+      border-radius: 2px 2px 0 0;
+      transition: background 0.15s;
+    }
+    .chart-x-labels {
+      display: flex; justify-content: space-between;
+      margin-top: 5px;
+      font-size: 10px; color: var(--text-muted);
+    }
 
     /* ── MANAGE SCREEN ── */
     .manage-header {
@@ -239,8 +306,8 @@
       font-family: inherit;
       -webkit-tap-highlight-color: transparent;
     }
-    .nav-btn .nav-icon { font-size: 22px; line-height: 1; }
-    .nav-btn .nav-label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+    .nav-btn .nav-icon { font-size: 20px; line-height: 1; }
+    .nav-btn .nav-label { font-size: 10px; color: var(--text-muted); font-weight: 600; }
     .nav-btn.active .nav-label { color: var(--accent); }
 
     /* ── TOAST ── */
@@ -285,13 +352,24 @@
 
 <!-- HISTORY -->
 <section id="screen-history" class="screen">
+  <p class="history-hint">Toca un emoji para editar días anteriores</p>
   <div class="history-list" id="history-list"></div>
+</section>
+
+<!-- CHARTS -->
+<section id="screen-charts" class="screen">
+  <div class="chart-filters">
+    <button class="filter-btn active" id="filter-week"  onclick="setChartFilter('week')">Semana</button>
+    <button class="filter-btn"        id="filter-month" onclick="setChartFilter('month')">Mes</button>
+    <button class="filter-btn"        id="filter-year"  onclick="setChartFilter('year')">Año</button>
+  </div>
+  <div class="charts-list" id="charts-list"></div>
 </section>
 
 <!-- MANAGE -->
 <section id="screen-manage" class="screen">
   <div class="manage-header">
-    <span id="habit-count-label">0 / 8 hábitos</span>
+    <span id="habit-count-label">0 / 10 hábitos</span>
   </div>
   <div class="manage-list" id="manage-list"></div>
   <div class="add-form" id="add-form">
@@ -302,7 +380,7 @@
     </div>
     <button class="add-btn" id="add-btn" onclick="addHabit()">Añadir</button>
   </div>
-  <p class="limit-note" id="limit-note" style="display:none">Máximo 8 hábitos alcanzado</p>
+  <p class="limit-note" id="limit-note" style="display:none">Máximo 10 hábitos alcanzado</p>
 </section>
 
 <!-- NAV -->
@@ -314,6 +392,10 @@
   <button class="nav-btn" id="nav-history" onclick="showScreen('history')">
     <span class="nav-icon">📅</span>
     <span class="nav-label">Historial</span>
+  </button>
+  <button class="nav-btn" id="nav-charts" onclick="showScreen('charts')">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">Gráficos</span>
   </button>
   <button class="nav-btn" id="nav-manage" onclick="showScreen('manage')">
     <span class="nav-icon">⚙️</span>
@@ -327,12 +409,16 @@
   // ── STATE ──
   let habits = [];
   let records = {};
+  let chartFilter = 'week';
 
   const DEFAULT_HABITS = [
     { id: 'creatine', label: 'Tomar creatina', emoji: '💊' },
     { id: 'exercise', label: 'Hacer deporte',  emoji: '🏋️' },
     { id: 'study',    label: 'Estudiar',        emoji: '📚' },
-    { id: 'water',    label: 'Beber agua',      emoji: '💧' },
+    { id: 'water',    label: 'Beber agua',       emoji: '💧' },
+    { id: 'tennis',   label: 'Tenis',            emoji: '🎾' },
+    { id: 'sleep8h',  label: 'Dormir 8h',        emoji: '😴' },
+    { id: 'protein',  label: 'Proteína',          emoji: '🥩' },
   ];
 
   // ── STORAGE ──
@@ -353,6 +439,23 @@
     catch { showToast('Error al guardar. Almacenamiento lleno.'); }
   }
 
+  // Adds new default habits that don't exist yet (migration for existing users)
+  function seedNewHabits() {
+    const toSeed = [
+      { id: 'tennis',  label: 'Tenis',     emoji: '🎾' },
+      { id: 'sleep8h', label: 'Dormir 8h', emoji: '😴' },
+      { id: 'protein', label: 'Proteína',  emoji: '🥩' },
+    ];
+    let changed = false;
+    for (const h of toSeed) {
+      if (!habits.find(x => x.id === h.id)) {
+        habits.push(h);
+        changed = true;
+      }
+    }
+    if (changed) saveHabits();
+  }
+
   // ── DOMAIN ──
   function todayKey() {
     return new Date().toISOString().slice(0, 10);
@@ -364,10 +467,10 @@
     return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
   }
 
-  function toggleHabit(habitId) {
-    const today = todayKey();
-    if (!records[today]) records[today] = {};
-    records[today][habitId] = !records[today][habitId];
+  function toggleHabit(habitId, dateKey) {
+    const key = dateKey || todayKey();
+    if (!records[key]) records[key] = {};
+    records[key][habitId] = !records[key][habitId];
     saveRecords();
   }
 
@@ -446,8 +549,8 @@
 
   // ── RENDER: HISTORY ──
   function renderHistory() {
-    const days  = getLast30Days();
-    const list  = document.getElementById('history-list');
+    const days = getLast30Days();
+    const list = document.getElementById('history-list');
 
     const rows = days.map(key => {
       const dayRecord = records[key] || {};
@@ -456,14 +559,17 @@
       if (total === 0) return '';
 
       const dots = habits.map(h =>
-        `<div class="habit-dot ${dayRecord[h.id] ? 'done' : ''}" title="${h.label}">${h.emoji}</div>`
+        `<div class="habit-dot ${dayRecord[h.id] ? 'done' : ''}"
+              onclick="toggleHistoryHabit('${key}','${h.id}')"
+              title="${h.label}">${h.emoji}</div>`
       ).join('');
 
       const label = formatDate(key);
+      const isToday = key === todayKey();
       return `
         <div class="history-day">
           <div class="history-day-header">
-            <span class="history-date">${label.charAt(0).toUpperCase() + label.slice(1)}</span>
+            <span class="history-date">${label.charAt(0).toUpperCase() + label.slice(1)}${isToday ? ' · Hoy' : ''}</span>
             <span class="history-count">${done}/${total}</span>
           </div>
           <div class="history-dots">${dots}</div>
@@ -475,10 +581,106 @@
       : `<div class="empty-state"><div class="icon">📭</div><p>Sin historial aún.</p></div>`;
   }
 
+  // ── RENDER: CHARTS ──
+  function getChartData(habitId) {
+    const now = new Date();
+    let points = [];
+
+    if (chartFilter === 'week') {
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        const label = d.toLocaleDateString('es-ES', { weekday: 'short' });
+        points.push({ label, value: records[key]?.[habitId] ? 1 : 0 });
+      }
+    } else if (chartFilter === 'month') {
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        const label = i === 0 ? 'hoy' : d.toLocaleDateString('es-ES', { day: 'numeric' });
+        points.push({ label, value: records[key]?.[habitId] ? 1 : 0 });
+      }
+    } else { // year — group by month (last 12)
+      for (let m = 11; m >= 0; m--) {
+        const ref = new Date(now.getFullYear(), now.getMonth() - m, 1);
+        const year = ref.getFullYear();
+        const month = ref.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const label = ref.toLocaleDateString('es-ES', { month: 'short' });
+        let done = 0, total = 0;
+        for (let d = 1; d <= daysInMonth; d++) {
+          const day = new Date(year, month, d);
+          if (day > now) break;
+          const key = day.toISOString().slice(0, 10);
+          total++;
+          if (records[key]?.[habitId]) done++;
+        }
+        points.push({ label, value: total > 0 ? done / total : 0 });
+      }
+    }
+
+    const sum = points.reduce((acc, p) => acc + p.value, 0);
+    const avg = points.length > 0 ? Math.round((sum / points.length) * 100) : 0;
+    return { points, avg };
+  }
+
+  function renderCharts() {
+    const list = document.getElementById('charts-list');
+    if (habits.length === 0) {
+      list.innerHTML = `<div class="empty-state"><div class="icon">📊</div><p>No hay hábitos todavía.</p></div>`;
+      return;
+    }
+
+    // Update filter button states
+    ['week', 'month', 'year'].forEach(f => {
+      document.getElementById(`filter-${f}`).classList.toggle('active', f === chartFilter);
+    });
+
+    list.innerHTML = habits.map(h => {
+      const { points, avg } = getChartData(h.id);
+
+      const bars = points.map(p => {
+        const heightPct = Math.max(p.value * 100, p.value > 0 ? 6 : 0);
+        const bg = p.value > 0 ? 'var(--accent)' : 'var(--border)';
+        return `<div class="chart-bar" style="height:${heightPct}%;background:${bg}" title="${p.label}"></div>`;
+      }).join('');
+
+      // Show first, middle, last x-labels
+      const n = points.length;
+      const xLabels = n > 1
+        ? `<div class="chart-x-labels">
+            <span>${points[0].label}</span>
+            <span>${points[Math.floor(n / 2)].label}</span>
+            <span>${points[n - 1].label}</span>
+           </div>`
+        : '';
+
+      return `
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-habit-name">${h.emoji} ${h.label}</span>
+            <div>
+              <div class="chart-avg">${avg}%</div>
+              <div class="chart-avg-label">media</div>
+            </div>
+          </div>
+          <div class="chart-bars">${bars}</div>
+          ${xLabels}
+        </div>`;
+    }).join('');
+  }
+
+  function setChartFilter(f) {
+    chartFilter = f;
+    renderCharts();
+  }
+
   // ── RENDER: MANAGE ──
   function renderManage() {
     const count = habits.length;
-    document.getElementById('habit-count-label').textContent = `${count} / 8 hábitos`;
+    document.getElementById('habit-count-label').textContent = `${count} / 10 hábitos`;
 
     const list = document.getElementById('manage-list');
     if (count === 0) {
@@ -493,7 +695,7 @@
       ).join('');
     }
 
-    const atLimit = count >= 8;
+    const atLimit = count >= 10;
     document.getElementById('add-form').style.display  = atLimit ? 'none' : 'flex';
     document.getElementById('limit-note').style.display = atLimit ? 'block' : 'none';
   }
@@ -504,8 +706,13 @@
     renderToday();
   }
 
+  function toggleHistoryHabit(dateKey, habitId) {
+    toggleHabit(habitId, dateKey);
+    renderHistory();
+  }
+
   function addHabit() {
-    if (habits.length >= 8) return;
+    if (habits.length >= 10) return;
     const emoji = document.getElementById('new-emoji').value.trim() || '🎯';
     const label = document.getElementById('new-label').value.trim();
     if (!label) { showToast('Escribe un nombre para el hábito'); return; }
@@ -529,7 +736,7 @@
 
   // ── NAVIGATION ──
   let currentScreen = 'today';
-  const titles = { today: 'Hoy', history: 'Historial', manage: 'Hábitos' };
+  const titles = { today: 'Hoy', history: 'Historial', charts: 'Gráficos', manage: 'Hábitos' };
 
   function showScreen(name) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -543,6 +750,7 @@
     currentScreen = name;
     if (name === 'today')   renderToday();
     if (name === 'history') renderHistory();
+    if (name === 'charts')  renderCharts();
     if (name === 'manage')  renderManage();
   }
 
@@ -563,6 +771,7 @@
 
   // ── INIT ──
   loadData();
+  seedNewHabits();
   renderToday();
 
   if ('serviceWorker' in navigator) {
