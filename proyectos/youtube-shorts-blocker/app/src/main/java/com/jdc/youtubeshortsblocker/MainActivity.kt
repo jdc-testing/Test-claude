@@ -4,11 +4,11 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import android.text.TextUtils
-import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusTitle: TextView
     private lateinit var statusDescription: TextView
     private lateinit var btnAction: Button
-    private lateinit var cardStatus: View
+    private lateinit var cardStatus: CardView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateUI() {
         val active = isAccessibilityServiceEnabled()
         if (active) {
-            cardStatus.backgroundTintList = ContextCompat.getColorStateList(this, R.color.status_active_bg)
+            cardStatus.setCardBackgroundColor(ContextCompat.getColor(this, R.color.status_active_bg))
             statusIcon.setImageResource(R.drawable.ic_shield_check)
             statusIcon.imageTintList = ContextCompat.getColorStateList(this, R.color.status_active)
             statusTitle.text = getString(R.string.status_active)
@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
             btnAction.text = getString(R.string.btn_open_settings)
             btnAction.backgroundTintList = ContextCompat.getColorStateList(this, R.color.status_inactive)
         } else {
-            cardStatus.backgroundTintList = ContextCompat.getColorStateList(this, R.color.status_inactive_bg)
+            cardStatus.setCardBackgroundColor(ContextCompat.getColor(this, R.color.status_inactive_bg))
             statusIcon.setImageResource(R.drawable.ic_shield_off)
             statusIcon.imageTintList = ContextCompat.getColorStateList(this, R.color.status_inactive)
             statusTitle.text = getString(R.string.status_inactive)
