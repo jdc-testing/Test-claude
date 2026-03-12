@@ -292,6 +292,46 @@
     .reorder-btn:active { background: var(--accent-light); color: var(--accent); }
     .reorder-btn:disabled { opacity: 0.2; cursor: default; }
 
+    /* ── SETTINGS CARD ── */
+    .settings-card {
+      margin: 16px 20px 0;
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .settings-card h3 { font-size: 15px; font-weight: 700; }
+    .settings-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .settings-label { font-size: 15px; font-weight: 500; flex: 1; }
+    .settings-sublabel { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* toggle switch */
+    .toggle-switch { position: relative; display: inline-block; width: 48px; height: 28px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: var(--border); border-radius: 28px;
+      transition: background 0.2s ease; cursor: pointer;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute; width: 22px; height: 22px; border-radius: 50%;
+      background: white; top: 3px; left: 3px;
+      transition: transform 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    .time-input {
+      border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 9px 12px; font-size: 15px; font-family: inherit;
+      background: var(--bg); color: var(--text);
+    }
+    .time-input:focus { outline: none; border-color: var(--accent); }
+
     /* ── CONFIRM MODAL ── */
     #confirm-overlay {
       position: fixed; inset: 0;
@@ -468,6 +508,24 @@
     <button class="add-btn" id="add-btn" onclick="addHabit()">Añadir</button>
   </div>
   <p class="limit-note" id="limit-note" style="display:none">Máximo 10 hábitos alcanzado</p>
+
+  <div class="settings-card">
+    <h3>🔔 Recordatorio diario</h3>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">Activar notificación</div>
+        <div class="settings-sublabel">Recibe un aviso cada día</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="notif-enabled" onchange="handleNotifToggle()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="settings-row" id="notif-time-row" style="display:none">
+      <div class="settings-label">Hora del recordatorio</div>
+      <input type="time" id="notif-time" value="22:00" class="time-input" onchange="handleNotifTime()">
+    </div>
+  </div>
 </section>
 
 <!-- NAV -->
@@ -982,7 +1040,7 @@
     if (name === 'today')   renderToday();
     if (name === 'history') renderHistory();
     if (name === 'charts')  renderCharts();
-    if (name === 'manage')  renderManage();
+    if (name === 'manage')  { renderManage(); renderNotifSettings(); }
   }
 
   // ── TOAST ──
@@ -1000,13 +1058,97 @@
     if (e.key === 'Enter') addHabit();
   });
 
+  // ── NOTIFICATIONS ──
+  let notifTimeout = null;
+
+  function loadSettings() {
+    try { return JSON.parse(localStorage.getItem('ht_settings')) || { notifEnabled: false, notifTime: '22:00' }; }
+    catch { return { notifEnabled: false, notifTime: '22:00' }; }
+  }
+  function saveSettings(s) { localStorage.setItem('ht_settings', JSON.stringify(s)); }
+
+  function scheduleNotification() {
+    clearTimeout(notifTimeout);
+    const s = loadSettings();
+    if (!s.notifEnabled || Notification.permission !== 'granted') return;
+    const [h, m] = s.notifTime.split(':').map(Number);
+    const now  = new Date();
+    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + 1);
+    notifTimeout = setTimeout(() => { showDailyNotification(); scheduleNotification(); }, next - now);
+  }
+
+  function showDailyNotification() {
+    const today = todayKey();
+    const done  = habits.filter(h => (records[today] || {})[h.id]).length;
+    const total = habits.length;
+    const body  = done === total
+      ? '¡Todos los hábitos completados hoy! 🎉'
+      : `${done}/${total} hábitos completados hoy. ¡Sigue adelante!`;
+    if (Notification.permission !== 'granted') return;
+    navigator.serviceWorker.ready
+      .then(sw => sw.showNotification('Habit Tracker', {
+        body, icon: './icons/icon-192.png', badge: './icons/icon-192.png',
+        tag: 'daily-reminder', renotify: true,
+      }))
+      .catch(() => new Notification('Habit Tracker', { body, icon: './icons/icon-192.png' }));
+  }
+
+  function handleNotifToggle() {
+    const cb = document.getElementById('notif-enabled');
+    const s  = loadSettings();
+    if (cb.checked) {
+      if (!('Notification' in window)) {
+        showToast('Tu navegador no soporta notificaciones');
+        cb.checked = false; return;
+      }
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') {
+          s.notifEnabled = true; saveSettings(s);
+          scheduleNotification();
+          showToast('Notificaciones activadas');
+          renderNotifSettings();
+        } else {
+          showToast('Permiso denegado. Actívalo en los ajustes del navegador.');
+          cb.checked = false;
+        }
+      });
+    } else {
+      s.notifEnabled = false; saveSettings(s);
+      clearTimeout(notifTimeout);
+      showToast('Notificaciones desactivadas');
+      renderNotifSettings();
+    }
+  }
+
+  function handleNotifTime() {
+    const time = document.getElementById('notif-time').value;
+    if (!time) return;
+    const s = loadSettings(); s.notifTime = time; saveSettings(s);
+    scheduleNotification();
+    showToast(`Recordatorio a las ${time}`);
+  }
+
+  function renderNotifSettings() {
+    const s = loadSettings();
+    const cb = document.getElementById('notif-enabled');
+    if (!cb) return;
+    cb.checked = s.notifEnabled && Notification.permission === 'granted';
+    document.getElementById('notif-time').value = s.notifTime || '22:00';
+    document.getElementById('notif-time-row').style.display = cb.checked ? 'flex' : 'none';
+  }
+
   // ── INIT ──
   loadData();
-  seedNewHabits();
   renderToday();
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  // Schedule notification on startup (if already granted)
+  if ('Notification' in window && Notification.permission === 'granted') {
+    scheduleNotification();
   }
 </script>
 </body>
