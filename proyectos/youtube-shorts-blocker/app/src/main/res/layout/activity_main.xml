@@ -24,7 +24,6 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:src="@drawable/ic_youtube"
-                android:imageTintList="@null"
                 android:layout_marginEnd="12dp" />
 
             <LinearLayout
