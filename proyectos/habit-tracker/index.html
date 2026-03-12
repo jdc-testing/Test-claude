@@ -189,6 +189,27 @@
       color: var(--accent);
       background: var(--accent-light);
     }
+    .date-range-row {
+      display: none; align-items: center; gap: 8px;
+      padding: 0 20px 12px; flex-wrap: wrap;
+    }
+    .date-range-row.visible { display: flex; }
+    .date-input {
+      flex: 1; min-width: 120px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 9px 10px; font-size: 14px; font-family: inherit;
+      background: var(--surface); color: var(--text);
+    }
+    .date-input:focus { outline: none; border-color: var(--accent); }
+    .date-sep { color: var(--text-muted); font-size: 16px; }
+    .apply-btn {
+      background: var(--accent); color: white;
+      border: none; border-radius: 10px;
+      padding: 9px 18px; font-size: 14px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .apply-btn:active { opacity: 0.85; }
     .charts-list {
       padding: 0 20px;
       display: flex; flex-direction: column; gap: 12px;
@@ -418,9 +439,16 @@
 <!-- CHARTS -->
 <section id="screen-charts" class="screen">
   <div class="chart-filters">
-    <button class="filter-btn active" id="filter-week"  onclick="setChartFilter('week')">Semana</button>
-    <button class="filter-btn"        id="filter-month" onclick="setChartFilter('month')">Mes</button>
-    <button class="filter-btn"        id="filter-year"  onclick="setChartFilter('year')">Año</button>
+    <button class="filter-btn active" id="filter-week"   onclick="setChartFilter('week')">Semana</button>
+    <button class="filter-btn"        id="filter-month"  onclick="setChartFilter('month')">Mes</button>
+    <button class="filter-btn"        id="filter-year"   onclick="setChartFilter('year')">Año</button>
+    <button class="filter-btn"        id="filter-custom" onclick="setChartFilter('custom')">Rango</button>
+  </div>
+  <div class="date-range-row" id="date-range-row">
+    <input type="date" id="chart-from" class="date-input">
+    <span class="date-sep">→</span>
+    <input type="date" id="chart-to" class="date-input">
+    <button class="apply-btn" onclick="applyDateRange()">Ver</button>
   </div>
   <div class="charts-list" id="charts-list"></div>
 </section>
@@ -481,6 +509,8 @@
   let habits = [];
   let records = {};
   let chartFilter = 'week';
+  let chartFrom = null; // 'YYYY-MM-DD'
+  let chartTo   = null;
   const START_DATE = new Date(2026, 2, 1); // 1 de marzo de 2026
 
   const DEFAULT_HABITS = [
@@ -654,17 +684,29 @@
   }
 
   // ── RENDER: CHARTS ──
+  function localKey(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
   function getChartData(habitId) {
     const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let points = [];
     let doneDays = 0, totalDays = 0;
 
     if (chartFilter === 'week') {
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(d.getDate() - i);
+      // Semana actual: lunes → hoy
+      const dow = today.getDay();
+      const daysFromMon = dow === 0 ? 6 : dow - 1;
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - daysFromMon);
+
+      for (let d = new Date(monday); d <= today; d.setDate(d.getDate() + 1)) {
         if (d < START_DATE) continue;
-        const key = d.toISOString().slice(0, 10);
+        const key = localKey(d);
         const label = d.toLocaleDateString('es-ES', { weekday: 'short' });
         const val = records[key]?.[habitId] ? 1 : 0;
         points.push({ label, value: val });
@@ -672,18 +714,36 @@
         if (val) doneDays++;
       }
     } else if (chartFilter === 'month') {
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(d.getDate() - i);
+      // Mes actual: día 1 → hoy
+      const first = new Date(today.getFullYear(), today.getMonth(), 1);
+
+      for (let d = new Date(first); d <= today; d.setDate(d.getDate() + 1)) {
         if (d < START_DATE) continue;
-        const key = d.toISOString().slice(0, 10);
-        const label = i === 0 ? 'hoy' : d.toLocaleDateString('es-ES', { day: 'numeric' });
+        const key = localKey(d);
+        const label = d.toLocaleDateString('es-ES', { day: 'numeric' });
         const val = records[key]?.[habitId] ? 1 : 0;
         points.push({ label, value: val });
         totalDays++;
         if (val) doneDays++;
       }
-    } else { // year — group by month (last 12)
+    } else if (chartFilter === 'custom') {
+      if (!chartFrom || !chartTo) return { points: [], avg: 0, doneDays: 0, totalDays: 0 };
+      const [fy, fm, fd] = chartFrom.split('-').map(Number);
+      const [ty, tm, td] = chartTo.split('-').map(Number);
+      const fromDate = new Date(fy, fm - 1, fd);
+      const toDate   = new Date(ty, tm - 1, td);
+      const end = toDate < today ? toDate : today;
+
+      for (let d = new Date(fromDate); d <= end; d.setDate(d.getDate() + 1)) {
+        if (d < START_DATE) continue;
+        const key = localKey(d);
+        const label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+        const val = records[key]?.[habitId] ? 1 : 0;
+        points.push({ label, value: val });
+        totalDays++;
+        if (val) doneDays++;
+      }
+    } else { // year — últimos 12 meses agrupados por mes
       for (let m = 11; m >= 0; m--) {
         const ref = new Date(now.getFullYear(), now.getMonth() - m, 1);
         const year = ref.getFullYear();
@@ -693,9 +753,9 @@
         let done = 0, total = 0;
         for (let d = 1; d <= daysInMonth; d++) {
           const day = new Date(year, month, d);
-          if (day > now) break;
+          if (day > today) break;
           if (day < START_DATE) continue;
-          const key = day.toISOString().slice(0, 10);
+          const key = localKey(day);
           total++;
           if (records[key]?.[habitId]) done++;
         }
@@ -719,7 +779,7 @@
     }
 
     // Update filter button states
-    ['week', 'month', 'year'].forEach(f => {
+    ['week', 'month', 'year', 'custom'].forEach(f => {
       document.getElementById(`filter-${f}`).classList.toggle('active', f === chartFilter);
     });
 
@@ -764,6 +824,32 @@
 
   function setChartFilter(f) {
     chartFilter = f;
+    const row = document.getElementById('date-range-row');
+    if (f === 'custom') {
+      // Pre-fill with current month range if empty
+      const today = new Date();
+      if (!chartFrom) {
+        const first = new Date(today.getFullYear(), today.getMonth(), 1);
+        document.getElementById('chart-from').value = localKey(first);
+        chartFrom = localKey(first);
+      }
+      if (!chartTo) {
+        document.getElementById('chart-to').value = localKey(today);
+        chartTo = localKey(today);
+      }
+      row.classList.add('visible');
+      renderCharts();
+    } else {
+      row.classList.remove('visible');
+      renderCharts();
+    }
+  }
+
+  function applyDateRange() {
+    chartFrom = document.getElementById('chart-from').value;
+    chartTo   = document.getElementById('chart-to').value;
+    if (!chartFrom || !chartTo) { showToast('Selecciona las dos fechas'); return; }
+    if (chartFrom > chartTo) { showToast('La fecha inicio debe ser anterior al fin'); return; }
     renderCharts();
   }
 
