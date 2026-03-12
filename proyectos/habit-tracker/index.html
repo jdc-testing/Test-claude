@@ -545,6 +545,8 @@
       <div class="settings-label">Hora del recordatorio</div>
       <input type="time" id="notif-time" value="22:00" class="time-input" onchange="handleNotifTime()">
     </div>
+    <div id="notif-next" style="font-size:12px;color:var(--text-muted);display:none"></div>
+    <button class="apply-btn" id="notif-test-btn" onclick="testNotification()" style="display:none">Probar ahora</button>
   </div>
 </section>
 
@@ -1160,12 +1162,26 @@
       ? '¡Todos los hábitos completados hoy! 🎉'
       : `${done}/${total} hábitos completados hoy. ¡Sigue adelante!`;
     if (Notification.permission !== 'granted') return;
+    // ServiceWorkerRegistration.showNotification es la única API que funciona en
+    // Android Chrome y PWAs instaladas. new Notification() no es soportado en Android.
     navigator.serviceWorker.ready
-      .then(sw => sw.showNotification('Habit Tracker', {
-        body, icon: './icons/icon-192.png', badge: './icons/icon-192.png',
-        tag: 'daily-reminder', renotify: true,
+      .then(reg => reg.showNotification('Habit Tracker', {
+        body,
+        icon: './icons/icon-192.png',
+        badge: './icons/icon-192.png',
+        tag: 'daily-reminder',
+        renotify: true,
+        data: { url: './' },
       }))
-      .catch(() => new Notification('Habit Tracker', { body, icon: './icons/icon-192.png' }));
+      .catch(err => showToast('Error al mostrar notificación: ' + err.message));
+  }
+
+  function testNotification() {
+    if (Notification.permission !== 'granted') {
+      showToast('Activa las notificaciones primero'); return;
+    }
+    showDailyNotification();
+    showToast('Notificación enviada');
   }
 
   function handleNotifToggle() {
@@ -1207,9 +1223,24 @@
     const s = loadSettings();
     const cb = document.getElementById('notif-enabled');
     if (!cb) return;
-    cb.checked = s.notifEnabled && Notification.permission === 'granted';
+    const granted = 'Notification' in window && Notification.permission === 'granted';
+    cb.checked = s.notifEnabled && granted;
     document.getElementById('notif-time').value = s.notifTime || '22:00';
-    document.getElementById('notif-time-row').style.display = cb.checked ? 'flex' : 'none';
+    const active = cb.checked;
+    document.getElementById('notif-time-row').style.display  = active ? 'flex'  : 'none';
+    document.getElementById('notif-test-btn').style.display  = active ? 'block' : 'none';
+    const nextEl = document.getElementById('notif-next');
+    if (active) {
+      const [hr, mn] = (s.notifTime || '22:00').split(':').map(Number);
+      const now  = new Date();
+      const next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hr, mn, 0, 0);
+      if (next <= now) next.setDate(next.getDate() + 1);
+      const isToday = next.getDate() === now.getDate();
+      nextEl.textContent = `Próximo aviso: ${isToday ? 'hoy' : 'mañana'} a las ${s.notifTime}`;
+      nextEl.style.display = 'block';
+    } else {
+      nextEl.style.display = 'none';
+    }
   }
 
   // ── INIT ──
@@ -1224,6 +1255,11 @@
   if ('Notification' in window && Notification.permission === 'granted') {
     scheduleNotification();
   }
+
+  // Reschedule when the page becomes visible again (el timer puede perderse si el SO suspende la app)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') scheduleNotification();
+  });
 </script>
 </body>
 </html>

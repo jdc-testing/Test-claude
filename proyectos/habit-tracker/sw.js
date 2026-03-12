@@ -1,4 +1,4 @@
-const CACHE_NAME = 'habit-tracker-v3';
+const CACHE_NAME = 'habit-tracker-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -23,6 +23,17 @@ self.addEventListener('activate', event => {
     )
   );
   self.clients.claim();
+});
+
+// Cuando el usuario toca la notificación: abre/enfoca la app.
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      if (list.length > 0) return list[0].focus();
+      return clients.openWindow('./');
+    })
+  );
 });
 
 // Network first: siempre intenta red para tener la versión más reciente.
