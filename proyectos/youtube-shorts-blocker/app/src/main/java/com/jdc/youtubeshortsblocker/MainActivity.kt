@@ -3,7 +3,6 @@ package com.jdc.youtubeshortsblocker
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
-import android.text.TextUtils
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -63,14 +62,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isAccessibilityServiceEnabled(): Boolean {
-        val serviceName = "${packageName}/${ShortsBlockerService::class.java.canonicalName}"
         val enabledServices = Settings.Secure.getString(
             contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         ) ?: return false
-        return TextUtils.SimpleStringSplitter(':').apply {
-            setString(enabledServices)
-        }.any { it.equals(serviceName, ignoreCase = true) }
+        // Buscar por nombre de clase (más robusto que comparación exacta)
+        return enabledServices.lowercase().contains(
+            ShortsBlockerService::class.java.simpleName.lowercase()
+        )
     }
 
     private fun openAccessibilitySettings() {
