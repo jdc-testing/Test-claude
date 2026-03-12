@@ -1,5 +1,7 @@
 # Bloqueador de YouTube Shorts
 
+> Versión 1.0 — Android 7.0+
+
 App Android que bloquea automáticamente los YouTube Shorts (Reels) sin afectar los videos normales.
 
 ## ¿Cómo funciona?
