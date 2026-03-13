@@ -7,428 +7,324 @@
 <title>Tennis Tracker</title>
 <link rel="manifest" href="manifest.json">
 <style>
-/* ── RESET & BASE ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; -webkit-tap-highlight-color: transparent; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100dvh;
-  max-width: 480px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-}
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;max-width:480px;margin:0 auto;display:flex;flex-direction:column}
 
-/* ── CSS VARIABLES ── */
-:root {
-  --accent: #2d6a4f;
-  --accent-light: #d8f3dc;
-  --accent-dark: #1b4332;
-  --ball: #c8a800;
-  --win: #43a047;
-  --loss: #e53935;
-  --abandoned: #888;
-  --bg: #f0f4f0;
-  --surface: #ffffff;
-  --text: #1b2d1e;
-  --muted: #6b7c6d;
-  --border: #c8dfc9;
-  --nav-h: 60px;
-  --header-h: 52px;
+/* ── VARIABLES ── */
+:root{
+  --accent:#2d6a4f;--accent-light:#d8f3dc;--accent-dark:#1b4332;
+  --win:#43a047;--loss:#e53935;--abandoned:#888;
+  --bg:#f0f4f0;--surface:#fff;--text:#1b2d1e;--muted:#6b7c6d;--border:#c8dfc9;
+  --nav-h:60px;--hdr-h:52px;
 }
 
 /* ── LAYOUT ── */
-#app-header {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--accent);
-  color: #fff;
-  height: var(--header-h);
-  display: flex; align-items: center; padding: 0 16px;
-  gap: 10px;
-}
-#app-header h1 { font-size: 1.1rem; font-weight: 700; flex: 1; }
-#app-header span { font-size: 1.4rem; }
-
-#main-content {
-  flex: 1;
-  overflow-y: auto;
-  padding-bottom: calc(var(--nav-h) + 8px);
-}
-
-#bottom-nav {
-  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-  width: 100%; max-width: 480px;
-  height: var(--nav-h);
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  display: flex;
-  z-index: 100;
-}
-.nav-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 3px;
-  background: none; border: none; cursor: pointer;
-  color: var(--muted); font-size: 0.7rem; font-weight: 600;
-  transition: color .15s;
-}
-.nav-btn .nav-icon { font-size: 1.5rem; line-height: 1; }
-.nav-btn.active { color: var(--accent); }
+#app-header{position:sticky;top:0;z-index:100;background:var(--accent);color:#fff;height:var(--hdr-h);display:flex;align-items:center;padding:0 16px;gap:10px}
+#app-header h1{font-size:1.1rem;font-weight:700;flex:1}
+#main-content{flex:1;overflow-y:auto;padding-bottom:calc(var(--nav-h) + 8px)}
+#bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:var(--nav-h);background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:0.68rem;font-weight:600;transition:color .15s}
+.nav-btn .ni{font-size:1.4rem;line-height:1}
+.nav-btn.active{color:var(--accent)}
 
 /* ── TABS ── */
-.tab { display: none; }
-.tab.active { display: block; }
+.tab{display:none}.tab.active{display:block}
 
 /* ── BUTTONS ── */
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  border: none; border-radius: 12px; cursor: pointer;
-  font-family: inherit; font-weight: 600; transition: opacity .15s, transform .1s;
-  text-decoration: none;
-}
-.btn:active { transform: scale(.97); opacity: .85; }
-.btn-primary   { background: var(--accent); color: #fff; }
-.btn-secondary { background: var(--accent-light); color: var(--accent-dark); }
-.btn-danger    { background: var(--loss); color: #fff; }
-.btn-ghost     { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-.btn-sm  { padding: 8px 14px; font-size: 0.82rem; border-radius: 8px; }
-.btn-md  { padding: 12px 20px; font-size: 0.95rem; }
-.btn-lg  { padding: 16px 24px; font-size: 1.1rem; }
-.btn-full { width: 100%; }
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600;transition:opacity .15s,transform .1s;text-decoration:none}
+.btn:active{transform:scale(.97);opacity:.85}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--accent-light);color:var(--accent-dark)}
+.btn-danger{background:var(--loss);color:#fff}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-sm{padding:7px 13px;font-size:.81rem;border-radius:8px}
+.btn-md{padding:12px 20px;font-size:.95rem}
+.btn-lg{padding:15px 24px;font-size:1.05rem}
+.btn-full{width:100%}
 
-/* ── NO MATCH SCREEN ── */
-#no-match { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-.start-card {
-  background: var(--accent); color: #fff;
-  border-radius: 20px; padding: 28px 20px; text-align: center;
-}
-.start-card .ball-emoji { font-size: 3rem; margin-bottom: 8px; }
-.start-card h2 { font-size: 1.3rem; margin-bottom: 16px; }
-.quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.quick-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 14px; padding: 16px 12px; text-align: center;
-  cursor: pointer; transition: background .15s;
-}
-.quick-card:active { background: var(--accent-light); }
-.quick-card .qc-icon  { font-size: 1.8rem; margin-bottom: 6px; }
-.quick-card .qc-label { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+/* ── SECTION HEADERS ── */
+.sec-title{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
 
-/* ── MATCH SCREEN ── */
-#match-screen { padding: 12px 16px; }
+/* ── AVATAR ── */
+.avatar{border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--accent-light);display:flex;align-items:center;justify-content:center}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar svg{width:100%;height:100%}
+.av-sm{width:36px;height:36px}.av-md{width:52px;height:52px}.av-lg{width:72px;height:72px}.av-xl{width:88px;height:88px}
 
-.players-row {
-  display: flex; align-items: center;
-  background: var(--surface); border-radius: 16px;
-  padding: 14px 16px; border: 1px solid var(--border);
-  gap: 8px; margin-bottom: 10px;
-}
-.player-info { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.player-info .player-name { font-size: 0.88rem; font-weight: 700; text-align: center; }
-.players-vs { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+/* ═══════════════════════════
+   TAB 1 — PARTIDO
+═══════════════════════════ */
 
-/* Scoreboard */
-.scoreboard {
-  background: var(--surface); border-radius: 16px;
-  border: 1px solid var(--border); overflow: hidden; margin-bottom: 10px;
-}
-.score-row {
-  display: flex; align-items: center;
-  border-bottom: 1px solid var(--border);
-}
-.score-row:last-child { border-bottom: none; }
-.score-label {
-  width: 80px; padding: 10px 14px;
-  font-size: 0.75rem; font-weight: 600;
-  color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
-  background: var(--bg);
-}
-.score-val {
-  flex: 1; padding: 10px 8px;
-  font-size: 1.1rem; font-weight: 700; text-align: center;
-}
-.score-val.special { font-size: 0.88rem; }
-.score-val.highlight { color: var(--accent); }
-.score-sep { padding: 10px 4px; font-weight: 300; color: var(--muted); }
+/* ── No-match screen (redesigned) ── */
+#no-match{padding:16px;display:flex;flex-direction:column;gap:14px}
 
-.sets-history {
-  display: flex; gap: 6px; flex-wrap: wrap;
-  padding: 8px 14px; background: var(--bg);
-  border-bottom: 1px solid var(--border);
-}
-.set-chip {
-  font-size: 0.78rem; font-weight: 600;
-  background: var(--accent-light); color: var(--accent-dark);
-  border-radius: 6px; padding: 2px 7px;
-}
-.set-chip.won  { background: var(--win);  color: #fff; }
-.set-chip.lost { background: var(--loss); color: #fff; }
+/* My profile hero */
+.my-hero{background:var(--accent);border-radius:20px;padding:20px 20px 24px;display:flex;align-items:center;gap:16px;color:#fff}
+.my-hero .hero-info h2{font-size:1.3rem;font-weight:800}
+.my-hero .hero-info p{font-size:.82rem;opacity:.8;margin-top:2px}
 
-/* Tiebreak banner */
-.tb-banner {
-  background: linear-gradient(135deg, #f9a825, #f57f17);
-  color: #fff; text-align: center; padding: 8px 16px;
-  font-size: 0.85rem; font-weight: 700;
-  border-radius: 10px; margin-bottom: 10px; display: none;
-}
-.tb-banner.visible { display: block; }
+/* Rival picker on home */
+.rival-picker-label{font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.rival-cards{display:flex;flex-direction:column;gap:8px}
+.rival-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:2px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s}
+.rival-card:active{opacity:.8}
+.rival-card.selected{border-color:var(--accent);background:var(--accent-light)}
+.rival-card-name{flex:1;font-weight:600;font-size:.92rem}
+.rival-card-record{font-size:.75rem;color:var(--muted)}
+.rival-card-record .rw{color:var(--win);font-weight:700}
+.rival-card-record .rl{color:var(--loss);font-weight:700}
+.rival-card .check{width:20px;height:20px;border-radius:50%;background:var(--accent);display:none;align-items:center;justify-content:center;color:#fff;font-size:.7rem;flex-shrink:0}
+.rival-card.selected .check{display:flex}
 
-/* Action buttons */
-.action-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
-}
-.btn-score-point {
-  padding: 22px 12px; font-size: 1rem; border-radius: 14px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-}
-.btn-score-point .btn-sub { font-size: 0.72rem; opacity: .8; font-weight: 500; }
-.btn-my    { background: var(--accent); color: #fff; }
-.btn-rival { background: var(--loss);   color: #fff; }
+.no-rivals-empty{text-align:center;padding:24px 16px;color:var(--muted)}
+.no-rivals-empty .ei{font-size:2.2rem;margin-bottom:8px}
+.no-rivals-empty p{font-size:.85rem;margin-bottom:12px}
 
-.btn-game-row {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
-}
-.btn-score-game       { padding: 10px 12px; font-size: 0.82rem; border-radius: 10px; background: var(--accent-light); color: var(--accent-dark); border: none; cursor: pointer; font-family: inherit; font-weight: 600; }
-.btn-score-game-rival { padding: 10px 12px; font-size: 0.82rem; border-radius: 10px; background: #fde8e8; color: var(--loss); border: none; cursor: pointer; font-family: inherit; font-weight: 600; }
-.btn-score-game:active, .btn-score-game-rival:active { transform: scale(.97); opacity: .85; }
+/* Start button area */
+.start-area{display:flex;gap:8px}
 
-.footer-row { display: flex; gap: 10px; }
-.footer-row .btn { flex: 1; }
+/* ── Match screen ── */
+#match-screen{padding:12px 16px}
 
-/* ── STATS TAB ── */
-#stats-tab { padding: 0 0 16px; }
-.stat-block { margin: 12px 16px; }
-.card-title {
-  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .05em; color: var(--muted); margin-bottom: 8px;
-}
+.players-row{display:flex;align-items:center;background:var(--surface);border-radius:16px;padding:14px 16px;border:1px solid var(--border);gap:8px;margin-bottom:10px}
+.player-info{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.player-info .pname{font-size:.88rem;font-weight:700;text-align:center}
+.pvs{font-size:.8rem;font-weight:700;color:var(--muted)}
 
-.summary-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
-.summary-box {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; padding: 12px 8px; text-align: center;
-}
-.summary-box .sb-val   { font-size: 1.6rem; font-weight: 800; color: var(--accent); }
-.summary-box .sb-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
-.summary-box.win  .sb-val { color: var(--win); }
-.summary-box.loss .sb-val { color: var(--loss); }
+.scoreboard{background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden;margin-bottom:10px}
+.score-row{display:flex;align-items:center;border-bottom:1px solid var(--border)}
+.score-row:last-child{border-bottom:none}
+.score-label{width:80px;padding:10px 14px;font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:var(--bg)}
+.score-val{flex:1;padding:10px 8px;font-size:1.1rem;font-weight:700;text-align:center}
+.score-val.special{font-size:.88rem}
+.score-val.hi{color:var(--accent)}
+.score-sep{padding:10px 4px;font-weight:300;color:var(--muted)}
 
-.streak-row { display: flex; gap: 8px; }
-.streak-box {
-  flex: 1; background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; padding: 12px; text-align: center;
-}
-.streak-box .sv { font-size: 1.4rem; font-weight: 800; color: var(--accent); }
-.streak-box .sl { font-size: 0.72rem; color: var(--muted); font-weight: 600; }
+.sets-history{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;background:var(--bg);border-bottom:1px solid var(--border)}
+.set-chip{font-size:.78rem;font-weight:600;border-radius:6px;padding:2px 7px}
+.set-chip.won{background:var(--win);color:#fff}
+.set-chip.lost{background:var(--loss);color:#fff}
+.set-chip.neutral{background:var(--accent-light);color:var(--accent-dark)}
 
-/* Chart */
-.chart-filters { display: flex; gap: 6px; margin-bottom: 10px; }
-.filter-btn {
-  border: 1px solid var(--border); background: var(--surface);
-  border-radius: 20px; padding: 5px 12px;
-  font-size: 0.78rem; font-weight: 600; cursor: pointer; color: var(--muted);
-  font-family: inherit; transition: all .15s;
-}
-.filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.chart-wrap { position: relative; height: 120px; }
-.chart-bars { display: flex; align-items: flex-end; gap: 4px; height: 100%; padding-bottom: 20px; }
-.chart-col  { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.bar-stack  { width: 100%; display: flex; flex-direction: column; gap: 2px; flex: 1; justify-content: flex-end; }
-.bar-win    { background: var(--win);  border-radius: 3px 3px 0 0; min-height: 0; }
-.bar-loss   { background: var(--loss); border-radius: 3px;          min-height: 0; }
-.bar-label  { font-size: 0.6rem; color: var(--muted); text-align: center; }
+.tb-banner{background:linear-gradient(135deg,#f9a825,#f57f17);color:#fff;text-align:center;padding:8px 16px;font-size:.85rem;font-weight:700;border-radius:10px;margin-bottom:10px;display:none}
+.tb-banner.visible{display:block}
+
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.btn-pt{padding:22px 12px;font-size:1rem;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.btn-pt .sub{font-size:.72rem;opacity:.8;font-weight:500}
+.btn-my{background:var(--accent);color:#fff;border:none;cursor:pointer;font-family:inherit;font-weight:600;transition:opacity .15s,transform .1s}
+.btn-my:active{transform:scale(.97);opacity:.85}
+.btn-rv{background:var(--loss);color:#fff;border:none;cursor:pointer;font-family:inherit;font-weight:600;transition:opacity .15s,transform .1s}
+.btn-rv:active{transform:scale(.97);opacity:.85}
+
+.game-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.btn-gm{padding:10px 12px;font-size:.82rem;border-radius:10px;border:none;cursor:pointer;font-family:inherit;font-weight:600;transition:opacity .15s,transform .1s}
+.btn-gm:active{transform:scale(.97);opacity:.85}
+.btn-gm-my{background:var(--accent-light);color:var(--accent-dark)}
+.btn-gm-rv{background:#fde8e8;color:var(--loss)}
+
+.footer-row{display:flex;gap:10px}
+.footer-row .btn{flex:1}
+
+/* ═══════════════════════════
+   TAB 2 — ESTADÍSTICAS
+═══════════════════════════ */
+#stats-tab{padding:0 0 16px}
+.stat-block{margin:12px 16px}
+
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.summary-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 8px;text-align:center}
+.summary-box .sbv{font-size:1.6rem;font-weight:800;color:var(--accent)}
+.summary-box .sbl{font-size:.7rem;color:var(--muted);font-weight:600}
+.summary-box.win .sbv{color:var(--win)}
+.summary-box.loss .sbv{color:var(--loss)}
+
+.streak-row{display:flex;gap:8px}
+.streak-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+.streak-box .sv{font-size:1.4rem;font-weight:800;color:var(--accent)}
+.streak-box .sl{font-size:.72rem;color:var(--muted);font-weight:600}
+
+/* Chart — fixed with px heights */
+.chart-filters{display:flex;gap:6px;margin-bottom:10px}
+.filter-btn{border:1px solid var(--border);background:var(--surface);border-radius:20px;padding:5px 12px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--muted);font-family:inherit;transition:all .15s}
+.filter-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chart-wrap{height:110px;display:flex;align-items:flex-end;gap:4px;padding-bottom:0}
+.chart-col{flex:1;display:flex;flex-direction:column;align-items:center}
+.bar-stack{width:100%;display:flex;flex-direction:column;justify-content:flex-end;height:80px;gap:2px}
+.bar-win{background:var(--win);border-radius:3px 3px 0 0;min-height:0}
+.bar-loss{background:var(--loss);border-radius:3px;min-height:0}
+.bar-label{font-size:.6rem;color:var(--muted);margin-top:4px;text-align:center}
 
 /* Rivals stats */
-.rival-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-.rival-row:last-child { border-bottom: none; }
-.rival-name   { flex: 1; font-weight: 600; font-size: 0.9rem; }
-.rival-record { font-size: 0.8rem; color: var(--muted); }
-.rival-record .rw { color: var(--win);  font-weight: 700; }
-.rival-record .rl { color: var(--loss); font-weight: 700; }
+.rival-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.rival-row:last-child{border-bottom:none}
+.rival-rname{flex:1;font-weight:600;font-size:.9rem}
+.rival-rec{font-size:.8rem;color:var(--muted)}
+.rival-rec .rw{color:var(--win);font-weight:700}
+.rival-rec .rl{color:var(--loss);font-weight:700}
 
 /* Match history */
-.match-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-.match-item:last-child { border-bottom: none; }
-.match-result-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.match-result-dot.win       { background: var(--win); }
-.match-result-dot.loss      { background: var(--loss); }
-.match-result-dot.abandoned { background: var(--abandoned); }
-.match-info  { flex: 1; }
-.match-rival { font-size: 0.88rem; font-weight: 600; }
-.match-meta  { font-size: 0.75rem; color: var(--muted); }
-.match-sets  { font-size: 0.78rem; color: var(--muted); }
+.match-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.match-item:last-child{border-bottom:none}
+.m-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.m-dot.win{background:var(--win)}.m-dot.loss{background:var(--loss)}.m-dot.abandoned{background:var(--abandoned)}
+.m-info{flex:1}
+.m-rival{font-size:.88rem;font-weight:600}
+.m-meta{font-size:.75rem;color:var(--muted)}
+.m-sets{font-size:.78rem;color:var(--muted)}
+
+/* ═══════════════════════════
+   TAB 3 — PERFIL
+═══════════════════════════ */
+#profile-tab{padding:0 0 16px}
+.profile-section{margin:12px 16px}
+
+/* My profile card */
+.my-profile-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px}
+.my-profile-top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.my-profile-top .avatar{cursor:pointer;border:3px dashed var(--border);transition:border-color .15s}
+.my-profile-top .avatar:hover{border-color:var(--accent)}
+.my-profile-top .pinfo{flex:1}
+.my-profile-top .pinfo h3{font-size:1rem;font-weight:700}
+.my-profile-top .pinfo small{font-size:.75rem;color:var(--muted)}
+
+/* Rivals inline */
+.rivals-inline-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.rivals-inline-item:last-child{border-bottom:none}
+.ri-name{flex:1;font-weight:600;font-size:.9rem}
+.ri-sub{font-size:.74rem;color:var(--muted)}
+.ri-actions{display:flex;gap:6px}
+
+/* Rival inline form */
+.rival-inline-form{background:var(--bg);border-radius:12px;padding:14px;margin-bottom:10px;display:none}
+.avatar-picker{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:12px}
+.avatar-picker .avatar{cursor:pointer;border:3px dashed var(--border)}
+.avatar-picker .avatar:hover{border-color:var(--accent)}
+.avatar-picker small{font-size:.75rem;color:var(--muted)}
+
+/* Default rival select */
+.form-select{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:.95rem;font-family:inherit;background:var(--bg);color:var(--text);outline:none}
+.form-select:focus{border-color:var(--accent)}
+
+/* Export section */
+.export-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px}
+.export-card .ei{font-size:2rem}
+.export-card .et{flex:1}
+.export-card .et h4{font-size:.9rem;font-weight:700}
+.export-card .et p{font-size:.78rem;color:var(--muted)}
 
 /* ── MODALS ── */
-.modal-overlay {
-  position: fixed; inset: 0; z-index: 500;
-  background: rgba(0,0,0,.5);
-  display: none; align-items: flex-end; justify-content: center;
-}
-.modal-overlay.open { display: flex; }
-.modal-sheet {
-  background: var(--surface); border-radius: 24px 24px 0 0;
-  width: 100%; max-width: 480px; max-height: 90dvh;
-  overflow-y: auto; padding: 20px 20px 36px;
-}
-.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
-.modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; }
+.modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-sheet{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;max-height:90dvh;overflow-y:auto;padding:20px 20px 36px}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:1.1rem;font-weight:700;margin-bottom:16px}
 
-/* Form */
-.form-group { margin-bottom: 14px; }
-.form-label { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block; }
-.form-input {
-  width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
-  padding: 10px 12px; font-size: 0.95rem; font-family: inherit;
-  background: var(--bg); color: var(--text); outline: none; transition: border-color .2s;
-}
-.form-input:focus { border-color: var(--accent); }
+/* Form elements */
+.form-group{margin-bottom:14px}
+.form-label{font-size:.82rem;font-weight:600;color:var(--muted);margin-bottom:6px;display:block}
+.form-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:.95rem;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--accent)}
 
-.radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
-.radio-option {
-  flex: 1; min-width: 70px;
-  border: 2px solid var(--border); border-radius: 10px; padding: 8px 10px;
-  text-align: center; cursor: pointer; font-size: 0.82rem; font-weight: 600;
-  color: var(--muted); transition: all .15s; user-select: none;
-}
-.radio-option.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent-dark); }
+.radio-group{display:flex;gap:8px;flex-wrap:wrap}
+.radio-option{flex:1;min-width:70px;border:2px solid var(--border);border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer;font-size:.82rem;font-weight:600;color:var(--muted);transition:all .15s;user-select:none}
+.radio-option.selected{border-color:var(--accent);background:var(--accent-light);color:var(--accent-dark)}
 
-/* Rival select */
-.rival-select-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-.rival-option {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border: 2px solid var(--border); border-radius: 12px;
-  cursor: pointer; transition: all .15s;
-}
-.rival-option.selected { border-color: var(--accent); background: var(--accent-light); }
-.rival-option-name { font-weight: 600; font-size: 0.9rem; }
+/* Rival select list in modal */
+.rival-select-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.rival-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:all .15s}
+.rival-opt.selected{border-color:var(--accent);background:var(--accent-light)}
+.rival-opt-name{font-weight:600;font-size:.9rem}
 
-/* Finish modal */
-.finish-set-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 0.9rem; }
-.result-options { display: flex; gap: 8px; margin-bottom: 16px; }
-.result-opt {
-  flex: 1; padding: 12px 8px; border-radius: 12px;
-  border: 2px solid var(--border); text-align: center;
-  cursor: pointer; font-weight: 700; font-size: 0.88rem;
-  transition: all .15s; color: var(--muted);
-}
-.result-opt.win.sel       { border-color: var(--win);       background: #e8f5e9; color: var(--win); }
-.result-opt.loss.sel      { border-color: var(--loss);      background: #ffebee; color: var(--loss); }
-.result-opt.abandoned.sel { border-color: var(--abandoned); background: #f5f5f5; color: var(--abandoned); }
+/* Finish / Edit result options */
+.result-options{display:flex;gap:8px;margin-bottom:16px}
+.result-opt{flex:1;padding:12px 8px;border-radius:12px;border:2px solid var(--border);text-align:center;cursor:pointer;font-weight:700;font-size:.88rem;transition:all .15s;color:var(--muted)}
+.result-opt.win.sel{border-color:var(--win);background:#e8f5e9;color:var(--win)}
+.result-opt.loss.sel{border-color:var(--loss);background:#ffebee;color:var(--loss)}
+.result-opt.abandoned.sel{border-color:var(--abandoned);background:#f5f5f5;color:var(--abandoned)}
+.finish-set-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:.9rem}
 
-/* Edit match modal */
-.edit-set-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.edit-set-row .form-input { width: 60px; text-align: center; }
-.edit-set-row .set-sep { font-weight: 700; color: var(--muted); }
-
-/* Rivals management */
-.rivals-mgmt-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-.rivals-mgmt-item:last-child { border-bottom: none; }
-.rivals-mgmt-name    { flex: 1; font-weight: 600; }
-.rivals-mgmt-actions { display: flex; gap: 6px; }
-
-/* Avatar */
-.avatar {
-  border-radius: 50%; overflow: hidden; flex-shrink: 0;
-  background: var(--accent-light);
-  display: flex; align-items: center; justify-content: center;
-}
-.avatar img { width: 100%; height: 100%; object-fit: cover; }
-.avatar svg { width: 100%; height: 100%; }
-.avatar-sm { width: 36px; height: 36px; }
-.avatar-md { width: 52px; height: 52px; }
-.avatar-lg { width: 72px; height: 72px; }
-
-/* Avatar picker */
-.avatar-picker { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 16px; }
-.avatar-picker .avatar { cursor: pointer; border: 3px dashed var(--border); }
-.avatar-picker .avatar:hover { border-color: var(--accent); }
-.avatar-picker small { font-size: 0.75rem; color: var(--muted); }
+/* Edit match */
+.edit-set-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.edit-set-row .form-input{width:60px;text-align:center}
+.set-sep{font-weight:700;color:var(--muted)}
 
 /* Empty state */
-.empty-state { text-align: center; padding: 32px 16px; color: var(--muted); }
-.empty-state .es-icon { font-size: 2.5rem; margin-bottom: 8px; }
-.empty-state p { font-size: 0.88rem; }
-
-/* Stats top bar */
-.stats-topbar { display: flex; gap: 8px; padding: 12px 16px 4px; justify-content: flex-end; }
+.empty-state{text-align:center;padding:28px 16px;color:var(--muted)}
+.empty-state .es-icon{font-size:2.2rem;margin-bottom:8px}
+.empty-state p{font-size:.88rem}
 
 /* ── TOAST ── */
-#toast {
-  position: fixed; bottom: calc(var(--nav-h) + 16px); left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: #333; color: #fff; border-radius: 20px; padding: 10px 20px;
-  font-size: 0.85rem; font-weight: 600;
-  opacity: 0; transition: opacity .2s, transform .2s;
-  pointer-events: none; z-index: 999; white-space: nowrap;
-}
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast{position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(20px);background:#333;color:#fff;border-radius:20px;padding:10px 20px;font-size:.85rem;font-weight:600;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:999;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-@media (max-width: 360px) {
-  .btn-score-point { padding: 18px 8px; font-size: 0.9rem; }
-}
+@media(max-width:360px){.btn-pt{padding:18px 8px;font-size:.9rem}}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header id="app-header">
   <span>🎾</span>
   <h1>Tennis Tracker</h1>
 </header>
 
-<!-- MAIN -->
 <main id="main-content">
 
-  <!-- TAB: PARTIDO -->
+  <!-- ══ TAB 1: PARTIDO ══ -->
   <div id="match-tab" class="tab active">
 
-    <!-- No match in progress -->
-    <div id="no-match">
-      <div class="start-card">
-        <div class="ball-emoji">🎾</div>
-        <h2>¿Listo para jugar?</h2>
-        <button class="btn btn-lg" style="background:#fff;color:var(--accent);width:100%;" onclick="openNewMatchModal()">
-          + Nuevo Partido
+    <!-- No match: professional home screen -->
+    <div id="no-match" style="display:none">
+      <!-- My hero card -->
+      <div class="my-hero" id="home-hero" onclick="switchTab('profile')">
+        <div class="avatar av-xl" id="home-avatar"></div>
+        <div class="hero-info">
+          <h2 id="home-name">Yo</h2>
+          <p>Toca para editar perfil</p>
+        </div>
+      </div>
+
+      <!-- Rival picker -->
+      <div id="home-rivals-section">
+        <div class="rival-picker-label">Jugar contra:</div>
+        <div class="rival-cards" id="home-rival-cards"></div>
+        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="switchTab('profile')">
+          + Gestionar rivales
         </button>
       </div>
-      <div class="quick-actions">
-        <div class="quick-card" onclick="openProfileModal()">
-          <div class="qc-icon">👤</div>
-          <div class="qc-label">Mi perfil</div>
-        </div>
-        <div class="quick-card" onclick="openRivalsModal()">
-          <div class="qc-icon">👥</div>
-          <div class="qc-label">Rivales</div>
-        </div>
+
+      <!-- Start button -->
+      <div class="start-area">
+        <button class="btn btn-primary btn-lg btn-full" id="btn-start-match" onclick="openNewMatchModal()" style="display:none">
+          Empezar partido →
+        </button>
       </div>
     </div>
 
     <!-- Match in progress -->
-    <div id="match-screen" style="display:none;">
+    <div id="match-screen" style="display:none">
       <div class="players-row" id="players-row"></div>
       <div class="tb-banner" id="tb-banner"></div>
       <div class="scoreboard" id="scoreboard"></div>
 
-      <!-- +Punto -->
       <div class="action-grid">
-        <button class="btn btn-score-point btn-my" onclick="addPoint('my')">
+        <button class="btn-pt btn-my" onclick="addPoint('my')">
           <span>+PUNTO</span>
-          <span class="btn-sub" id="my-name-btn">Yo</span>
+          <span class="sub" id="my-name-btn">Yo</span>
         </button>
-        <button class="btn btn-score-point btn-rival" onclick="addPoint('rival')">
+        <button class="btn-pt btn-rv" onclick="addPoint('rival')">
           <span>+PUNTO</span>
-          <span class="btn-sub" id="rival-name-btn">Rival</span>
+          <span class="sub" id="rival-name-btn">Rival</span>
         </button>
       </div>
 
-      <!-- +Juego -->
-      <div class="btn-game-row">
-        <button class="btn-score-game btn-full" onclick="addGame('my')">+Juego Yo</button>
-        <button class="btn-score-game-rival btn-full" onclick="addGame('rival')">+Juego Rival</button>
+      <div class="game-row">
+        <button class="btn-gm btn-gm-my btn-full" onclick="addGame('my')">+Juego Yo</button>
+        <button class="btn-gm btn-gm-rv btn-full" onclick="addGame('rival')">+Juego Rival</button>
       </div>
 
-      <!-- Footer -->
       <div class="footer-row">
         <button class="btn btn-ghost btn-md" onclick="undoLastPoint()">↩ Deshacer</button>
         <button class="btn btn-primary btn-md" onclick="openFinishModal()">🏁 Terminar</button>
@@ -437,83 +333,152 @@ body {
 
   </div><!-- /match-tab -->
 
-  <!-- TAB: ESTADÍSTICAS -->
+  <!-- ══ TAB 2: ESTADÍSTICAS ══ -->
   <div id="stats-tab" class="tab">
-    <div class="stats-topbar">
-      <button class="btn btn-ghost btn-sm" onclick="openProfileModal()">👤 Mi perfil</button>
-      <button class="btn btn-ghost btn-sm" onclick="openRivalsModal()">👥 Rivales</button>
-    </div>
 
     <div class="stat-block">
-      <div class="card-title">Resumen</div>
+      <div class="sec-title">Resumen</div>
       <div class="summary-grid" id="summary-grid"></div>
     </div>
 
     <div class="stat-block">
-      <div class="card-title">Rachas</div>
+      <div class="sec-title">Rachas</div>
       <div class="streak-row" id="streak-row"></div>
     </div>
 
     <div class="stat-block">
-      <div class="card-title">Victorias / Derrotas</div>
+      <div class="sec-title">Victorias / Derrotas</div>
       <div class="chart-filters" id="chart-filters">
         <button class="filter-btn active" data-f="semana">Semana</button>
         <button class="filter-btn" data-f="mes">Mes</button>
         <button class="filter-btn" data-f="año">Año</button>
       </div>
-      <div class="chart-wrap"><div class="chart-bars" id="chart-bars"></div></div>
+      <div class="chart-wrap" id="chart-wrap"></div>
     </div>
 
     <div class="stat-block">
-      <div class="card-title">Por rival</div>
+      <div class="sec-title">Por rival</div>
       <div id="rivals-stats"></div>
     </div>
 
     <div class="stat-block">
-      <div class="card-title">Historial de partidos</div>
+      <div class="sec-title">Historial de partidos</div>
       <div id="match-history"></div>
     </div>
+
   </div><!-- /stats-tab -->
+
+  <!-- ══ TAB 3: PERFIL ══ -->
+  <div id="profile-tab" class="tab">
+
+    <!-- Mi perfil -->
+    <div class="profile-section">
+      <div class="sec-title">Mi perfil</div>
+      <div class="my-profile-card">
+        <div class="my-profile-top">
+          <div class="avatar av-lg" id="profile-av" onclick="pickPhoto('profile')"></div>
+          <div class="pinfo">
+            <h3>Toca la foto para cambiarla</h3>
+            <small>Tu nombre aparecerá en el marcador</small>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:10px">
+          <input type="text" class="form-input" id="profile-name-input" placeholder="Tu nombre">
+        </div>
+        <button class="btn btn-primary btn-full btn-md" onclick="saveProfile()">Guardar perfil</button>
+      </div>
+    </div>
+
+    <!-- Rival por defecto -->
+    <div class="profile-section">
+      <div class="sec-title">Rival por defecto</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+        <div class="form-label" style="margin-bottom:6px">Se preseleccionará al iniciar partido</div>
+        <select class="form-select" id="default-rival-select" onchange="saveDefaultRival()">
+          <option value="">— Sin rival por defecto —</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Mis rivales -->
+    <div class="profile-section">
+      <div class="sec-title">Mis rivales</div>
+
+      <!-- Inline add/edit form -->
+      <div class="rival-inline-form" id="rival-form">
+        <div class="avatar-picker">
+          <div class="avatar av-lg" id="rival-av" onclick="pickPhoto('rival')"></div>
+          <small>Toca para cambiar foto</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nombre</label>
+          <input type="text" class="form-input" id="rival-name-input" placeholder="Nombre del rival">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary btn-md" style="flex:1" onclick="saveRivalForm()">Guardar</button>
+          <button class="btn btn-ghost btn-md" onclick="closeRivalForm()">Cancelar</button>
+        </div>
+      </div>
+
+      <button class="btn btn-secondary btn-md btn-full" onclick="openAddRivalForm()" style="margin-bottom:10px">+ Añadir rival</button>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:4px 14px">
+        <div id="rivals-list-inline"></div>
+      </div>
+    </div>
+
+    <!-- Exportar datos -->
+    <div class="profile-section">
+      <div class="sec-title">Datos</div>
+      <div class="export-card">
+        <div class="ei">📥</div>
+        <div class="et">
+          <h4>Exportar datos</h4>
+          <p>Descarga todos tus partidos y rivales en JSON</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="downloadData()">Descargar</button>
+      </div>
+    </div>
+
+  </div><!-- /profile-tab -->
 
 </main>
 
-<!-- BOTTOM NAV -->
+<!-- BOTTOM NAV (3 tabs) -->
 <nav id="bottom-nav">
   <button class="nav-btn active" id="nav-match" onclick="switchTab('match')">
-    <span class="nav-icon">🎾</span>
-    <span>Partido</span>
+    <span class="ni">🎾</span><span>Partido</span>
   </button>
   <button class="nav-btn" id="nav-stats" onclick="switchTab('stats')">
-    <span class="nav-icon">📊</span>
-    <span>Estadísticas</span>
+    <span class="ni">📊</span><span>Estadísticas</span>
+  </button>
+  <button class="nav-btn" id="nav-profile" onclick="switchTab('profile')">
+    <span class="ni">👤</span><span>Perfil</span>
   </button>
 </nav>
 
-<!-- TOAST -->
 <div id="toast"></div>
 
-<!-- ═══════════════════════════════════════
+<!-- ═══════════════════════════════════════════
      MODALS
-═══════════════════════════════════════ -->
+═══════════════════════════════════════════ -->
 
 <!-- New Match -->
 <div class="modal-overlay" id="modal-new-match">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Nuevo Partido</div>
+    <div class="modal-title">Configurar partido</div>
 
     <div class="form-group">
       <div class="form-label">Rival</div>
       <div class="rival-select-list" id="rival-select-list"></div>
-      <button class="btn btn-ghost btn-sm btn-full" onclick="openRivalsModal(true)">+ Añadir rival nuevo</button>
     </div>
 
     <div class="form-group">
       <div class="form-label">Número de sets</div>
       <div class="radio-group" id="rg-numsets">
         <div class="radio-option" data-val="1">1 set</div>
-        <div class="radio-option selected" data-val="3">Al mejor de 3</div>
-        <div class="radio-option" data-val="5">Al mejor de 5</div>
+        <div class="radio-option selected" data-val="3">Mejor de 3</div>
+        <div class="radio-option" data-val="5">Mejor de 5</div>
       </div>
     </div>
 
@@ -526,8 +491,16 @@ body {
       </div>
     </div>
 
-    <button class="btn btn-primary btn-lg btn-full" onclick="startMatch()" style="margin-top:8px;">Empezar partido</button>
-    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-new-match')" style="margin-top:8px;">Cancelar</button>
+    <div class="form-group">
+      <div class="form-label">Regla en 40-40</div>
+      <div class="radio-group" id="rg-deuce">
+        <div class="radio-option selected" data-val="deuce">Con deuce</div>
+        <div class="radio-option" data-val="nodeuce">Sin deuce</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg btn-full" onclick="startMatch()" style="margin-top:8px">Empezar partido</button>
+    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-new-match')" style="margin-top:8px">Cancelar</button>
   </div>
 </div>
 
@@ -536,19 +509,16 @@ body {
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">Terminar partido</div>
-
-    <div class="card-title" style="margin-bottom:6px;">Sets jugados</div>
-    <div id="finish-sets-list" style="margin-bottom:14px;"></div>
-
-    <div class="card-title" style="margin-bottom:8px;">Resultado</div>
+    <div class="sec-title" style="margin-bottom:6px">Sets jugados</div>
+    <div id="finish-sets-list" style="margin-bottom:14px"></div>
+    <div class="sec-title" style="margin-bottom:8px">Resultado</div>
     <div class="result-options" id="result-options">
       <div class="result-opt win"       data-r="win"       onclick="selectResult('win')">Victoria</div>
       <div class="result-opt loss"      data-r="loss"      onclick="selectResult('loss')">Derrota</div>
       <div class="result-opt abandoned" data-r="abandoned" onclick="selectResult('abandoned')">Abandonado</div>
     </div>
-
     <button class="btn btn-primary btn-lg btn-full" onclick="confirmFinish()">Guardar</button>
-    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-finish')" style="margin-top:8px;">Cancelar</button>
+    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-finish')" style="margin-top:8px">Cancelar</button>
   </div>
 </div>
 
@@ -557,12 +527,10 @@ body {
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">Editar partido</div>
-
     <div class="form-group">
       <label class="form-label">Fecha</label>
       <input type="date" class="form-input" id="edit-date">
     </div>
-
     <div class="form-group">
       <div class="form-label">Resultado</div>
       <div class="result-options" id="edit-result-options">
@@ -571,94 +539,44 @@ body {
         <div class="result-opt abandoned" data-r="abandoned" onclick="editSelectResult('abandoned')">Abandonado</div>
       </div>
     </div>
-
     <div class="form-group">
       <div class="form-label">Sets <small style="color:var(--muted)">(Yo — Rival)</small></div>
       <div id="edit-sets-list"></div>
-      <button class="btn btn-ghost btn-sm" onclick="editAddSet()" style="margin-top:6px;">+ Añadir set</button>
+      <button class="btn btn-ghost btn-sm" onclick="editAddSet()" style="margin-top:6px">+ Añadir set</button>
     </div>
-
     <button class="btn btn-primary btn-lg btn-full" onclick="saveEditMatch()">Guardar cambios</button>
-    <button class="btn btn-danger btn-md btn-full" onclick="deleteMatch()" style="margin-top:8px;">Eliminar partido</button>
-    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-edit-match')" style="margin-top:8px;">Cancelar</button>
+    <button class="btn btn-danger btn-md btn-full" onclick="deleteMatch()" style="margin-top:8px">Eliminar partido</button>
+    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-edit-match')" style="margin-top:8px">Cancelar</button>
   </div>
 </div>
 
-<!-- Profile -->
-<div class="modal-overlay" id="modal-profile">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Mi perfil</div>
-
-    <div class="avatar-picker">
-      <div class="avatar avatar-lg" id="profile-avatar-pick" onclick="pickPhoto('profile')"></div>
-      <small>Toca para cambiar foto</small>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Nombre</label>
-      <input type="text" class="form-input" id="profile-name-input" placeholder="Tu nombre">
-    </div>
-
-    <button class="btn btn-primary btn-lg btn-full" onclick="saveProfile()">Guardar</button>
-    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-profile')" style="margin-top:8px;">Cancelar</button>
-  </div>
-</div>
-
-<!-- Rivals -->
-<div class="modal-overlay" id="modal-rivals">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Rivales</div>
-
-    <button class="btn btn-secondary btn-md btn-full" onclick="openAddRivalForm()" style="margin-bottom:12px;">+ Añadir rival</button>
-
-    <div id="rival-form" style="display:none; margin-bottom:12px; padding:14px; background:var(--bg); border-radius:12px;">
-      <div class="avatar-picker">
-        <div class="avatar avatar-lg" id="rival-avatar-pick" onclick="pickPhoto('rival')"></div>
-        <small>Toca para cambiar foto</small>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Nombre del rival</label>
-        <input type="text" class="form-input" id="rival-name-input" placeholder="Nombre">
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary btn-md" style="flex:1" onclick="saveRivalForm()">Guardar</button>
-        <button class="btn btn-ghost btn-md" onclick="closeRivalForm()">Cancelar</button>
-      </div>
-    </div>
-
-    <div id="rivals-list-mgmt"></div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════
+<!-- ═══════════════════════════════════════════
      JAVASCRIPT
-═══════════════════════════════════════ -->
+═══════════════════════════════════════════ -->
 <script>
 'use strict';
 
 // ── STATE ──────────────────────────────────────────
-let profile = { name: 'Yo', photo: null };
+let profile = { name: 'Yo', photo: null, defaultRivalId: null };
 let rivals  = [];
 let matches = [];
 let current = null;
 
-// UI transient state
-let _finishResult         = null;
-let _editMatchId          = null;
-let _editResult           = null;
-let _editRivalId          = null;
-let _editRivalPhoto       = null;
-let _profilePhoto         = null;
-let _chartFilter          = 'semana';
-let _pendingReturnToNew   = false;
+// Transient UI
+let _finishResult       = null;
+let _editMatchId        = null;
+let _editResult         = null;
+let _editRivalId        = null;
+let _editRivalPhoto     = null;
+let _profilePhoto       = null;
+let _chartFilter        = 'semana';
+let _homeSelectedRival  = null;  // rivalId selected on home screen
 
 // ── STORAGE ────────────────────────────────────────
 const SK = { profile:'tt_profile', rivals:'tt_rivals', matches:'tt_matches', current:'tt_current' };
 
 function loadAll() {
-  try { profile = JSON.parse(localStorage.getItem(SK.profile)) || { name:'Yo', photo:null }; } catch(e){}
+  try { profile = { name:'Yo', photo:null, defaultRivalId:null, ...JSON.parse(localStorage.getItem(SK.profile)) }; } catch(e){}
   try { rivals  = JSON.parse(localStorage.getItem(SK.rivals))  || []; } catch(e){}
   try { matches = JSON.parse(localStorage.getItem(SK.matches)) || []; } catch(e){}
   try { current = JSON.parse(localStorage.getItem(SK.current)) || null; } catch(e){}
@@ -668,31 +586,37 @@ function saveRivals()      { localStorage.setItem(SK.rivals,   JSON.stringify(ri
 function saveMatches()     { localStorage.setItem(SK.matches,  JSON.stringify(matches)); }
 function saveCurrent()     { localStorage.setItem(SK.current,  JSON.stringify(current)); }
 function clearCurrent()    { localStorage.removeItem(SK.current); current = null; }
-
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function uid()             { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
 // ── TENNIS LOGIC ────────────────────────────────────
 
-/**
- * Returns display strings for the current point score.
- * Handles 0/15/30/40, Deuce, and Advantage correctly.
- */
 function getPointDisplay(my, rival) {
   const L = ['0','15','30','40'];
-  // Normal score (below deuce territory)
+  const noDeuce = current && current.format.noDeuce;
   if (my < 3 && rival < 3) return { my: L[my], rival: L[rival] };
-  // Deuce
+  // noDeuce: at 3-3 just show 40-40 (next point wins)
+  if (noDeuce) {
+    if (my === 3 && rival === 3) return { my: '40', rival: '40' };
+    // beyond 3-3 with noDeuce shouldn't happen (game already won), fallback
+    return { my: L[Math.min(my,3)], rival: L[Math.min(rival,3)] };
+  }
+  // Standard deuce rules
   if (my === rival) return { my: 'Deuce', rival: 'Deuce' };
-  // Advantage
   if (my - rival ===  1) return { my: 'Ad', rival: '—' };
   if (rival - my ===  1) return { my: '—', rival: 'Ad' };
-  // Shouldn't reach here — game should have been awarded already
   return { my: String(my), rival: String(rival) };
 }
 
 function gameWinner(my, rival) {
-  if (my    >= 4 && my    - rival >= 2) return 'my';
-  if (rival >= 4 && rival - my    >= 2) return 'rival';
+  const noDeuce = current && current.format.noDeuce;
+  if (noDeuce) {
+    // First to 4 (= next point after 40-40 each) wins
+    if (my    >= 4 && my    > rival) return 'my';
+    if (rival >= 4 && rival > my)    return 'rival';
+  } else {
+    if (my    >= 4 && my    - rival >= 2) return 'my';
+    if (rival >= 4 && rival - my    >= 2) return 'rival';
+  }
   return null;
 }
 
@@ -735,10 +659,8 @@ function closeCurrentSet() {
 function checkAfterGame() {
   const sw = setWinner(current.currentSetGames.my, current.currentSetGames.rival);
   if (sw) { closeCurrentSet(); return; }
-  // 6-6 → start tiebreak (if enabled)
   if (current.currentSetGames.my === 6 && current.currentSetGames.rival === 6) {
     if (current.format.tiebreakTarget > 0) current.isTiebreak = true;
-    // if tiebreakTarget === 0 → keep playing with advantage rule (no tiebreak)
   }
 }
 
@@ -749,8 +671,7 @@ function addPoint(player) {
 
   if (current.isTiebreak) {
     current.tbPoints[player]++;
-    const tw = tiebreakWinner(current.tbPoints.my, current.tbPoints.rival, current.format.tiebreakTarget);
-    if (tw) closeCurrentSet();
+    if (tiebreakWinner(current.tbPoints.my, current.tbPoints.rival, current.format.tiebreakTarget)) closeCurrentSet();
   } else {
     current.gamePoints[player]++;
     const gw = gameWinner(current.gamePoints.my, current.gamePoints.rival);
@@ -760,24 +681,18 @@ function addPoint(player) {
       checkAfterGame();
     }
   }
-
-  saveCurrent();
-  renderMatch();
+  saveCurrent(); renderMatch();
 }
 
 function addGame(player) {
   if (!current) return;
   if (current.isTiebreak) { showToast('Estás en tiebreak — usa +Punto'); return; }
-
   current.history.push(snapshotCurrent());
   if (current.history.length > 30) current.history.shift();
-
   current.currentSetGames[player]++;
   current.gamePoints = { my: 0, rival: 0 };
   checkAfterGame();
-
-  saveCurrent();
-  renderMatch();
+  saveCurrent(); renderMatch();
 }
 
 function undoLastPoint() {
@@ -788,31 +703,53 @@ function undoLastPoint() {
   current.isTiebreak      = snap.isTiebreak;
   current.tbPoints        = snap.tbPoints;
   current.gamePoints      = snap.gamePoints;
-  saveCurrent();
-  renderMatch();
+  saveCurrent(); renderMatch();
 }
 
 function getSetsWon() {
   let my = 0, rival = 0;
-  for (const s of current.completedSets) {
-    if (s.my > s.rival) my++; else rival++;
-  }
+  for (const s of current.completedSets) { if (s.my > s.rival) my++; else rival++; }
   return { my, rival };
 }
 
 // ── MATCH LIFECYCLE ────────────────────────────────
 
-function startMatch() {
-  const sel = document.querySelector('#rival-select-list .rival-option.selected');
-  if (!sel) { showToast('Selecciona un rival'); return; }
+function openNewMatchModal() {
+  // Populate rival list (pre-select home selection or default)
+  const preferredId = _homeSelectedRival || profile.defaultRivalId;
+  const list = document.getElementById('rival-select-list');
+  if (rivals.length === 0) {
+    list.innerHTML = '<p style="color:var(--muted);font-size:.85rem;margin-bottom:8px">No hay rivales. Ve a la pestaña Perfil para añadir uno.</p>';
+  } else {
+    list.innerHTML = rivals.map(r => {
+      const isSel = r.id === preferredId || (!preferredId && rivals[0].id === r.id);
+      return `<div class="rival-opt${isSel ? ' selected' : ''}" data-id="${r.id}" data-name="${esc(r.name)}" onclick="selectRivalOpt(this)">
+        <div class="avatar av-sm">${avatarHTML(r.photo, r.name)}</div>
+        <span class="rival-opt-name">${esc(r.name)}</span>
+      </div>`;
+    }).join('');
+    // Ensure exactly one is selected
+    if (!list.querySelector('.rival-opt.selected')) list.querySelector('.rival-opt').classList.add('selected');
+  }
+  openModal('modal-new-match');
+}
 
+function selectRivalOpt(el) {
+  document.querySelectorAll('#rival-select-list .rival-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function startMatch() {
+  const sel = document.querySelector('#rival-select-list .rival-opt.selected');
+  if (!sel) { showToast('Selecciona un rival'); return; }
   const numSets  = parseInt(document.querySelector('#rg-numsets  .radio-option.selected')?.dataset.val || '3');
   const tbTarget = parseInt(document.querySelector('#rg-tiebreak .radio-option.selected')?.dataset.val ?? '7');
+  const noDeuce  = document.querySelector('#rg-deuce .radio-option.selected')?.dataset.val === 'nodeuce';
 
   current = {
     rivalId:         sel.dataset.id,
     rivalName:       sel.dataset.name,
-    format:          { numSets, tiebreakTarget: tbTarget },
+    format:          { numSets, tiebreakTarget: tbTarget, noDeuce },
     completedSets:   [],
     currentSetGames: { my: 0, rival: 0 },
     isTiebreak:      false,
@@ -829,106 +766,149 @@ function startMatch() {
 function openFinishModal() {
   if (!current) return;
   _finishResult = null;
-
   const sw = getSetsWon();
   if (sw.my > sw.rival) _finishResult = 'win';
   else if (sw.rival > sw.my) _finishResult = 'loss';
 
   const allSets = [...current.completedSets];
-  if (current.currentSetGames.my > 0 || current.currentSetGames.rival > 0) {
+  if (current.currentSetGames.my > 0 || current.currentSetGames.rival > 0)
     allSets.push({ my: current.currentSetGames.my, rival: current.currentSetGames.rival, tiebreak: null });
-  }
 
   const myName  = profile.name || 'Yo';
   const rivName = current.rivalName || 'Rival';
 
   document.getElementById('finish-sets-list').innerHTML = allSets.length === 0
-    ? '<p style="color:var(--muted);font-size:.85rem;">Sin sets completados aún</p>'
-    : allSets.map((s, i) => `
+    ? '<p style="color:var(--muted);font-size:.85rem">Sin sets completados aún</p>'
+    : allSets.map((s,i) => `
         <div class="finish-set-row">
-          <span style="color:var(--muted);width:50px">Set ${i+1}:</span>
+          <span style="color:var(--muted);width:52px">Set ${i+1}:</span>
           <strong>${esc(myName)} ${s.my} — ${s.rival} ${esc(rivName)}</strong>
           ${s.tiebreak ? `<span style="font-size:.75rem;color:var(--muted)">(TB ${s.tiebreak.my}-${s.tiebreak.rival})</span>` : ''}
         </div>`).join('');
 
-  document.querySelectorAll('#result-options .result-opt').forEach(el => {
-    el.classList.toggle('sel', _finishResult !== null && el.dataset.r === _finishResult);
-  });
+  document.querySelectorAll('#result-options .result-opt').forEach(el =>
+    el.classList.toggle('sel', _finishResult !== null && el.dataset.r === _finishResult));
 
   openModal('modal-finish');
 }
 
 function selectResult(r) {
   _finishResult = r;
-  document.querySelectorAll('#result-options .result-opt').forEach(el => {
-    el.classList.toggle('sel', el.dataset.r === r);
-  });
+  document.querySelectorAll('#result-options .result-opt').forEach(el => el.classList.toggle('sel', el.dataset.r === r));
 }
 
 function confirmFinish() {
   if (!_finishResult) { showToast('Selecciona el resultado'); return; }
-
   const allSets = [...current.completedSets];
-  if (current.currentSetGames.my > 0 || current.currentSetGames.rival > 0) {
+  if (current.currentSetGames.my > 0 || current.currentSetGames.rival > 0)
     allSets.push({ my: current.currentSetGames.my, rival: current.currentSetGames.rival, tiebreak: null });
-  }
-
   const sw = getSetsWon();
-  const m = {
-    id:        uid(),
-    date:      current.startDate || new Date().toISOString().slice(0,10),
-    rivalId:   current.rivalId,
-    rivalName: current.rivalName,
-    result:    _finishResult,
-    sets:      allSets,
-    setsWon:   sw,
-    format:    current.format,
-  };
-  matches.unshift(m);
-  saveMatches();
-  clearCurrent();
+  matches.unshift({
+    id: uid(), date: current.startDate || new Date().toISOString().slice(0,10),
+    rivalId: current.rivalId, rivalName: current.rivalName,
+    result: _finishResult, sets: allSets, setsWon: sw, format: current.format,
+  });
+  saveMatches(); clearCurrent();
   closeModal('modal-finish');
   renderMatch();
   showToast('Partido guardado ✓');
 }
 
-// ── RENDER: MATCH TAB ───────────────────────────────
+// ── RENDER: MATCH TAB ──────────────────────────────
 
 function renderMatch() {
   const noMatch     = document.getElementById('no-match');
   const matchScreen = document.getElementById('match-screen');
 
-  if (!current) {
+  if (current) {
+    noMatch.style.display     = 'none';
+    matchScreen.style.display = '';
+    renderMatchScreen();
+  } else {
     noMatch.style.display     = '';
     matchScreen.style.display = 'none';
+    renderHomeScreen();
+  }
+}
+
+function renderHomeScreen() {
+  // Hero
+  document.getElementById('home-name').textContent = profile.name || 'Yo';
+  document.getElementById('home-avatar').innerHTML = avatarHTML(profile.photo, profile.name);
+
+  const btn = document.getElementById('btn-start-match');
+
+  if (rivals.length === 0) {
+    document.getElementById('home-rivals-section').innerHTML = `
+      <div class="no-rivals-empty">
+        <div class="ei">👥</div>
+        <p>Añade un rival para empezar a jugar</p>
+        <button class="btn btn-secondary btn-md" onclick="switchTab('profile')">Ir a Perfil →</button>
+      </div>`;
+    btn.style.display = 'none';
     return;
   }
-  noMatch.style.display     = 'none';
-  matchScreen.style.display = '';
 
+  // W-L map
+  const wlMap = {};
+  for (const m of matches) {
+    if (m.result === 'abandoned') continue;
+    if (!wlMap[m.rivalId]) wlMap[m.rivalId] = { w:0, l:0 };
+    m.result === 'win' ? wlMap[m.rivalId].w++ : wlMap[m.rivalId].l++;
+  }
+
+  // Ensure selected rival is valid
+  if (!_homeSelectedRival || !rivals.find(r => r.id === _homeSelectedRival)) {
+    _homeSelectedRival = profile.defaultRivalId || rivals[0].id;
+  }
+
+  document.getElementById('home-rivals-section').innerHTML = `
+    <div class="rival-picker-label">Jugar contra:</div>
+    <div class="rival-cards" id="home-rival-cards">
+      ${rivals.map(r => {
+        const wl  = wlMap[r.id] || { w:0, l:0 };
+        const sel = r.id === _homeSelectedRival;
+        return `<div class="rival-card${sel ? ' selected' : ''}" onclick="selectHomeRival('${r.id}')">
+          <div class="avatar av-sm">${avatarHTML(r.photo, r.name)}</div>
+          <div style="flex:1">
+            <div class="rival-card-name">${esc(r.name)}</div>
+            <div class="rival-card-record"><span class="rw">${wl.w}V</span> <span class="rl">${wl.l}D</span></div>
+          </div>
+          <div class="check">✓</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="switchTab('profile')">+ Gestionar rivales</button>`;
+
+  btn.style.display = '';
+}
+
+function selectHomeRival(id) {
+  _homeSelectedRival = id;
+  document.querySelectorAll('#home-rival-cards .rival-card').forEach(c => {
+    c.classList.toggle('selected', c.getAttribute('onclick') === `selectHomeRival('${id}')`);
+  });
+}
+
+function renderMatchScreen() {
   const myName  = profile.name || 'Yo';
   const rivName = current.rivalName || 'Rival';
 
   document.getElementById('my-name-btn').textContent    = myName;
   document.getElementById('rival-name-btn').textContent = rivName;
 
-  // Players row
-  const rival    = rivals.find(r => r.id === current.rivalId);
-  const myPhoto  = profile.photo;
-  const rivPhoto = rival?.photo || null;
-
+  const rival   = rivals.find(r => r.id === current.rivalId);
   document.getElementById('players-row').innerHTML = `
     <div class="player-info">
-      <div class="avatar avatar-md">${avatarHTML(myPhoto, myName)}</div>
-      <span class="player-name">${esc(myName)}</span>
+      <div class="avatar av-md">${avatarHTML(profile.photo, myName)}</div>
+      <span class="pname">${esc(myName)}</span>
     </div>
-    <span class="players-vs">VS</span>
+    <span class="pvs">VS</span>
     <div class="player-info">
-      <div class="avatar avatar-md">${avatarHTML(rivPhoto, rivName)}</div>
-      <span class="player-name">${esc(rivName)}</span>
+      <div class="avatar av-md">${avatarHTML(rival?.photo || null, rivName)}</div>
+      <span class="pname">${esc(rivName)}</span>
     </div>`;
 
-  // Tiebreak banner
   const banner = document.getElementById('tb-banner');
   if (current.isTiebreak) {
     banner.textContent = `🔥 Tiebreak — primero a ${current.format.tiebreakTarget}`;
@@ -937,7 +917,6 @@ function renderMatch() {
     banner.classList.remove('visible');
   }
 
-  // Scoreboard
   const sw = getSetsWon();
   const pt = current.isTiebreak
     ? { my: String(current.tbPoints.my), rival: String(current.tbPoints.rival) }
@@ -955,19 +934,15 @@ function renderMatch() {
     ${current.completedSets.length > 0 ? `<div class="sets-history">${chipsHTML}</div>` : ''}
     <div class="score-row">
       <div class="score-label">Sets</div>
-      <div class="score-val highlight">${sw.my}</div>
-      <div class="score-sep">—</div>
-      <div class="score-val">${sw.rival}</div>
+      <div class="score-val hi">${sw.my}</div><div class="score-sep">—</div><div class="score-val">${sw.rival}</div>
     </div>
     <div class="score-row">
       <div class="score-label">Juegos</div>
-      <div class="score-val highlight">${current.currentSetGames.my}</div>
-      <div class="score-sep">—</div>
-      <div class="score-val">${current.currentSetGames.rival}</div>
+      <div class="score-val hi">${current.currentSetGames.my}</div><div class="score-sep">—</div><div class="score-val">${current.currentSetGames.rival}</div>
     </div>
     <div class="score-row">
       <div class="score-label">${current.isTiebreak ? 'TB pts' : 'Puntos'}</div>
-      <div class="score-val highlight${isSpecial ? ' special' : ''}">${esc(pt.my)}</div>
+      <div class="score-val hi${isSpecial ? ' special' : ''}">${esc(pt.my)}</div>
       <div class="score-sep">—</div>
       <div class="score-val${isSpecial ? ' special' : ''}">${esc(pt.rival)}</div>
     </div>`;
@@ -983,21 +958,14 @@ function renderStats() {
   const pct    = total > 0 ? Math.round(wins / total * 100) : 0;
 
   document.getElementById('summary-grid').innerHTML = `
-    <div class="summary-box win"><div class="sb-val">${wins}</div><div class="sb-label">Victorias</div></div>
-    <div class="summary-box loss"><div class="sb-val">${losses}</div><div class="sb-label">Derrotas</div></div>
-    <div class="summary-box"><div class="sb-val">${pct}%</div><div class="sb-label">% victorias</div></div>`;
+    <div class="summary-box win"><div class="sbv">${wins}</div><div class="sbl">Victorias</div></div>
+    <div class="summary-box loss"><div class="sbv">${losses}</div><div class="sbl">Derrotas</div></div>
+    <div class="summary-box"><div class="sbv">${pct}%</div><div class="sbl">% victorias</div></div>`;
 
-  // Streaks — sorted ascending by date
   const sorted = [...fin].sort((a,b) => a.date.localeCompare(b.date));
   let bestStreak = 0, tmp = 0, curStreak = 0;
-  for (const m of sorted) {
-    if (m.result === 'win') { tmp++; bestStreak = Math.max(bestStreak, tmp); }
-    else tmp = 0;
-  }
-  for (let i = sorted.length - 1; i >= 0; i--) {
-    if (sorted[i].result === 'win') curStreak++;
-    else break;
-  }
+  for (const m of sorted) { if (m.result === 'win') { tmp++; bestStreak = Math.max(bestStreak, tmp); } else tmp = 0; }
+  for (let i = sorted.length - 1; i >= 0; i--) { if (sorted[i].result === 'win') curStreak++; else break; }
 
   document.getElementById('streak-row').innerHTML = `
     <div class="streak-box"><div class="sv">${curStreak}</div><div class="sl">Racha actual</div></div>
@@ -1005,39 +973,34 @@ function renderStats() {
 
   renderChart(_chartFilter);
 
-  // By rival
   const rivalMap = {};
   for (const m of fin) {
-    if (!rivalMap[m.rivalId]) rivalMap[m.rivalId] = { name: m.rivalName, w: 0, l: 0 };
-    if (m.result === 'win') rivalMap[m.rivalId].w++;
-    else rivalMap[m.rivalId].l++;
+    if (!rivalMap[m.rivalId]) rivalMap[m.rivalId] = { name: m.rivalName, w:0, l:0 };
+    m.result === 'win' ? rivalMap[m.rivalId].w++ : rivalMap[m.rivalId].l++;
   }
   const rivalEntries = Object.values(rivalMap).sort((a,b) => (b.w+b.l)-(a.w+a.l));
-
   document.getElementById('rivals-stats').innerHTML = rivalEntries.length === 0
     ? '<div class="empty-state"><div class="es-icon">🎾</div><p>Sin partidos registrados</p></div>'
     : rivalEntries.map(r => `
         <div class="rival-row">
-          <div class="rival-name">${esc(r.name)}</div>
-          <div class="rival-record"><span class="rw">${r.w}V</span> <span class="rl">${r.l}D</span></div>
+          <div class="rival-rname">${esc(r.name)}</div>
+          <div class="rival-rec"><span class="rw">${r.w}V</span> <span class="rl">${r.l}D</span></div>
         </div>`).join('');
 
-  // Match history
   document.getElementById('match-history').innerHTML = matches.length === 0
     ? '<div class="empty-state"><div class="es-icon">📋</div><p>Aún no hay partidos</p></div>'
     : matches.map(m => {
-        const setsStr  = m.sets && m.sets.length > 0 ? m.sets.map(s => `${s.my}-${s.rival}`).join(', ') : '—';
+        const setsStr  = m.sets?.length > 0 ? m.sets.map(s => `${s.my}-${s.rival}`).join(', ') : '—';
         const resLabel = m.result === 'win' ? 'Victoria' : m.result === 'loss' ? 'Derrota' : 'Abandonado';
-        return `
-          <div class="match-item">
-            <div class="match-result-dot ${m.result}"></div>
-            <div class="match-info">
-              <div class="match-rival">${esc(m.rivalName)}</div>
-              <div class="match-meta">${m.date} · ${resLabel}</div>
-              <div class="match-sets">${setsStr}</div>
-            </div>
-            <button class="btn btn-ghost btn-sm" onclick="openEditMatchModal('${m.id}')">✏️</button>
-          </div>`;
+        return `<div class="match-item">
+          <div class="m-dot ${m.result}"></div>
+          <div class="m-info">
+            <div class="m-rival">${esc(m.rivalName)}</div>
+            <div class="m-meta">${m.date} · ${resLabel}</div>
+            <div class="m-sets">${setsStr}</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="openEditMatchModal('${m.id}')">✏️</button>
+        </div>`;
       }).join('');
 }
 
@@ -1051,113 +1014,203 @@ function renderChart(filter) {
   if (filter === 'semana') {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now); d.setDate(d.getDate() - i);
-      const key   = d.toISOString().slice(0,10);
-      const label = d.toLocaleDateString('es-ES', { weekday: 'narrow' });
-      periods.push({ key, label, w: 0, l: 0 });
+      periods.push({ key: d.toISOString().slice(0,10), label: d.toLocaleDateString('es-ES',{weekday:'narrow'}), w:0, l:0 });
     }
-    const map = {};
-    for (const p of periods) map[p.key] = p;
+    const map = {}; for (const p of periods) map[p.key] = p;
     for (const m of matches) {
       if (m.result === 'abandoned') continue;
-      if (map[m.date]) { m.result === 'win' ? map[m.date].w++ : map[m.date].l++; }
+      if (map[m.date]) m.result === 'win' ? map[m.date].w++ : map[m.date].l++;
     }
   } else if (filter === 'mes') {
-    // 4 weeks back, each period = 7 days
     for (let w = 3; w >= 0; w--) {
-      const toDate   = new Date(now); toDate.setDate(toDate.getDate() - w * 7);
-      const fromDate = new Date(toDate); fromDate.setDate(fromDate.getDate() - 6);
-      const toKey    = toDate.toISOString().slice(0,10);
-      const fromKey  = fromDate.toISOString().slice(0,10);
-      const label    = fromDate.toLocaleDateString('es-ES', { day:'numeric', month:'short' }).replace('.','');
-      periods.push({ fromKey, toKey, label, w: 0, l: 0 });
+      const toD = new Date(now); toD.setDate(toD.getDate() - w * 7);
+      const frD = new Date(toD); frD.setDate(frD.getDate() - 6);
+      periods.push({ fromKey: frD.toISOString().slice(0,10), toKey: toD.toISOString().slice(0,10),
+        label: frD.toLocaleDateString('es-ES',{day:'numeric',month:'short'}).replace('.',''), w:0, l:0 });
     }
     for (const m of matches) {
       if (m.result === 'abandoned') continue;
       for (const p of periods) {
-        if (m.date >= p.fromKey && m.date <= p.toKey) {
-          m.result === 'win' ? p.w++ : p.l++;
-          break;
-        }
+        if (m.date >= p.fromKey && m.date <= p.toKey) { m.result === 'win' ? p.w++ : p.l++; break; }
       }
     }
   } else {
-    // año — last 12 months
     for (let i = 11; i >= 0; i--) {
-      const d     = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key   = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      const label = d.toLocaleDateString('es-ES', { month: 'short' }).slice(0,3);
-      periods.push({ key, label, w: 0, l: 0 });
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      periods.push({ key, label: d.toLocaleDateString('es-ES',{month:'short'}).slice(0,3), w:0, l:0 });
     }
-    const map = {};
-    for (const p of periods) map[p.key] = p;
+    const map = {}; for (const p of periods) map[p.key] = p;
     for (const m of matches) {
       if (m.result === 'abandoned') continue;
       const mk = m.date.slice(0,7);
-      if (map[mk]) { m.result === 'win' ? map[mk].w++ : map[mk].l++; }
+      if (map[mk]) m.result === 'win' ? map[mk].w++ : map[mk].l++;
     }
   }
 
+  // Fixed px heights to avoid percentage-in-flex rendering issues
+  const BAR_H = 80;
   const maxVal = Math.max(...periods.map(p => p.w + p.l), 1);
-  document.getElementById('chart-bars').innerHTML = periods.map(p => {
-    const wPct = (p.w / maxVal * 100).toFixed(1);
-    const lPct = (p.l / maxVal * 100).toFixed(1);
-    return `
-      <div class="chart-col">
-        <div class="bar-stack">
-          <div class="bar-win"  style="height:${wPct}%"></div>
-          <div class="bar-loss" style="height:${lPct}%"></div>
-        </div>
-        <div class="bar-label">${esc(p.label)}</div>
-      </div>`;
+  document.getElementById('chart-wrap').innerHTML = periods.map(p => {
+    const wH = Math.round(p.w / maxVal * BAR_H);
+    const lH = Math.round(p.l / maxVal * BAR_H);
+    return `<div class="chart-col">
+      <div class="bar-stack">
+        <div class="bar-win"  style="height:${wH}px"></div>
+        <div class="bar-loss" style="height:${lH}px"></div>
+      </div>
+      <div class="bar-label">${esc(p.label)}</div>
+    </div>`;
   }).join('');
 }
 
-// ── MODAL: NEW MATCH ────────────────────────────────
+// ── RENDER: PROFILE TAB ────────────────────────────
 
-function openNewMatchModal() {
-  const list = document.getElementById('rival-select-list');
-  if (rivals.length === 0) {
-    list.innerHTML = '<p style="color:var(--muted);font-size:.85rem;margin-bottom:8px;">No tienes rivales aún. Añade uno primero.</p>';
-  } else {
-    list.innerHTML = rivals.map((r, i) => `
-      <div class="rival-option${i === 0 ? ' selected' : ''}" data-id="${r.id}" data-name="${esc(r.name)}" onclick="selectRivalOption(this)">
-        <div class="avatar avatar-sm">${avatarHTML(r.photo, r.name)}</div>
-        <span class="rival-option-name">${esc(r.name)}</span>
-      </div>`).join('');
+function renderProfileTab() {
+  // My profile
+  _profilePhoto = profile.photo;
+  document.getElementById('profile-name-input').value = profile.name || '';
+  document.getElementById('profile-av').innerHTML = avatarHTML(profile.photo, profile.name);
+
+  // Default rival select
+  const sel = document.getElementById('default-rival-select');
+  sel.innerHTML = '<option value="">— Sin rival por defecto —</option>' +
+    rivals.map(r => `<option value="${r.id}"${r.id === profile.defaultRivalId ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
+
+  // Rivals list
+  renderRivalsInline();
+}
+
+function renderRivalsInline() {
+  const container = document.getElementById('rivals-list-inline');
+  const wlMap = {};
+  for (const m of matches) {
+    if (m.result === 'abandoned') continue;
+    if (!wlMap[m.rivalId]) wlMap[m.rivalId] = { w:0, l:0 };
+    m.result === 'win' ? wlMap[m.rivalId].w++ : wlMap[m.rivalId].l++;
   }
-  openModal('modal-new-match');
+
+  if (rivals.length === 0) {
+    container.innerHTML = '<div class="empty-state" style="padding:16px"><div class="es-icon">👥</div><p>Sin rivales. Añade uno.</p></div>';
+    return;
+  }
+  container.innerHTML = rivals.map(r => {
+    const wl = wlMap[r.id] || { w:0, l:0 };
+    const isDef = r.id === profile.defaultRivalId;
+    return `<div class="rivals-inline-item">
+      <div class="avatar av-sm" style="cursor:pointer" onclick="openEditRival('${r.id}')">${avatarHTML(r.photo, r.name)}</div>
+      <div style="flex:1">
+        <div class="ri-name">${esc(r.name)}${isDef ? ' <span style="font-size:.7rem;color:var(--accent)">★ defecto</span>' : ''}</div>
+        <div class="ri-sub"><span style="color:var(--win);font-weight:700">${wl.w}V</span> <span style="color:var(--loss);font-weight:700">${wl.l}D</span></div>
+      </div>
+      <div class="ri-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openEditRival('${r.id}')">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteRival('${r.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function selectRivalOption(el) {
-  document.querySelectorAll('#rival-select-list .rival-option').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
+// ── PROFILE SAVE ───────────────────────────────────
+
+function saveProfile() {
+  const name = document.getElementById('profile-name-input').value.trim();
+  if (!name) { showToast('Introduce un nombre'); return; }
+  profile.name  = name;
+  profile.photo = _profilePhoto;
+  saveProfileData();
+  // Refresh home screen if on match tab
+  if (document.getElementById('match-tab').classList.contains('active')) renderMatch();
+  showToast('Perfil guardado ✓');
+  // Update hero avatar in profile tab
+  document.getElementById('profile-av').innerHTML = avatarHTML(profile.photo, profile.name);
 }
 
-// ── MODAL: EDIT MATCH ──────────────────────────────
+function saveDefaultRival() {
+  profile.defaultRivalId = document.getElementById('default-rival-select').value || null;
+  saveProfileData();
+  _homeSelectedRival = profile.defaultRivalId;
+  renderRivalsInline(); // refresh ★ marker
+}
+
+// ── RIVALS MANAGEMENT ──────────────────────────────
+
+function openAddRivalForm() {
+  _editRivalId    = null;
+  _editRivalPhoto = null;
+  document.getElementById('rival-name-input').value = '';
+  document.getElementById('rival-av').innerHTML = avatarHTML(null, '');
+  document.getElementById('rival-form').style.display = '';
+  document.getElementById('rival-name-input').focus();
+}
+
+function openEditRival(id) {
+  const r = rivals.find(x => x.id === id);
+  if (!r) return;
+  _editRivalId    = id;
+  _editRivalPhoto = r.photo;
+  document.getElementById('rival-name-input').value = r.name;
+  document.getElementById('rival-av').innerHTML = avatarHTML(r.photo, r.name);
+  document.getElementById('rival-form').style.display = '';
+}
+
+function closeRivalForm() {
+  document.getElementById('rival-form').style.display = 'none';
+  _editRivalId = null; _editRivalPhoto = null;
+}
+
+function saveRivalForm() {
+  const name = document.getElementById('rival-name-input').value.trim();
+  if (!name) { showToast('Introduce un nombre'); return; }
+
+  if (_editRivalId) {
+    const r = rivals.find(x => x.id === _editRivalId);
+    if (r) { r.name = name; r.photo = _editRivalPhoto; }
+    // Sync name in all historical matches
+    for (const m of matches) { if (m.rivalId === _editRivalId) m.rivalName = name; }
+    saveMatches();
+  } else {
+    rivals.push({ id: uid(), name, photo: _editRivalPhoto });
+  }
+  saveRivals();
+  closeRivalForm();
+  renderProfileTab();
+  // If on match tab, refresh home rival cards
+  if (document.getElementById('match-tab').classList.contains('active')) renderMatch();
+  showToast(_editRivalId ? 'Rival actualizado ✓' : 'Rival añadido ✓');
+}
+
+function deleteRival(id) {
+  const hasMatches = matches.some(m => m.rivalId === id);
+  const msg = hasMatches ? 'Este rival tiene partidos guardados. ¿Eliminar igualmente?' : '¿Eliminar este rival?';
+  if (!confirm(msg)) return;
+  rivals = rivals.filter(r => r.id !== id);
+  if (profile.defaultRivalId === id) { profile.defaultRivalId = null; saveProfileData(); }
+  if (_homeSelectedRival === id) _homeSelectedRival = null;
+  saveRivals();
+  renderProfileTab();
+  if (document.getElementById('match-tab').classList.contains('active')) renderMatch();
+  showToast('Rival eliminado');
+}
+
+// ── EDIT MATCH ─────────────────────────────────────
 
 function openEditMatchModal(id) {
   const m = matches.find(x => x.id === id);
   if (!m) return;
-  _editMatchId = id;
-  _editResult  = m.result;
-
+  _editMatchId = id; _editResult = m.result;
   document.getElementById('edit-date').value = m.date;
-
-  document.querySelectorAll('#edit-result-options .result-opt').forEach(el => {
-    el.classList.toggle('sel', el.dataset.r === m.result);
-  });
-
+  document.querySelectorAll('#edit-result-options .result-opt').forEach(el =>
+    el.classList.toggle('sel', el.dataset.r === m.result));
   const container = document.getElementById('edit-sets-list');
   container.innerHTML = '';
   (m.sets || []).forEach((s, i) => appendEditSetRow(container, s.my, s.rival, i));
-
   openModal('modal-edit-match');
 }
 
 function appendEditSetRow(container, myVal, rivalVal, idx) {
   const div = document.createElement('div');
-  div.className = 'edit-set-row';
-  div.dataset.idx = idx;
+  div.className = 'edit-set-row'; div.dataset.idx = idx;
   div.innerHTML = `
     <input class="form-input" type="number" min="0" max="99" value="${myVal}"    data-side="my">
     <span class="set-sep">—</span>
@@ -1167,8 +1220,8 @@ function appendEditSetRow(container, myVal, rivalVal, idx) {
 }
 
 function editAddSet() {
-  const container = document.getElementById('edit-sets-list');
-  appendEditSetRow(container, 0, 0, container.children.length);
+  const c = document.getElementById('edit-sets-list');
+  appendEditSetRow(c, 0, 0, c.children.length);
 }
 
 function editRemoveSet(btn) {
@@ -1179,163 +1232,45 @@ function editRemoveSet(btn) {
 
 function editSelectResult(r) {
   _editResult = r;
-  document.querySelectorAll('#edit-result-options .result-opt').forEach(el => {
-    el.classList.toggle('sel', el.dataset.r === r);
-  });
+  document.querySelectorAll('#edit-result-options .result-opt').forEach(el => el.classList.toggle('sel', el.dataset.r === r));
 }
 
 function saveEditMatch() {
   if (!_editResult) { showToast('Selecciona el resultado'); return; }
   const m = matches.find(x => x.id === _editMatchId);
   if (!m) return;
-
   const rows = document.querySelectorAll('#edit-sets-list .edit-set-row');
   const sets = Array.from(rows).map(row => ({
-    my:       parseInt(row.querySelector('[data-side="my"]').value)    || 0,
-    rival:    parseInt(row.querySelector('[data-side="rival"]').value) || 0,
+    my: parseInt(row.querySelector('[data-side="my"]').value) || 0,
+    rival: parseInt(row.querySelector('[data-side="rival"]').value) || 0,
     tiebreak: null
   }));
-
-  m.date   = document.getElementById('edit-date').value;
-  m.result = _editResult;
-  m.sets   = sets;
-
+  m.date = document.getElementById('edit-date').value;
+  m.result = _editResult; m.sets = sets;
   let myS = 0, rivS = 0;
   for (const s of sets) { if (s.my > s.rival) myS++; else rivS++; }
   m.setsWon = { my: myS, rival: rivS };
-
-  saveMatches();
-  closeModal('modal-edit-match');
-  renderStats();
+  saveMatches(); closeModal('modal-edit-match'); renderStats();
   showToast('Partido actualizado ✓');
 }
 
 function deleteMatch() {
   if (!confirm('¿Eliminar este partido?')) return;
   matches = matches.filter(m => m.id !== _editMatchId);
-  saveMatches();
-  closeModal('modal-edit-match');
-  renderStats();
+  saveMatches(); closeModal('modal-edit-match'); renderStats();
   showToast('Partido eliminado');
 }
 
-// ── MODAL: PROFILE ─────────────────────────────────
+// ── EXPORT DATA ────────────────────────────────────
 
-function openProfileModal() {
-  _profilePhoto = profile.photo;
-  document.getElementById('profile-name-input').value = profile.name || '';
-  document.getElementById('profile-avatar-pick').innerHTML = avatarHTML(_profilePhoto, profile.name);
-  openModal('modal-profile');
-}
-
-function saveProfile() {
-  const name = document.getElementById('profile-name-input').value.trim();
-  if (!name) { showToast('Introduce un nombre'); return; }
-  profile.name  = name;
-  profile.photo = _profilePhoto;
-  saveProfileData();
-  closeModal('modal-profile');
-  renderMatch();
-  showToast('Perfil guardado ✓');
-}
-
-// ── MODAL: RIVALS ──────────────────────────────────
-
-function openRivalsModal(returnToNew = false) {
-  _pendingReturnToNew = returnToNew;
-  _editRivalId        = null;
-  _editRivalPhoto     = null;
-  closeRivalForm();
-  renderRivalsManagement();
-  openModal('modal-rivals');
-}
-
-function renderRivalsManagement() {
-  const container = document.getElementById('rivals-list-mgmt');
-  if (rivals.length === 0) {
-    container.innerHTML = '<div class="empty-state"><div class="es-icon">👥</div><p>Sin rivales. Añade uno.</p></div>';
-    return;
-  }
-
-  const wlMap = {};
-  for (const m of matches) {
-    if (m.result === 'abandoned') continue;
-    if (!wlMap[m.rivalId]) wlMap[m.rivalId] = { w:0, l:0 };
-    m.result === 'win' ? wlMap[m.rivalId].w++ : wlMap[m.rivalId].l++;
-  }
-
-  container.innerHTML = rivals.map(r => {
-    const wl = wlMap[r.id] || { w:0, l:0 };
-    return `
-      <div class="rivals-mgmt-item">
-        <div class="avatar avatar-sm" style="cursor:pointer" onclick="editRivalPhoto('${r.id}')">${avatarHTML(r.photo, r.name)}</div>
-        <div style="flex:1;">
-          <div class="rivals-mgmt-name">${esc(r.name)}</div>
-          <div style="font-size:.75rem;color:var(--muted)">
-            <span style="color:var(--win);font-weight:700">${wl.w}V</span>
-            <span style="color:var(--loss);font-weight:700"> ${wl.l}D</span>
-          </div>
-        </div>
-        <div class="rivals-mgmt-actions">
-          <button class="btn btn-ghost btn-sm" onclick="openEditRival('${r.id}')">✏️</button>
-          <button class="btn btn-ghost btn-sm" onclick="deleteRival('${r.id}')">🗑</button>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-function openAddRivalForm() {
-  _editRivalId    = null;
-  _editRivalPhoto = null;
-  document.getElementById('rival-name-input').value = '';
-  document.getElementById('rival-avatar-pick').innerHTML = avatarHTML(null, '');
-  document.getElementById('rival-form').style.display = '';
-}
-
-function openEditRival(id) {
-  const r = rivals.find(x => x.id === id);
-  if (!r) return;
-  _editRivalId    = id;
-  _editRivalPhoto = r.photo;
-  document.getElementById('rival-name-input').value = r.name;
-  document.getElementById('rival-avatar-pick').innerHTML = avatarHTML(r.photo, r.name);
-  document.getElementById('rival-form').style.display = '';
-}
-
-function editRivalPhoto(id) {
-  openEditRival(id);
-  pickPhoto('rival');
-}
-
-function closeRivalForm() {
-  document.getElementById('rival-form').style.display = 'none';
-}
-
-function saveRivalForm() {
-  const name = document.getElementById('rival-name-input').value.trim();
-  if (!name) { showToast('Introduce un nombre'); return; }
-  if (_editRivalId) {
-    const r = rivals.find(x => x.id === _editRivalId);
-    if (r) { r.name = name; r.photo = _editRivalPhoto; }
-  } else {
-    rivals.push({ id: uid(), name, photo: _editRivalPhoto });
-  }
-  saveRivals();
-  closeRivalForm();
-  renderRivalsManagement();
-  showToast(_editRivalId ? 'Rival actualizado ✓' : 'Rival añadido ✓');
-}
-
-function deleteRival(id) {
-  const hasMatches = matches.some(m => m.rivalId === id);
-  const msg = hasMatches
-    ? 'Este rival tiene partidos guardados. ¿Eliminar igualmente?'
-    : '¿Eliminar este rival?';
-  if (!confirm(msg)) return;
-  rivals = rivals.filter(r => r.id !== id);
-  saveRivals();
-  renderRivalsManagement();
-  showToast('Rival eliminado');
+function downloadData() {
+  const data = { exportDate: new Date().toISOString(), profile, rivals, matches };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `tennis-tracker-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('Datos descargados ✓');
 }
 
 // ── PHOTO UPLOAD ────────────────────────────────────
@@ -1344,17 +1279,16 @@ function pickPhoto(target) {
   const inp = document.createElement('input');
   inp.type = 'file'; inp.accept = 'image/*';
   inp.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
-      const dataUrl = ev.target.result;
+      const url = ev.target.result;
       if (target === 'profile') {
-        _profilePhoto = dataUrl;
-        document.getElementById('profile-avatar-pick').innerHTML = avatarHTML(dataUrl, '');
+        _profilePhoto = url;
+        document.getElementById('profile-av').innerHTML = avatarHTML(url, '');
       } else {
-        _editRivalPhoto = dataUrl;
-        document.getElementById('rival-avatar-pick').innerHTML = avatarHTML(dataUrl, '');
+        _editRivalPhoto = url;
+        document.getElementById('rival-av').innerHTML = avatarHTML(url, '');
       }
     };
     reader.readAsDataURL(file);
@@ -1362,47 +1296,35 @@ function pickPhoto(target) {
   inp.click();
 }
 
-// ── MODALS GENERIC ──────────────────────────────────
+// ── MODALS ─────────────────────────────────────────
 
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-  if (id === 'modal-rivals' && _pendingReturnToNew) {
-    _pendingReturnToNew = false;
-    openNewMatchModal();
-  }
-}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) closeModal(overlay.id);
-  });
-});
+document.querySelectorAll('.modal-overlay').forEach(ov =>
+  ov.addEventListener('click', e => { if (e.target === ov) closeModal(ov.id); }));
 
-// ── RADIO GROUPS ────────────────────────────────────
+// ── RADIO GROUPS ───────────────────────────────────
 
-document.querySelectorAll('.radio-group').forEach(group => {
-  group.addEventListener('click', e => {
-    const opt = e.target.closest('.radio-option');
-    if (!opt) return;
-    group.querySelectorAll('.radio-option').forEach(o => o.classList.remove('selected'));
+document.querySelectorAll('.radio-group').forEach(g =>
+  g.addEventListener('click', e => {
+    const opt = e.target.closest('.radio-option'); if (!opt) return;
+    g.querySelectorAll('.radio-option').forEach(o => o.classList.remove('selected'));
     opt.classList.add('selected');
-  });
-});
+  }));
 
-// ── NAVIGATION ──────────────────────────────────────
+// ── NAVIGATION ─────────────────────────────────────
 
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t    => t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  if (tab === 'match') {
-    document.getElementById('match-tab').classList.add('active');
-    document.getElementById('nav-match').classList.add('active');
-  } else {
-    document.getElementById('stats-tab').classList.add('active');
-    document.getElementById('nav-stats').classList.add('active');
-    renderStats();
-  }
+  const tabEl = document.getElementById(tab + '-tab');
+  const navEl = document.getElementById('nav-' + tab);
+  if (tabEl) tabEl.classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  if (tab === 'stats')   renderStats();
+  if (tab === 'profile') renderProfileTab();
+  if (tab === 'match')   renderMatch();
 }
 
 document.getElementById('chart-filters').addEventListener('click', e => {
@@ -1410,43 +1332,39 @@ document.getElementById('chart-filters').addEventListener('click', e => {
   if (btn) renderChart(btn.dataset.f);
 });
 
-// ── TOAST ───────────────────────────────────────────
+// ── TOAST ──────────────────────────────────────────
 
 let _toastTimer;
 function showToast(msg) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
+  el.textContent = msg; el.classList.add('show');
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
-// ── HELPERS ─────────────────────────────────────────
+// ── HELPERS ────────────────────────────────────────
 
 function esc(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function avatarHTML(photo, name) {
-  if (photo) {
-    return `<img src="${photo}" alt="${esc(name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-  }
-  const letter = (String(name || '?')[0] || '?').toUpperCase();
+  if (photo) return `<img src="${photo}" alt="${esc(name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  const letter = (String(name||'?')[0]||'?').toUpperCase();
   return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
     <circle cx="20" cy="20" r="20" fill="#2d6a4f"/>
     <text x="20" y="27" text-anchor="middle" font-size="18" font-family="sans-serif" fill="#fff" font-weight="bold">${esc(letter)}</text>
   </svg>`;
 }
 
-// ── SERVICE WORKER ──────────────────────────────────
+// ── SERVICE WORKER ─────────────────────────────────
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
-}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
-// ── INIT ────────────────────────────────────────────
+// ── INIT ───────────────────────────────────────────
 
 loadAll();
+_homeSelectedRival = profile.defaultRivalId || (rivals[0]?.id || null);
 renderMatch();
 </script>
 </body>
