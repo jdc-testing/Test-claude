@@ -233,10 +233,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .radio-option.selected{border-color:var(--accent);background:var(--accent-light);color:var(--accent-dark)}
 
 /* Rival select list in modal */
-.rival-select-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.rival-search-wrap{margin-bottom:8px}
+.rival-select-list{display:flex;flex-direction:column;gap:6px;margin-bottom:6px;max-height:200px;overflow-y:auto}
 .rival-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:all .15s}
 .rival-opt.selected{border-color:var(--accent);background:var(--accent-light)}
 .rival-opt-name{font-weight:600;font-size:.9rem}
+.rival-opt.hidden{display:none}
+/* Finish result badge */
+.finish-result-badge{border-radius:14px;padding:14px 16px;text-align:center;font-size:1.1rem;font-weight:800;margin-bottom:12px}
+.finish-result-badge.win{background:#e8f5e9;color:var(--win)}
+.finish-result-badge.loss{background:#ffebee;color:var(--loss)}
+.finish-result-badge.tie{background:var(--bg);color:var(--muted)}
 
 /* Finish / Edit result options */
 .result-options{display:flex;gap:8px;margin-bottom:16px}
@@ -501,6 +508,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
     <div class="form-group">
       <div class="form-label">Rival</div>
+      <div class="rival-search-wrap">
+        <input type="text" class="form-input" id="rival-search" placeholder="Buscar rival..." oninput="filterRivalList(this.value)" autocomplete="off">
+      </div>
       <div class="rival-select-list" id="rival-select-list"></div>
     </div>
 
@@ -541,14 +551,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="modal-handle"></div>
     <div class="modal-title">Terminar partido</div>
     <div class="sec-title" style="margin-bottom:6px">Sets jugados</div>
-    <div id="finish-sets-list" style="margin-bottom:14px"></div>
-    <div class="sec-title" style="margin-bottom:8px">Resultado</div>
-    <div class="result-options" id="result-options">
-      <div class="result-opt win"       data-r="win"       onclick="selectResult('win')">Victoria</div>
-      <div class="result-opt loss"      data-r="loss"      onclick="selectResult('loss')">Derrota</div>
-      <div class="result-opt abandoned" data-r="abandoned" onclick="selectResult('abandoned')">Abandonado</div>
+    <div id="finish-sets-list" style="margin-bottom:12px"></div>
+    <!-- Auto result badge -->
+    <div id="finish-result-badge"></div>
+    <!-- Override (hidden by default) -->
+    <div id="finish-override" style="display:none;margin-bottom:10px">
+      <div class="result-options" id="result-options">
+        <div class="result-opt win"       data-r="win"       onclick="selectResult('win')">Victoria</div>
+        <div class="result-opt loss"      data-r="loss"      onclick="selectResult('loss')">Derrota</div>
+        <div class="result-opt abandoned" data-r="abandoned" onclick="selectResult('abandoned')">Abandonado</div>
+      </div>
     </div>
-    <button class="btn btn-primary btn-lg btn-full" onclick="confirmFinish()">Guardar</button>
+    <button class="btn btn-ghost btn-sm" id="finish-override-btn" onclick="toggleFinishOverride()" style="margin-bottom:12px;width:100%">Cambiar resultado</button>
+    <button class="btn btn-primary btn-lg btn-full" onclick="confirmFinish()">Guardar partido</button>
     <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-finish')" style="margin-top:8px">Cancelar</button>
   </div>
 </div>
@@ -765,7 +780,17 @@ function getSetsWon() {
 
 // ── MATCH LIFECYCLE ────────────────────────────────
 
+function filterRivalList(query) {
+  const q = query.trim().toLowerCase();
+  document.querySelectorAll('#rival-select-list .rival-opt').forEach(el => {
+    el.classList.toggle('hidden', q.length > 0 && !el.dataset.name.toLowerCase().includes(q));
+  });
+}
+
 function openNewMatchModal() {
+  // Clear search on open
+  const searchEl = document.getElementById('rival-search');
+  if (searchEl) searchEl.value = '';
   // Populate rival list (pre-select home selection or default)
   const preferredId = _homeSelectedRival || profile.defaultRivalId;
   const list = document.getElementById('rival-select-list');
@@ -837,15 +862,44 @@ function openFinishModal() {
           ${s.tiebreak ? `<span style="font-size:.75rem;color:var(--muted)">(TB ${s.tiebreak.my}-${s.tiebreak.rival})</span>` : ''}
         </div>`).join('');
 
-  document.querySelectorAll('#result-options .result-opt').forEach(el =>
-    el.classList.toggle('sel', _finishResult !== null && el.dataset.r === _finishResult));
+  // Show auto-calculated result badge
+  const badge = document.getElementById('finish-result-badge');
+  const isTie = sw.my === sw.rival;
+  if (_finishResult === 'win') {
+    badge.className = 'finish-result-badge win';
+    badge.textContent = '✓ Victoria';
+  } else if (_finishResult === 'loss') {
+    badge.className = 'finish-result-badge loss';
+    badge.textContent = '✗ Derrota';
+  } else {
+    badge.className = 'finish-result-badge tie';
+    badge.textContent = 'Sets empatados — elige resultado';
+  }
+
+  // Show override section if tie (must choose), hide "Cambiar" button if tie
+  document.getElementById('finish-override').style.display = isTie ? 'block' : 'none';
+  document.getElementById('finish-override-btn').style.display = isTie ? 'none' : '';
+
+  // Sync override buttons if tie
+  if (isTie) {
+    document.querySelectorAll('#result-options .result-opt').forEach(el => el.classList.remove('sel'));
+  }
 
   openModal('modal-finish');
+}
+
+function toggleFinishOverride() {
+  const ov = document.getElementById('finish-override');
+  ov.style.display = ov.style.display === 'none' ? 'block' : 'none';
 }
 
 function selectResult(r) {
   _finishResult = r;
   document.querySelectorAll('#result-options .result-opt').forEach(el => el.classList.toggle('sel', el.dataset.r === r));
+  const badge = document.getElementById('finish-result-badge');
+  if (r === 'win')       { badge.className = 'finish-result-badge win';  badge.textContent = '✓ Victoria'; }
+  else if (r === 'loss') { badge.className = 'finish-result-badge loss'; badge.textContent = '✗ Derrota'; }
+  else                   { badge.className = 'finish-result-badge tie';  badge.textContent = '⊘ Abandonado'; }
 }
 
 function confirmFinish() {
