@@ -1067,7 +1067,7 @@ function renderChart(filter) {
 // ── RENDER: PROFILE TAB ────────────────────────────
 
 function renderProfileTab() {
-  // My profile
+  // My profile — only reset temp state if entering the tab fresh (not on rival save)
   _profilePhoto = profile.photo;
   document.getElementById('profile-name-input').value = profile.name || '';
   document.getElementById('profile-av').innerHTML = avatarHTML(profile.photo, profile.name);
@@ -1140,7 +1140,7 @@ function openAddRivalForm() {
   _editRivalPhoto = null;
   document.getElementById('rival-name-input').value = '';
   document.getElementById('rival-av').innerHTML = avatarHTML(null, '');
-  document.getElementById('rival-form').style.display = '';
+  document.getElementById('rival-form').style.display = 'block';
   document.getElementById('rival-name-input').focus();
 }
 
@@ -1151,7 +1151,7 @@ function openEditRival(id) {
   _editRivalPhoto = r.photo;
   document.getElementById('rival-name-input').value = r.name;
   document.getElementById('rival-av').innerHTML = avatarHTML(r.photo, r.name);
-  document.getElementById('rival-form').style.display = '';
+  document.getElementById('rival-form').style.display = 'block';
 }
 
 function closeRivalForm() {
@@ -1174,7 +1174,13 @@ function saveRivalForm() {
   }
   saveRivals();
   closeRivalForm();
-  renderProfileTab();
+  // Refresh only the rivals list and default-rival select (not full tab, to avoid resetting _profilePhoto)
+  renderRivalsInline();
+  const selEl = document.getElementById('default-rival-select');
+  if (selEl) {
+    selEl.innerHTML = '<option value="">— Sin rival por defecto —</option>' +
+      rivals.map(r => `<option value="${r.id}"${r.id === profile.defaultRivalId ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
+  }
   // If on match tab, refresh home rival cards
   if (document.getElementById('match-tab').classList.contains('active')) renderMatch();
   showToast(_editRivalId ? 'Rival actualizado ✓' : 'Rival añadido ✓');
@@ -1188,7 +1194,12 @@ function deleteRival(id) {
   if (profile.defaultRivalId === id) { profile.defaultRivalId = null; saveProfileData(); }
   if (_homeSelectedRival === id) _homeSelectedRival = null;
   saveRivals();
-  renderProfileTab();
+  renderRivalsInline();
+  const selElD = document.getElementById('default-rival-select');
+  if (selElD) {
+    selElD.innerHTML = '<option value="">— Sin rival por defecto —</option>' +
+      rivals.map(r => `<option value="${r.id}"${r.id === profile.defaultRivalId ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
+  }
   if (document.getElementById('match-tab').classList.contains('active')) renderMatch();
   showToast('Rival eliminado');
 }
