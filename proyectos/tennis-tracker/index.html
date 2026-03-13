@@ -260,6 +260,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 #toast{position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(20px);background:#333;color:#fff;border-radius:20px;padding:10px 20px;font-size:.85rem;font-weight:600;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:999;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* ── PERIOD FILTER ── */
+.period-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.pf-chip{border:1.5px solid var(--border);background:var(--surface);border-radius:20px;padding:5px 12px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--muted);font-family:inherit;transition:all .15s;white-space:nowrap}
+.pf-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.month-filter{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.mf-chip{border:1.5px solid var(--border);background:var(--surface);border-radius:16px;padding:4px 9px;font-size:.73rem;font-weight:600;cursor:pointer;color:var(--muted);font-family:inherit;transition:all .15s}
+.mf-chip.active{background:var(--accent-light);color:var(--accent-dark);border-color:var(--accent)}
+
+/* ── RIVAL DETAIL MODAL ── */
+.rd-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.rd-name{font-size:1.1rem;font-weight:800}
+.rd-sub{font-size:.8rem;color:var(--muted);margin-top:2px}
+.rd-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.rd-box{background:var(--bg);border-radius:12px;padding:10px 8px;text-align:center}
+.rd-box .rbv{font-size:1.4rem;font-weight:800}
+.rd-box .rbl{font-size:.7rem;color:var(--muted);font-weight:600}
+.rd-box.win .rbv{color:var(--win)}.rd-box.loss .rbv{color:var(--loss)}
+.rd-match-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.rd-match-row:last-child{border-bottom:none}
+.rd-match-res{font-size:.75rem;font-weight:700;width:52px;flex-shrink:0}
+.rd-match-res.win{color:var(--win)}.rd-match-res.loss{color:var(--loss)}
+.rd-match-sets{flex:1;font-size:.82rem;color:var(--muted)}
+.rd-match-date{font-size:.73rem;color:var(--muted)}
+
 @media(max-width:360px){.btn-pt{padding:18px 8px;font-size:.9rem}}
 </style>
 </head>
@@ -336,6 +360,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <!-- ══ TAB 2: ESTADÍSTICAS ══ -->
   <div id="stats-tab" class="tab">
 
+    <!-- Period filter -->
+    <div class="stat-block" style="margin-bottom:0">
+      <div class="sec-title">Periodo</div>
+      <div class="period-filter" id="period-year-filter"></div>
+      <div class="month-filter" id="period-month-filter" style="display:none"></div>
+    </div>
+
     <div class="stat-block">
       <div class="sec-title">Resumen</div>
       <div class="summary-grid" id="summary-grid"></div>
@@ -357,7 +388,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
 
     <div class="stat-block">
-      <div class="sec-title">Por rival</div>
+      <div class="sec-title">Por rival <small style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">— toca para ver detalles</small></div>
       <div id="rivals-stats"></div>
     </div>
 
@@ -550,6 +581,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- Rival detail modal -->
+<div class="modal-overlay" id="modal-rival-detail">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="rd-header">
+      <div class="avatar av-md" id="rd-avatar"></div>
+      <div>
+        <div class="rd-name" id="rd-name"></div>
+        <div class="rd-sub">Estadísticas desde su perspectiva</div>
+      </div>
+    </div>
+    <div class="rd-summary" id="rd-summary"></div>
+    <div class="sec-title" style="margin-bottom:8px">Partidos contra mí</div>
+    <div id="rd-matches"></div>
+    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-rival-detail')" style="margin-top:14px">Cerrar</button>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
 ═══════════════════════════════════════════ -->
@@ -571,6 +620,8 @@ let _editRivalPhoto     = null;
 let _profilePhoto       = null;
 let _chartFilter        = 'semana';
 let _homeSelectedRival  = null;  // rivalId selected on home screen
+let _statsYear          = null;  // null = all years
+let _statsMonth         = null;  // null = all months (only valid when _statsYear set)
 
 // ── STORAGE ────────────────────────────────────────
 const SK = { profile:'tt_profile', rivals:'tt_rivals', matches:'tt_matches', current:'tt_current' };
@@ -948,10 +999,62 @@ function renderMatchScreen() {
     </div>`;
 }
 
+// ── STATS: PERIOD FILTER ────────────────────────────
+
+function getFilteredMatches() {
+  return matches.filter(m => {
+    if (m.result === 'abandoned') return false;
+    if (_statsYear  !== null && m.date.slice(0,4)   !== String(_statsYear))  return false;
+    if (_statsMonth !== null && parseInt(m.date.slice(5,7)) !== _statsMonth)  return false;
+    return true;
+  });
+}
+
+function renderPeriodFilter() {
+  // Gather years present in data + current year
+  const years = [...new Set(matches.map(m => m.date.slice(0,4)))].sort().reverse();
+  const now   = new Date();
+  const curY  = String(now.getFullYear());
+  if (!years.includes(curY)) years.unshift(curY);
+
+  const yEl = document.getElementById('period-year-filter');
+  yEl.innerHTML =
+    `<button class="pf-chip${_statsYear === null ? ' active' : ''}" onclick="setPeriodYear(null)">Todo</button>` +
+    years.map(y =>
+      `<button class="pf-chip${_statsYear === y ? ' active' : ''}" onclick="setPeriodYear('${y}')">${y}</button>`
+    ).join('');
+
+  const mEl   = document.getElementById('period-month-filter');
+  const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  if (_statsYear !== null) {
+    mEl.style.display = '';
+    mEl.innerHTML =
+      `<button class="mf-chip${_statsMonth === null ? ' active' : ''}" onclick="setPeriodMonth(null)">Todos</button>` +
+      MONTHS.map((mn, i) =>
+        `<button class="mf-chip${_statsMonth === (i+1) ? ' active' : ''}" onclick="setPeriodMonth(${i+1})">${mn}</button>`
+      ).join('');
+  } else {
+    mEl.style.display = 'none';
+  }
+}
+
+function setPeriodYear(y) {
+  _statsYear  = y;
+  _statsMonth = null;
+  renderStats();
+}
+
+function setPeriodMonth(m) {
+  _statsMonth = m;
+  renderStats();
+}
+
 // ── RENDER: STATS TAB ──────────────────────────────
 
 function renderStats() {
-  const fin    = matches.filter(m => m.result !== 'abandoned');
+  renderPeriodFilter();
+  const fin = getFilteredMatches();
+
   const wins   = fin.filter(m => m.result === 'win').length;
   const losses = fin.filter(m => m.result === 'loss').length;
   const total  = wins + losses;
@@ -973,25 +1076,30 @@ function renderStats() {
 
   renderChart(_chartFilter);
 
+  // By rival (filtered)
   const rivalMap = {};
   for (const m of fin) {
-    if (!rivalMap[m.rivalId]) rivalMap[m.rivalId] = { name: m.rivalName, w:0, l:0 };
+    if (!rivalMap[m.rivalId]) rivalMap[m.rivalId] = { id: m.rivalId, name: m.rivalName, w:0, l:0 };
     m.result === 'win' ? rivalMap[m.rivalId].w++ : rivalMap[m.rivalId].l++;
   }
   const rivalEntries = Object.values(rivalMap).sort((a,b) => (b.w+b.l)-(a.w+a.l));
+  const rival = id => rivals.find(r => r.id === id);
   document.getElementById('rivals-stats').innerHTML = rivalEntries.length === 0
-    ? '<div class="empty-state"><div class="es-icon">🎾</div><p>Sin partidos registrados</p></div>'
+    ? '<div class="empty-state"><div class="es-icon">🎾</div><p>Sin partidos en este periodo</p></div>'
     : rivalEntries.map(r => `
-        <div class="rival-row">
+        <div class="rival-row" style="cursor:pointer" onclick="openRivalDetail('${r.id}')">
+          <div class="avatar av-sm">${avatarHTML(rival(r.id)?.photo || null, r.name)}</div>
           <div class="rival-rname">${esc(r.name)}</div>
           <div class="rival-rec"><span class="rw">${r.w}V</span> <span class="rl">${r.l}D</span></div>
+          <span style="color:var(--muted);font-size:.8rem">›</span>
         </div>`).join('');
 
-  document.getElementById('match-history').innerHTML = matches.length === 0
-    ? '<div class="empty-state"><div class="es-icon">📋</div><p>Aún no hay partidos</p></div>'
-    : matches.map(m => {
+  // Match history (filtered)
+  document.getElementById('match-history').innerHTML = fin.length === 0
+    ? '<div class="empty-state"><div class="es-icon">📋</div><p>Sin partidos en este periodo</p></div>'
+    : fin.map(m => {
         const setsStr  = m.sets?.length > 0 ? m.sets.map(s => `${s.my}-${s.rival}`).join(', ') : '—';
-        const resLabel = m.result === 'win' ? 'Victoria' : m.result === 'loss' ? 'Derrota' : 'Abandonado';
+        const resLabel = m.result === 'win' ? 'Victoria' : 'Derrota';
         return `<div class="match-item">
           <div class="m-dot ${m.result}"></div>
           <div class="m-info">
@@ -1002,6 +1110,48 @@ function renderStats() {
           <button class="btn btn-ghost btn-sm" onclick="openEditMatchModal('${m.id}')">✏️</button>
         </div>`;
       }).join('');
+}
+
+// ── RIVAL DETAIL ────────────────────────────────────
+
+function openRivalDetail(rivalId) {
+  // All non-abandoned matches against this rival
+  const ms = matches.filter(m => m.rivalId === rivalId && m.result !== 'abandoned')
+                    .sort((a,b) => b.date.localeCompare(a.date));
+
+  const r = rivals.find(x => x.id === rivalId) || { name: ms[0]?.rivalName || '?', photo: null };
+
+  // From rival's perspective: their wins = our losses, their losses = our wins
+  const theirWins   = ms.filter(m => m.result === 'loss').length;
+  const theirLosses = ms.filter(m => m.result === 'win').length;
+  const total       = ms.length;
+  const pct         = total > 0 ? Math.round(theirWins / total * 100) : 0;
+
+  document.getElementById('rd-avatar').innerHTML = avatarHTML(r.photo, r.name);
+  document.getElementById('rd-name').textContent  = r.name;
+
+  document.getElementById('rd-summary').innerHTML = `
+    <div class="rd-box win"><div class="rbv">${theirWins}</div><div class="rbl">Sus victorias</div></div>
+    <div class="rd-box loss"><div class="rbv">${theirLosses}</div><div class="rbl">Sus derrotas</div></div>
+    <div class="rd-box"><div class="rbv">${pct}%</div><div class="rbl">% victorias</div></div>`;
+
+  const myName = profile.name || 'Yo';
+  document.getElementById('rd-matches').innerHTML = ms.length === 0
+    ? '<p style="color:var(--muted);font-size:.85rem">Sin partidos</p>'
+    : ms.map(m => {
+        const theirResult = m.result === 'loss' ? 'win' : 'loss';
+        const label       = theirResult === 'win' ? 'Gana' : 'Pierde';
+        // Invert set scores to show from rival's POV
+        const setsStr     = m.sets?.length > 0
+          ? m.sets.map(s => `${s.rival}-${s.my}`).join(', ') : '—';
+        return `<div class="rd-match-row">
+          <div class="rd-match-res ${theirResult}">${label}</div>
+          <div class="rd-match-sets">${setsStr} vs ${esc(myName)}</div>
+          <div class="rd-match-date">${m.date}</div>
+        </div>`;
+      }).join('');
+
+  openModal('modal-rival-detail');
 }
 
 function renderChart(filter) {
