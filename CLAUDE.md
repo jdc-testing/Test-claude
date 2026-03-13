@@ -58,3 +58,4 @@ Test-claude/
 3. Crear `proyectos/<nombre>/CLAUDE.md` con instrucciones específicas
 4. **Actualizar `README.md`** con la entrada del nuevo proyecto
 5. **Actualizar este `CLAUDE.md`**: añadir el proyecto a la tabla de "Proyectos activos"
+6. **Añadir una tarjeta en `/home/user/Test-claude/index.html`** (la landing page raíz) con el nombre, emoji/icono, descripción breve y enlace al proyecto — **hacerlo siempre salvo que se indique explícitamente lo contrario**
