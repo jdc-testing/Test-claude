@@ -1,1665 +1,1453 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#2d6a4f" />
-  <title>Tennis Tracker</title>
-  <link rel="manifest" href="manifest.json" />
-  <style>
-    /* ── CSS VARIABLES ── */
-    :root {
-      --accent:       #2d6a4f;
-      --accent-light: #d8f3dc;
-      --accent-dark:  #1b4332;
-      --ball:         #f9a825;
-      --win:          #43a047;
-      --loss:         #e53935;
-      --bg:           #f0f4f0;
-      --surface:      #ffffff;
-      --text:         #1b2d1e;
-      --text-muted:   #6b7c6d;
-      --border:       #c8dfc9;
-      --nav-h:        64px;
-      --radius:       12px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2d6a4f">
+<title>Tennis Tracker</title>
+<link rel="manifest" href="manifest.json">
+<style>
+/* ── RESET & BASE ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── CSS VARIABLES ── */
+:root {
+  --accent: #2d6a4f;
+  --accent-light: #d8f3dc;
+  --accent-dark: #1b4332;
+  --ball: #c8a800;
+  --win: #43a047;
+  --loss: #e53935;
+  --abandoned: #888;
+  --bg: #f0f4f0;
+  --surface: #ffffff;
+  --text: #1b2d1e;
+  --muted: #6b7c6d;
+  --border: #c8dfc9;
+  --nav-h: 60px;
+  --header-h: 52px;
+}
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      max-width: 480px;
-      margin: 0 auto;
-      min-height: 100dvh;
-      padding-bottom: calc(var(--nav-h) + 8px);
-    }
+/* ── LAYOUT ── */
+#app-header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--accent);
+  color: #fff;
+  height: var(--header-h);
+  display: flex; align-items: center; padding: 0 16px;
+  gap: 10px;
+}
+#app-header h1 { font-size: 1.1rem; font-weight: 700; flex: 1; }
+#app-header span { font-size: 1.4rem; }
 
-    /* ── HEADER ── */
-    .header {
-      background: var(--accent);
-      color: #fff;
-      padding: 16px 20px 12px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    .header h1 { font-size: 1.2rem; font-weight: 700; }
-    .header .subtitle { font-size: 0.8rem; opacity: 0.8; margin-top: 2px; }
+#main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: calc(var(--nav-h) + 8px);
+}
 
-    /* ── BOTTOM NAV ── */
-    .nav {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 480px;
-      height: var(--nav-h);
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      display: flex;
-      z-index: 20;
-    }
-    .nav-btn {
-      flex: 1;
-      background: none;
-      border: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      cursor: pointer;
-      color: var(--text-muted);
-      font-size: 0.65rem;
-      transition: color 0.15s;
-    }
-    .nav-btn .nav-icon { font-size: 1.4rem; }
-    .nav-btn.active { color: var(--accent); font-weight: 600; }
+#bottom-nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  height: var(--nav-h);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 100;
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px;
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 0.7rem; font-weight: 600;
+  transition: color .15s;
+}
+.nav-btn .nav-icon { font-size: 1.5rem; line-height: 1; }
+.nav-btn.active { color: var(--accent); }
 
-    /* ── SCREENS ── */
-    .screen { display: none; padding: 16px; }
-    .screen.active { display: block; }
+/* ── TABS ── */
+.tab { display: none; }
+.tab.active { display: block; }
 
-    /* ── CARDS ── */
-    .card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 12px;
-      border: 1px solid var(--border);
-    }
-    .card-title {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-    }
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: none; border-radius: 12px; cursor: pointer;
+  font-family: inherit; font-weight: 600; transition: opacity .15s, transform .1s;
+  text-decoration: none;
+}
+.btn:active { transform: scale(.97); opacity: .85; }
+.btn-primary   { background: var(--accent); color: #fff; }
+.btn-secondary { background: var(--accent-light); color: var(--accent-dark); }
+.btn-danger    { background: var(--loss); color: #fff; }
+.btn-ghost     { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-sm  { padding: 8px 14px; font-size: 0.82rem; border-radius: 8px; }
+.btn-md  { padding: 12px 20px; font-size: 0.95rem; }
+.btn-lg  { padding: 16px 24px; font-size: 1.1rem; }
+.btn-full { width: 100%; }
 
-    /* ── AVATARS ── */
-    .avatar {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid var(--border);
-      background: var(--accent-light);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .avatar svg { width: 40px; height: 40px; opacity: 0.5; }
-    .avatar-sm {
-      width: 48px;
-      height: 48px;
-    }
-    .avatar-sm svg { width: 28px; height: 28px; }
+/* ── NO MATCH SCREEN ── */
+#no-match { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.start-card {
+  background: var(--accent); color: #fff;
+  border-radius: 20px; padding: 28px 20px; text-align: center;
+}
+.start-card .ball-emoji { font-size: 3rem; margin-bottom: 8px; }
+.start-card h2 { font-size: 1.3rem; margin-bottom: 16px; }
+.quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.quick-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px 12px; text-align: center;
+  cursor: pointer; transition: background .15s;
+}
+.quick-card:active { background: var(--accent-light); }
+.quick-card .qc-icon  { font-size: 1.8rem; margin-bottom: 6px; }
+.quick-card .qc-label { font-size: 0.82rem; font-weight: 600; color: var(--text); }
 
-    /* ── NEW MATCH SCREEN ── */
-    .players-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      margin: 16px 0;
-    }
-    .player-col {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      flex: 1;
-    }
-    .player-name {
-      font-weight: 600;
-      font-size: 0.95rem;
-      text-align: center;
-      max-width: 120px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .player-edit-hint {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      cursor: pointer;
-    }
-    .vs-badge {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: var(--text-muted);
-      flex-shrink: 0;
-    }
+/* ── MATCH SCREEN ── */
+#match-screen { padding: 12px 16px; }
 
-    /* ── RIVAL SELECT ── */
-    .rival-select-wrap { margin: 8px 0; }
-    select {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--surface);
-      font-size: 0.95rem;
-      color: var(--text);
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7c6d' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-    }
+.players-row {
+  display: flex; align-items: center;
+  background: var(--surface); border-radius: 16px;
+  padding: 14px 16px; border: 1px solid var(--border);
+  gap: 8px; margin-bottom: 10px;
+}
+.player-info { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.player-info .player-name { font-size: 0.88rem; font-weight: 700; text-align: center; }
+.players-vs { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
 
-    /* ── TIEBREAK OPTION ── */
-    .tb-options {
-      display: flex;
-      gap: 8px;
-      margin: 8px 0;
-    }
-    .tb-opt {
-      flex: 1;
-      padding: 8px;
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      background: var(--surface);
-      cursor: pointer;
-      text-align: center;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      transition: all 0.15s;
-    }
-    .tb-opt.selected {
-      border-color: var(--accent);
-      background: var(--accent-light);
-      color: var(--accent);
-      font-weight: 600;
-    }
+/* Scoreboard */
+.scoreboard {
+  background: var(--surface); border-radius: 16px;
+  border: 1px solid var(--border); overflow: hidden; margin-bottom: 10px;
+}
+.score-row {
+  display: flex; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.score-row:last-child { border-bottom: none; }
+.score-label {
+  width: 80px; padding: 10px 14px;
+  font-size: 0.75rem; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
+  background: var(--bg);
+}
+.score-val {
+  flex: 1; padding: 10px 8px;
+  font-size: 1.1rem; font-weight: 700; text-align: center;
+}
+.score-val.special { font-size: 0.88rem; }
+.score-val.highlight { color: var(--accent); }
+.score-sep { padding: 10px 4px; font-weight: 300; color: var(--muted); }
 
-    /* ── BUTTONS ── */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-    .btn:active { transform: scale(0.97); }
-    .btn-primary { background: var(--accent); color: #fff; width: 100%; }
-    .btn-secondary { background: var(--accent-light); color: var(--accent); width: 100%; }
-    .btn-danger { background: var(--loss); color: #fff; }
-    .btn-ghost {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      width: 100%;
-    }
-    .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.sets-history {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  padding: 8px 14px; background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.set-chip {
+  font-size: 0.78rem; font-weight: 600;
+  background: var(--accent-light); color: var(--accent-dark);
+  border-radius: 6px; padding: 2px 7px;
+}
+.set-chip.won  { background: var(--win);  color: #fff; }
+.set-chip.lost { background: var(--loss); color: #fff; }
 
-    /* ── SCOREBOARD ── */
-    .scoreboard {
-      background: var(--accent-dark);
-      border-radius: var(--radius);
-      padding: 20px 16px;
-      margin-bottom: 12px;
-      color: #fff;
-    }
-    .sb-players {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .sb-player {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      flex: 1;
-    }
-    .sb-player-name {
-      font-size: 0.85rem;
-      font-weight: 600;
-      opacity: 0.9;
-      text-align: center;
-      max-width: 100px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .sb-divider { font-size: 1.5rem; font-weight: 300; opacity: 0.4; }
+/* Tiebreak banner */
+.tb-banner {
+  background: linear-gradient(135deg, #f9a825, #f57f17);
+  color: #fff; text-align: center; padding: 8px 16px;
+  font-size: 0.85rem; font-weight: 700;
+  border-radius: 10px; margin-bottom: 10px; display: none;
+}
+.tb-banner.visible { display: block; }
 
-    .sb-scores {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 6px 12px;
-      align-items: center;
-    }
-    .sb-label {
-      font-size: 0.7rem;
-      opacity: 0.6;
-      text-align: center;
-      grid-column: 2;
-      letter-spacing: 0.04em;
-    }
-    .sb-val {
-      font-size: 2.2rem;
-      font-weight: 800;
-      text-align: center;
-      line-height: 1;
-    }
-    .sb-val.small { font-size: 1.3rem; font-weight: 600; }
-    .sb-val.muted { opacity: 0.5; font-size: 1.3rem; font-weight: 600; }
-    .sb-separator { font-size: 1.5rem; font-weight: 300; opacity: 0.4; text-align: center; }
-    .sb-sets-history {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-    .sb-set-chip {
-      background: rgba(255,255,255,0.15);
-      border-radius: 6px;
-      padding: 3px 10px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    .sb-tiebreak-badge {
-      background: var(--ball);
-      color: #1b2d1e;
-      border-radius: 20px;
-      padding: 4px 14px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-align: center;
-      margin-top: 10px;
-    }
+/* Action buttons */
+.action-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
+}
+.btn-score-point {
+  padding: 22px 12px; font-size: 1rem; border-radius: 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.btn-score-point .btn-sub { font-size: 0.72rem; opacity: .8; font-weight: 500; }
+.btn-my    { background: var(--accent); color: #fff; }
+.btn-rival { background: var(--loss);   color: #fff; }
 
-    /* ── POINT BUTTONS ── */
-    .point-btns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-    .btn-point {
-      padding: 22px 8px;
-      border: none;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.1s, opacity 0.15s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-    .btn-point:active { transform: scale(0.96); }
-    .btn-point-my { background: var(--win); color: #fff; }
-    .btn-point-rival { background: var(--loss); color: #fff; }
-    .btn-point .btn-point-label { font-size: 0.7rem; opacity: 0.85; font-weight: 500; }
+.btn-game-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
+}
+.btn-score-game       { padding: 10px 12px; font-size: 0.82rem; border-radius: 10px; background: var(--accent-light); color: var(--accent-dark); border: none; cursor: pointer; font-family: inherit; font-weight: 600; }
+.btn-score-game-rival { padding: 10px 12px; font-size: 0.82rem; border-radius: 10px; background: #fde8e8; color: var(--loss); border: none; cursor: pointer; font-family: inherit; font-weight: 600; }
+.btn-score-game:active, .btn-score-game-rival:active { transform: scale(.97); opacity: .85; }
 
-    /* ── MATCH ACTIONS ── */
-    .match-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .btn-undo {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .btn-finish {
-      background: var(--ball);
-      color: #1b2d1e;
-      border: none;
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
+.footer-row { display: flex; gap: 10px; }
+.footer-row .btn { flex: 1; }
 
-    /* ── MANAGE PANEL ── */
-    .manage-section { margin-bottom: 16px; }
-    .rival-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .rival-item:last-child { border-bottom: none; }
-    .rival-item-info { flex: 1; min-width: 0; }
-    .rival-item-name { font-weight: 600; font-size: 0.9rem; }
-    .rival-item-actions { display: flex; gap: 6px; }
-    .btn-icon {
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 5px 8px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-    .btn-icon.danger { color: var(--loss); border-color: var(--loss); }
+/* ── STATS TAB ── */
+#stats-tab { padding: 0 0 16px; }
+.stat-block { margin: 12px 16px; }
+.card-title {
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--muted); margin-bottom: 8px;
+}
 
-    /* ── STATS ── */
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .stat-row:last-child { border-bottom: none; }
-    .stat-key { color: var(--text-muted); font-size: 0.85rem; }
-    .stat-val { font-weight: 700; font-size: 0.95rem; }
-    .stat-val.win { color: var(--win); }
-    .stat-val.loss { color: var(--loss); }
+.summary-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.summary-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 8px; text-align: center;
+}
+.summary-box .sb-val   { font-size: 1.6rem; font-weight: 800; color: var(--accent); }
+.summary-box .sb-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
+.summary-box.win  .sb-val { color: var(--win); }
+.summary-box.loss .sb-val { color: var(--loss); }
 
-    .win-badge {
-      display: inline-block;
-      background: var(--accent-light);
-      color: var(--accent);
-      border-radius: 20px;
-      padding: 2px 10px;
-      font-size: 0.75rem;
-      font-weight: 700;
-    }
-    .loss-badge {
-      display: inline-block;
-      background: #fdecea;
-      color: var(--loss);
-      border-radius: 20px;
-      padding: 2px 10px;
-      font-size: 0.75rem;
-      font-weight: 700;
-    }
+.streak-row { display: flex; gap: 8px; }
+.streak-box {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px; text-align: center;
+}
+.streak-box .sv { font-size: 1.4rem; font-weight: 800; color: var(--accent); }
+.streak-box .sl { font-size: 0.72rem; color: var(--muted); font-weight: 600; }
 
-    /* ── CHART FILTER ── */
-    .chart-filter {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
-    .filter-btn {
-      flex: 1;
-      padding: 7px 4px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--surface);
-      color: var(--text-muted);
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .filter-btn.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
+/* Chart */
+.chart-filters { display: flex; gap: 6px; margin-bottom: 10px; }
+.filter-btn {
+  border: 1px solid var(--border); background: var(--surface);
+  border-radius: 20px; padding: 5px 12px;
+  font-size: 0.78rem; font-weight: 600; cursor: pointer; color: var(--muted);
+  font-family: inherit; transition: all .15s;
+}
+.filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.chart-wrap { position: relative; height: 120px; }
+.chart-bars { display: flex; align-items: flex-end; gap: 4px; height: 100%; padding-bottom: 20px; }
+.chart-col  { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.bar-stack  { width: 100%; display: flex; flex-direction: column; gap: 2px; flex: 1; justify-content: flex-end; }
+.bar-win    { background: var(--win);  border-radius: 3px 3px 0 0; min-height: 0; }
+.bar-loss   { background: var(--loss); border-radius: 3px;          min-height: 0; }
+.bar-label  { font-size: 0.6rem; color: var(--muted); text-align: center; }
 
-    /* ── BAR CHART ── */
-    .bar-chart {
-      display: flex;
-      align-items: flex-end;
-      gap: 3px;
-      height: 90px;
-      margin: 8px 0 4px;
-    }
-    .bar-group {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100%;
-      justify-content: flex-end;
-    }
-    .bar-stack {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      justify-content: flex-end;
-    }
-    .bar-win {
-      background: var(--win);
-      width: 70%;
-      border-radius: 3px 3px 0 0;
-      min-height: 2px;
-    }
-    .bar-loss {
-      background: var(--loss);
-      width: 70%;
-      border-radius: 0 0 3px 3px;
-      min-height: 2px;
-    }
-    .bar-label {
-      font-size: 0.6rem;
-      color: var(--text-muted);
-      margin-top: 4px;
-      text-align: center;
-      width: 100%;
-    }
-    .chart-legend {
-      display: flex;
-      gap: 16px;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-    }
-    .legend-dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-right: 4px;
-    }
+/* Rivals stats */
+.rival-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.rival-row:last-child { border-bottom: none; }
+.rival-name   { flex: 1; font-weight: 600; font-size: 0.9rem; }
+.rival-record { font-size: 0.8rem; color: var(--muted); }
+.rival-record .rw { color: var(--win);  font-weight: 700; }
+.rival-record .rl { color: var(--loss); font-weight: 700; }
 
-    /* ── RIVAL STATS ── */
-    .rival-stat {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .rival-stat:last-child { border-bottom: none; }
-    .rival-stat-info { flex: 1; }
-    .rival-stat-name { font-weight: 600; font-size: 0.9rem; }
-    .rival-stat-record { font-size: 0.78rem; color: var(--text-muted); }
-    .rival-stat-pct {
-      font-weight: 700;
-      font-size: 0.9rem;
-      color: var(--accent);
-    }
+/* Match history */
+.match-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.match-item:last-child { border-bottom: none; }
+.match-result-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.match-result-dot.win       { background: var(--win); }
+.match-result-dot.loss      { background: var(--loss); }
+.match-result-dot.abandoned { background: var(--abandoned); }
+.match-info  { flex: 1; }
+.match-rival { font-size: 0.88rem; font-weight: 600; }
+.match-meta  { font-size: 0.75rem; color: var(--muted); }
+.match-sets  { font-size: 0.78rem; color: var(--muted); }
 
-    /* ── MATCH HISTORY ITEM ── */
-    .match-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .match-item:last-child { border-bottom: none; }
-    .match-result-badge {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-    .match-result-badge.win { background: var(--accent-light); color: var(--accent); }
-    .match-result-badge.loss { background: #fdecea; color: var(--loss); }
-    .match-info { flex: 1; min-width: 0; }
-    .match-rival { font-weight: 600; font-size: 0.88rem; }
-    .match-date-score { font-size: 0.75rem; color: var(--text-muted); }
+/* ── MODALS ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.5);
+  display: none; align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  background: var(--surface); border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 480px; max-height: 90dvh;
+  overflow-y: auto; padding: 20px 20px 36px;
+}
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+.modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; }
 
-    /* ── EMPTY STATE ── */
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-muted);
-    }
-    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
-    .empty-state p { font-size: 0.9rem; line-height: 1.5; }
+/* Form */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block; }
+.form-input {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; font-size: 0.95rem; font-family: inherit;
+  background: var(--bg); color: var(--text); outline: none; transition: border-color .2s;
+}
+.form-input:focus { border-color: var(--accent); }
 
-    /* ── MODAL ── */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
-      display: flex;
-      align-items: flex-end;
-      z-index: 100;
-    }
-    .modal-overlay.hidden { display: none; }
-    .modal-box {
-      background: var(--surface);
-      border-radius: 16px 16px 0 0;
-      padding: 20px;
-      width: 100%;
-      max-width: 480px;
-      margin: 0 auto;
-      max-height: 85dvh;
-      overflow-y: auto;
-    }
-    .modal-title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      margin-bottom: 16px;
-    }
-    .modal-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 16px;
-    }
+.radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.radio-option {
+  flex: 1; min-width: 70px;
+  border: 2px solid var(--border); border-radius: 10px; padding: 8px 10px;
+  text-align: center; cursor: pointer; font-size: 0.82rem; font-weight: 600;
+  color: var(--muted); transition: all .15s; user-select: none;
+}
+.radio-option.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent-dark); }
 
-    /* ── FORM ELEMENTS ── */
-    label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; display: block; }
-    input[type="text"] {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 0.95rem;
-      color: var(--text);
-      background: var(--surface);
-      margin-bottom: 12px;
-    }
-    input[type="text"]:focus { outline: none; border-color: var(--accent); }
+/* Rival select */
+.rival-select-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.rival-option {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border: 2px solid var(--border); border-radius: 12px;
+  cursor: pointer; transition: all .15s;
+}
+.rival-option.selected { border-color: var(--accent); background: var(--accent-light); }
+.rival-option-name { font-weight: 600; font-size: 0.9rem; }
 
-    /* ── TOAST ── */
-    .toast {
-      position: fixed;
-      bottom: calc(var(--nav-h) + 12px);
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: var(--accent-dark);
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      z-index: 200;
-      opacity: 0;
-      transition: opacity 0.2s, transform 0.2s;
-      pointer-events: none;
-      white-space: nowrap;
-    }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* Finish modal */
+.finish-set-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 0.9rem; }
+.result-options { display: flex; gap: 8px; margin-bottom: 16px; }
+.result-opt {
+  flex: 1; padding: 12px 8px; border-radius: 12px;
+  border: 2px solid var(--border); text-align: center;
+  cursor: pointer; font-weight: 700; font-size: 0.88rem;
+  transition: all .15s; color: var(--muted);
+}
+.result-opt.win.sel       { border-color: var(--win);       background: #e8f5e9; color: var(--win); }
+.result-opt.loss.sel      { border-color: var(--loss);      background: #ffebee; color: var(--loss); }
+.result-opt.abandoned.sel { border-color: var(--abandoned); background: #f5f5f5; color: var(--abandoned); }
 
-    /* ── DIVIDER ── */
-    .divider {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin: 16px 0 12px;
-      position: relative;
-    }
-    .divider::before, .divider::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      width: 40%;
-      height: 1px;
-      background: var(--border);
-    }
-    .divider::before { left: 0; }
-    .divider::after { right: 0; }
+/* Edit match modal */
+.edit-set-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.edit-set-row .form-input { width: 60px; text-align: center; }
+.edit-set-row .set-sep { font-weight: 700; color: var(--muted); }
 
-    /* ── ADD RIVAL INLINE ── */
-    .add-rival-form {
-      padding-top: 10px;
-    }
-    .input-row {
-      display: flex;
-      gap: 8px;
-      align-items: flex-end;
-    }
-    .input-row input { margin-bottom: 0; flex: 1; }
+/* Rivals management */
+.rivals-mgmt-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.rivals-mgmt-item:last-child { border-bottom: none; }
+.rivals-mgmt-name    { flex: 1; font-weight: 600; }
+.rivals-mgmt-actions { display: flex; gap: 6px; }
 
-    /* ── SUMMARY NUMBERS ── */
-    .summary-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .summary-cell {
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 10px 8px;
-      text-align: center;
-    }
-    .summary-num { font-size: 1.6rem; font-weight: 800; line-height: 1; }
-    .summary-num.win { color: var(--win); }
-    .summary-num.loss { color: var(--loss); }
-    .summary-lbl { font-size: 0.65rem; color: var(--text-muted); margin-top: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+/* Avatar */
+.avatar {
+  border-radius: 50%; overflow: hidden; flex-shrink: 0;
+  background: var(--accent-light);
+  display: flex; align-items: center; justify-content: center;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.avatar svg { width: 100%; height: 100%; }
+.avatar-sm { width: 36px; height: 36px; }
+.avatar-md { width: 52px; height: 52px; }
+.avatar-lg { width: 72px; height: 72px; }
 
-    .streak-row {
-      display: flex;
-      gap: 8px;
-    }
-    .streak-cell {
-      flex: 1;
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .streak-icon { font-size: 1.4rem; }
-    .streak-num { font-size: 1.3rem; font-weight: 800; }
-    .streak-lbl { font-size: 0.7rem; color: var(--text-muted); }
+/* Avatar picker */
+.avatar-picker { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 16px; }
+.avatar-picker .avatar { cursor: pointer; border: 3px dashed var(--border); }
+.avatar-picker .avatar:hover { border-color: var(--accent); }
+.avatar-picker small { font-size: 0.75rem; color: var(--muted); }
 
-    /* ── FINISH MODAL RESULT BTNS ── */
-    .result-btns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin: 12px 0;
-    }
-    .result-btn {
-      padding: 14px 8px;
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface);
-      cursor: pointer;
-      text-align: center;
-      font-size: 0.9rem;
-      font-weight: 700;
-      transition: all 0.15s;
-    }
-    .result-btn.win.selected { border-color: var(--win); background: var(--accent-light); color: var(--win); }
-    .result-btn.loss.selected { border-color: var(--loss); background: #fdecea; color: var(--loss); }
-    .result-btn:hover { border-color: var(--accent); }
+/* Empty state */
+.empty-state { text-align: center; padding: 32px 16px; color: var(--muted); }
+.empty-state .es-icon { font-size: 2.5rem; margin-bottom: 8px; }
+.empty-state p { font-size: 0.88rem; }
 
-    /* ── RESPONSIVE ── */
-    @media (min-width: 480px) {
-      body { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
-    }
-  </style>
+/* Stats top bar */
+.stats-topbar { display: flex; gap: 8px; padding: 12px 16px 4px; justify-content: flex-end; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: calc(var(--nav-h) + 16px); left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #333; color: #fff; border-radius: 20px; padding: 10px 20px;
+  font-size: 0.85rem; font-weight: 600;
+  opacity: 0; transition: opacity .2s, transform .2s;
+  pointer-events: none; z-index: 999; white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 360px) {
+  .btn-score-point { padding: 18px 8px; font-size: 0.9rem; }
+}
+</style>
 </head>
 <body>
 
-  <!-- HEADER -->
-  <div class="header">
-    <h1 id="header-title">🎾 Tennis Tracker</h1>
-    <div class="subtitle" id="header-sub"></div>
-  </div>
+<!-- HEADER -->
+<header id="app-header">
+  <span>🎾</span>
+  <h1>Tennis Tracker</h1>
+</header>
+
+<!-- MAIN -->
+<main id="main-content">
 
   <!-- TAB: PARTIDO -->
-  <div class="screen active" id="screen-match">
-    <div id="match-content"></div>
-  </div>
+  <div id="match-tab" class="tab active">
+
+    <!-- No match in progress -->
+    <div id="no-match">
+      <div class="start-card">
+        <div class="ball-emoji">🎾</div>
+        <h2>¿Listo para jugar?</h2>
+        <button class="btn btn-lg" style="background:#fff;color:var(--accent);width:100%;" onclick="openNewMatchModal()">
+          + Nuevo Partido
+        </button>
+      </div>
+      <div class="quick-actions">
+        <div class="quick-card" onclick="openProfileModal()">
+          <div class="qc-icon">👤</div>
+          <div class="qc-label">Mi perfil</div>
+        </div>
+        <div class="quick-card" onclick="openRivalsModal()">
+          <div class="qc-icon">👥</div>
+          <div class="qc-label">Rivales</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Match in progress -->
+    <div id="match-screen" style="display:none;">
+      <div class="players-row" id="players-row"></div>
+      <div class="tb-banner" id="tb-banner"></div>
+      <div class="scoreboard" id="scoreboard"></div>
+
+      <!-- +Punto -->
+      <div class="action-grid">
+        <button class="btn btn-score-point btn-my" onclick="addPoint('my')">
+          <span>+PUNTO</span>
+          <span class="btn-sub" id="my-name-btn">Yo</span>
+        </button>
+        <button class="btn btn-score-point btn-rival" onclick="addPoint('rival')">
+          <span>+PUNTO</span>
+          <span class="btn-sub" id="rival-name-btn">Rival</span>
+        </button>
+      </div>
+
+      <!-- +Juego -->
+      <div class="btn-game-row">
+        <button class="btn-score-game btn-full" onclick="addGame('my')">+Juego Yo</button>
+        <button class="btn-score-game-rival btn-full" onclick="addGame('rival')">+Juego Rival</button>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer-row">
+        <button class="btn btn-ghost btn-md" onclick="undoLastPoint()">↩ Deshacer</button>
+        <button class="btn btn-primary btn-md" onclick="openFinishModal()">🏁 Terminar</button>
+      </div>
+    </div>
+
+  </div><!-- /match-tab -->
 
   <!-- TAB: ESTADÍSTICAS -->
-  <div class="screen" id="screen-stats">
-    <div id="stats-content"></div>
+  <div id="stats-tab" class="tab">
+    <div class="stats-topbar">
+      <button class="btn btn-ghost btn-sm" onclick="openProfileModal()">👤 Mi perfil</button>
+      <button class="btn btn-ghost btn-sm" onclick="openRivalsModal()">👥 Rivales</button>
+    </div>
+
+    <div class="stat-block">
+      <div class="card-title">Resumen</div>
+      <div class="summary-grid" id="summary-grid"></div>
+    </div>
+
+    <div class="stat-block">
+      <div class="card-title">Rachas</div>
+      <div class="streak-row" id="streak-row"></div>
+    </div>
+
+    <div class="stat-block">
+      <div class="card-title">Victorias / Derrotas</div>
+      <div class="chart-filters" id="chart-filters">
+        <button class="filter-btn active" data-f="semana">Semana</button>
+        <button class="filter-btn" data-f="mes">Mes</button>
+        <button class="filter-btn" data-f="año">Año</button>
+      </div>
+      <div class="chart-wrap"><div class="chart-bars" id="chart-bars"></div></div>
+    </div>
+
+    <div class="stat-block">
+      <div class="card-title">Por rival</div>
+      <div id="rivals-stats"></div>
+    </div>
+
+    <div class="stat-block">
+      <div class="card-title">Historial de partidos</div>
+      <div id="match-history"></div>
+    </div>
+  </div><!-- /stats-tab -->
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav id="bottom-nav">
+  <button class="nav-btn active" id="nav-match" onclick="switchTab('match')">
+    <span class="nav-icon">🎾</span>
+    <span>Partido</span>
+  </button>
+  <button class="nav-btn" id="nav-stats" onclick="switchTab('stats')">
+    <span class="nav-icon">📊</span>
+    <span>Estadísticas</span>
+  </button>
+</nav>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════
+     MODALS
+═══════════════════════════════════════ -->
+
+<!-- New Match -->
+<div class="modal-overlay" id="modal-new-match">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nuevo Partido</div>
+
+    <div class="form-group">
+      <div class="form-label">Rival</div>
+      <div class="rival-select-list" id="rival-select-list"></div>
+      <button class="btn btn-ghost btn-sm btn-full" onclick="openRivalsModal(true)">+ Añadir rival nuevo</button>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Número de sets</div>
+      <div class="radio-group" id="rg-numsets">
+        <div class="radio-option" data-val="1">1 set</div>
+        <div class="radio-option selected" data-val="3">Al mejor de 3</div>
+        <div class="radio-option" data-val="5">Al mejor de 5</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Tiebreak en 6-6</div>
+      <div class="radio-group" id="rg-tiebreak">
+        <div class="radio-option selected" data-val="7">Sí (a 7)</div>
+        <div class="radio-option" data-val="10">Super TB (a 10)</div>
+        <div class="radio-option" data-val="0">No (ventaja)</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg btn-full" onclick="startMatch()" style="margin-top:8px;">Empezar partido</button>
+    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-new-match')" style="margin-top:8px;">Cancelar</button>
   </div>
+</div>
 
-  <!-- BOTTOM NAV -->
-  <nav class="nav">
-    <button class="nav-btn active" id="nav-match" onclick="switchTab('match')">
-      <span class="nav-icon">🎾</span>
-      <span>Partido</span>
-    </button>
-    <button class="nav-btn" id="nav-stats" onclick="switchTab('stats')">
-      <span class="nav-icon">📊</span>
-      <span>Estadísticas</span>
-    </button>
-  </nav>
+<!-- Finish Match -->
+<div class="modal-overlay" id="modal-finish">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Terminar partido</div>
 
-  <!-- MODAL -->
-  <div class="modal-overlay hidden" id="modal-overlay" onclick="handleModalOverlayClick(event)">
-    <div class="modal-box" id="modal-box"></div>
+    <div class="card-title" style="margin-bottom:6px;">Sets jugados</div>
+    <div id="finish-sets-list" style="margin-bottom:14px;"></div>
+
+    <div class="card-title" style="margin-bottom:8px;">Resultado</div>
+    <div class="result-options" id="result-options">
+      <div class="result-opt win"       data-r="win"       onclick="selectResult('win')">Victoria</div>
+      <div class="result-opt loss"      data-r="loss"      onclick="selectResult('loss')">Derrota</div>
+      <div class="result-opt abandoned" data-r="abandoned" onclick="selectResult('abandoned')">Abandonado</div>
+    </div>
+
+    <button class="btn btn-primary btn-lg btn-full" onclick="confirmFinish()">Guardar</button>
+    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-finish')" style="margin-top:8px;">Cancelar</button>
   </div>
+</div>
 
-  <!-- TOAST -->
-  <div class="toast" id="toast"></div>
+<!-- Edit Match -->
+<div class="modal-overlay" id="modal-edit-match">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Editar partido</div>
 
-  <script>
-    // ── STATE ──
-    let profile = { name: 'Yo', photo: null };
-    let rivals  = [];
-    let matches = [];
-    let current = null;   // in-progress match
-    let statsFilter = 'mes';
-    let selectedRivalId = null;
-    let tiebreakTarget = 7;
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input type="date" class="form-input" id="edit-date">
+    </div>
 
-    // ── STORAGE ──
-    function loadData() {
-      try { profile = JSON.parse(localStorage.getItem('tt_profile')) || { name: 'Yo', photo: null }; } catch(e) {}
-      try { rivals  = JSON.parse(localStorage.getItem('tt_rivals'))  || []; } catch(e) {}
-      try { matches = JSON.parse(localStorage.getItem('tt_matches')) || []; } catch(e) {}
-      try { current = JSON.parse(localStorage.getItem('tt_current')) || null; } catch(e) {}
-      if (!rivals.length) {
-        rivals = [{ id: 'default', name: 'Rival', photo: null }];
-        saveRivals();
-      }
+    <div class="form-group">
+      <div class="form-label">Resultado</div>
+      <div class="result-options" id="edit-result-options">
+        <div class="result-opt win"       data-r="win"       onclick="editSelectResult('win')">Victoria</div>
+        <div class="result-opt loss"      data-r="loss"      onclick="editSelectResult('loss')">Derrota</div>
+        <div class="result-opt abandoned" data-r="abandoned" onclick="editSelectResult('abandoned')">Abandonado</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Sets <small style="color:var(--muted)">(Yo — Rival)</small></div>
+      <div id="edit-sets-list"></div>
+      <button class="btn btn-ghost btn-sm" onclick="editAddSet()" style="margin-top:6px;">+ Añadir set</button>
+    </div>
+
+    <button class="btn btn-primary btn-lg btn-full" onclick="saveEditMatch()">Guardar cambios</button>
+    <button class="btn btn-danger btn-md btn-full" onclick="deleteMatch()" style="margin-top:8px;">Eliminar partido</button>
+    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-edit-match')" style="margin-top:8px;">Cancelar</button>
+  </div>
+</div>
+
+<!-- Profile -->
+<div class="modal-overlay" id="modal-profile">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Mi perfil</div>
+
+    <div class="avatar-picker">
+      <div class="avatar avatar-lg" id="profile-avatar-pick" onclick="pickPhoto('profile')"></div>
+      <small>Toca para cambiar foto</small>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Nombre</label>
+      <input type="text" class="form-input" id="profile-name-input" placeholder="Tu nombre">
+    </div>
+
+    <button class="btn btn-primary btn-lg btn-full" onclick="saveProfile()">Guardar</button>
+    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-profile')" style="margin-top:8px;">Cancelar</button>
+  </div>
+</div>
+
+<!-- Rivals -->
+<div class="modal-overlay" id="modal-rivals">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Rivales</div>
+
+    <button class="btn btn-secondary btn-md btn-full" onclick="openAddRivalForm()" style="margin-bottom:12px;">+ Añadir rival</button>
+
+    <div id="rival-form" style="display:none; margin-bottom:12px; padding:14px; background:var(--bg); border-radius:12px;">
+      <div class="avatar-picker">
+        <div class="avatar avatar-lg" id="rival-avatar-pick" onclick="pickPhoto('rival')"></div>
+        <small>Toca para cambiar foto</small>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nombre del rival</label>
+        <input type="text" class="form-input" id="rival-name-input" placeholder="Nombre">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-md" style="flex:1" onclick="saveRivalForm()">Guardar</button>
+        <button class="btn btn-ghost btn-md" onclick="closeRivalForm()">Cancelar</button>
+      </div>
+    </div>
+
+    <div id="rivals-list-mgmt"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ── STATE ──────────────────────────────────────────
+let profile = { name: 'Yo', photo: null };
+let rivals  = [];
+let matches = [];
+let current = null;
+
+// UI transient state
+let _finishResult         = null;
+let _editMatchId          = null;
+let _editResult           = null;
+let _editRivalId          = null;
+let _editRivalPhoto       = null;
+let _profilePhoto         = null;
+let _chartFilter          = 'semana';
+let _pendingReturnToNew   = false;
+
+// ── STORAGE ────────────────────────────────────────
+const SK = { profile:'tt_profile', rivals:'tt_rivals', matches:'tt_matches', current:'tt_current' };
+
+function loadAll() {
+  try { profile = JSON.parse(localStorage.getItem(SK.profile)) || { name:'Yo', photo:null }; } catch(e){}
+  try { rivals  = JSON.parse(localStorage.getItem(SK.rivals))  || []; } catch(e){}
+  try { matches = JSON.parse(localStorage.getItem(SK.matches)) || []; } catch(e){}
+  try { current = JSON.parse(localStorage.getItem(SK.current)) || null; } catch(e){}
+}
+function saveProfileData() { localStorage.setItem(SK.profile,  JSON.stringify(profile)); }
+function saveRivals()      { localStorage.setItem(SK.rivals,   JSON.stringify(rivals)); }
+function saveMatches()     { localStorage.setItem(SK.matches,  JSON.stringify(matches)); }
+function saveCurrent()     { localStorage.setItem(SK.current,  JSON.stringify(current)); }
+function clearCurrent()    { localStorage.removeItem(SK.current); current = null; }
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+// ── TENNIS LOGIC ────────────────────────────────────
+
+/**
+ * Returns display strings for the current point score.
+ * Handles 0/15/30/40, Deuce, and Advantage correctly.
+ */
+function getPointDisplay(my, rival) {
+  const L = ['0','15','30','40'];
+  // Normal score (below deuce territory)
+  if (my < 3 && rival < 3) return { my: L[my], rival: L[rival] };
+  // Deuce
+  if (my === rival) return { my: 'Deuce', rival: 'Deuce' };
+  // Advantage
+  if (my - rival ===  1) return { my: 'Ad', rival: '—' };
+  if (rival - my ===  1) return { my: '—', rival: 'Ad' };
+  // Shouldn't reach here — game should have been awarded already
+  return { my: String(my), rival: String(rival) };
+}
+
+function gameWinner(my, rival) {
+  if (my    >= 4 && my    - rival >= 2) return 'my';
+  if (rival >= 4 && rival - my    >= 2) return 'rival';
+  return null;
+}
+
+function setWinner(myG, rivalG) {
+  if (myG    >= 6 && myG    - rivalG >= 2) return 'my';
+  if (rivalG >= 6 && rivalG - myG    >= 2) return 'rival';
+  return null;
+}
+
+function tiebreakWinner(my, rival, target) {
+  if (my    >= target && my    - rival >= 2) return 'my';
+  if (rival >= target && rival - my    >= 2) return 'rival';
+  return null;
+}
+
+function snapshotCurrent() {
+  return {
+    completedSets:   JSON.parse(JSON.stringify(current.completedSets)),
+    currentSetGames: { ...current.currentSetGames },
+    isTiebreak:      current.isTiebreak,
+    tbPoints:        { ...current.tbPoints },
+    gamePoints:      { ...current.gamePoints },
+  };
+}
+
+function closeCurrentSet() {
+  current.completedSets.push({
+    my:       current.currentSetGames.my,
+    rival:    current.currentSetGames.rival,
+    tiebreak: current.isTiebreak
+      ? { my: current.tbPoints.my, rival: current.tbPoints.rival, target: current.format.tiebreakTarget }
+      : null
+  });
+  current.currentSetGames = { my: 0, rival: 0 };
+  current.isTiebreak      = false;
+  current.tbPoints        = { my: 0, rival: 0 };
+  current.gamePoints      = { my: 0, rival: 0 };
+}
+
+function checkAfterGame() {
+  const sw = setWinner(current.currentSetGames.my, current.currentSetGames.rival);
+  if (sw) { closeCurrentSet(); return; }
+  // 6-6 → start tiebreak (if enabled)
+  if (current.currentSetGames.my === 6 && current.currentSetGames.rival === 6) {
+    if (current.format.tiebreakTarget > 0) current.isTiebreak = true;
+    // if tiebreakTarget === 0 → keep playing with advantage rule (no tiebreak)
+  }
+}
+
+function addPoint(player) {
+  if (!current) return;
+  current.history.push(snapshotCurrent());
+  if (current.history.length > 30) current.history.shift();
+
+  if (current.isTiebreak) {
+    current.tbPoints[player]++;
+    const tw = tiebreakWinner(current.tbPoints.my, current.tbPoints.rival, current.format.tiebreakTarget);
+    if (tw) closeCurrentSet();
+  } else {
+    current.gamePoints[player]++;
+    const gw = gameWinner(current.gamePoints.my, current.gamePoints.rival);
+    if (gw) {
+      current.currentSetGames[gw]++;
+      current.gamePoints = { my: 0, rival: 0 };
+      checkAfterGame();
     }
-    function saveProfile()  { localStorage.setItem('tt_profile',  JSON.stringify(profile)); }
-    function saveRivals()   { localStorage.setItem('tt_rivals',   JSON.stringify(rivals)); }
-    function saveMatches()  { localStorage.setItem('tt_matches',  JSON.stringify(matches)); }
-    function saveCurrent()  { localStorage.setItem('tt_current',  JSON.stringify(current)); }
-    function clearCurrent() { localStorage.removeItem('tt_current'); current = null; }
-
-    // ── UTILS ──
-    function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
-    function todayKey() {
-      const d = new Date();
-      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-    }
-    function formatDateDisplay(key) {
-      const [y,m,d] = key.split('-').map(Number);
-      const date = new Date(y, m-1, d);
-      return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
-    function avatarSVG(size=40) {
-      return `<svg width="${size}" height="${size}" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="20" cy="15" r="8" fill="#2d6a4f" opacity="0.35"/>
-        <ellipse cx="20" cy="33" rx="13" ry="8" fill="#2d6a4f" opacity="0.35"/>
-      </svg>`;
-    }
-    function avatarHTML(photo, size='72px', cls='') {
-      const svgSize = size === '48px' ? 28 : 40;
-      return `<div class="avatar ${cls}" style="width:${size};height:${size}">
-        ${photo ? `<img src="${photo}" alt="">` : avatarSVG(svgSize)}
-      </div>`;
-    }
-    function getRival(id) { return rivals.find(r => r.id === id) || null; }
-
-    // ── TENNIS LOGIC ──
-    const POINT_LABELS = ['0','15','30','40'];
-
-    function getPointDisplay(my, rival) {
-      // Both below deuce territory
-      if (my < 3 && rival < 3) return { my: POINT_LABELS[my], rival: POINT_LABELS[rival] };
-      if (my === rival) return { my: 'Deuce', rival: 'Deuce' };
-      if (my > rival) return { my: 'Ad', rival: '—' };
-      return { my: '—', rival: 'Ad' };
-    }
-
-    function isGameWon(my, rival) {
-      return (my >= 4 && my - rival >= 2) || (rival >= 4 && rival - my >= 2);
-    }
-
-    function gameWinner(my, rival) {
-      if (my >= 4 && my - rival >= 2) return 'my';
-      if (rival >= 4 && rival - my >= 2) return 'rival';
-      return null;
-    }
-
-    function isTiebreakWon(my, rival, target) {
-      return (my >= target && my - rival >= 2) || (rival >= target && rival - my >= 2);
-    }
-
-    function tiebreakWinner(my, rival, target) {
-      if (my >= target && my - rival >= 2) return 'my';
-      if (rival >= target && rival - my >= 2) return 'rival';
-      return null;
-    }
-
-    function isSetWon(myG, rivalG) {
-      if (myG >= 6 && myG - rivalG >= 2) return 'my';
-      if (rivalG >= 6 && rivalG - myG >= 2) return 'rival';
-      return null;
-    }
-
-    function shouldStartTiebreak(myG, rivalG) {
-      return myG === 6 && rivalG === 6;
-    }
-
-    function snapshotCurrent() {
-      return {
-        completedSets:    JSON.parse(JSON.stringify(current.completedSets)),
-        currentSetGames:  { ...current.currentSetGames },
-        isTiebreak:       current.isTiebreak,
-        tbPoints:         { ...current.tbPoints },
-        gamePoints:       { ...current.gamePoints },
-      };
-    }
-
-    function addPoint(player) {
-      if (!current) return;
-      // push snapshot for undo (keep last 30)
-      current.history.push(snapshotCurrent());
-      if (current.history.length > 30) current.history.shift();
-
-      if (current.isTiebreak) {
-        current.tbPoints[player]++;
-        const winner = tiebreakWinner(current.tbPoints.my, current.tbPoints.rival, current.tiebreakTarget);
-        if (winner) {
-          // Set won via tiebreak
-          current.completedSets.push({
-            my: current.currentSetGames.my,
-            rival: current.currentSetGames.rival,
-            tiebreak: { my: current.tbPoints.my, rival: current.tbPoints.rival, target: current.tiebreakTarget }
-          });
-          current.currentSetGames = { my: 0, rival: 0 };
-          current.isTiebreak = false;
-          current.tbPoints   = { my: 0, rival: 0 };
-          current.gamePoints = { my: 0, rival: 0 };
-        }
-      } else {
-        current.gamePoints[player]++;
-        const winner = gameWinner(current.gamePoints.my, current.gamePoints.rival);
-        if (winner) {
-          current.currentSetGames[winner]++;
-          current.gamePoints = { my: 0, rival: 0 };
-          // Check set
-          const setWinner = isSetWon(current.currentSetGames.my, current.currentSetGames.rival);
-          if (setWinner) {
-            current.completedSets.push({ my: current.currentSetGames.my, rival: current.currentSetGames.rival, tiebreak: null });
-            current.currentSetGames = { my: 0, rival: 0 };
-          } else if (shouldStartTiebreak(current.currentSetGames.my, current.currentSetGames.rival)) {
-            current.isTiebreak = true;
-          }
-        }
-      }
-
-      saveCurrent();
-      renderMatch();
-    }
-
-    function undoLastPoint() {
-      if (!current || !current.history.length) { showToast('Nada que deshacer'); return; }
-      const snap = current.history.pop();
-      current.completedSets   = snap.completedSets;
-      current.currentSetGames = snap.currentSetGames;
-      current.isTiebreak      = snap.isTiebreak;
-      current.tbPoints        = snap.tbPoints;
-      current.gamePoints      = snap.gamePoints;
-      saveCurrent();
-      renderMatch();
-    }
-
-    function startMatch(rivalId, tbTarget) {
-      const rival = getRival(rivalId);
-      if (!rival) return;
-      current = {
-        rivalId:       rivalId,
-        rivalName:     rival.name,
-        tiebreakTarget: tbTarget,
-        completedSets: [],
-        currentSetGames: { my: 0, rival: 0 },
-        isTiebreak:    false,
-        tbPoints:      { my: 0, rival: 0 },
-        gamePoints:    { my: 0, rival: 0 },
-        history:       [],
-      };
-      saveCurrent();
-      renderMatch();
-    }
-
-    function getSetsWon() {
-      let my = 0, rival = 0;
-      for (const s of current.completedSets) {
-        if (s.my > s.rival) my++; else rival++;
-      }
-      return { my, rival };
-    }
-
-    function buildSetsString() {
-      if (!current) return '';
-      return current.completedSets.map(s => {
-        const tb = s.tiebreak ? `(${Math.min(s.tiebreak.my, s.tiebreak.rival)})` : '';
-        if (s.my > s.rival) return `${s.my}-${s.rival}${tb}`;
-        return `${s.my}-${s.rival}${tb}`;
-      }).join(', ');
-    }
-
-    function finishMatch(result) {
-      if (!current) return;
-      const setsWon = getSetsWon();
-      // Include current incomplete set if it has any games played
-      const allSets = [...current.completedSets];
-      if (current.currentSetGames.my > 0 || current.currentSetGames.rival > 0) {
-        allSets.push({ my: current.currentSetGames.my, rival: current.currentSetGames.rival, tiebreak: null });
-      }
-      const m = {
-        id:       uid(),
-        date:     todayKey(),
-        rivalId:  current.rivalId,
-        rivalName: current.rivalName,
-        result:   result,
-        sets:     allSets,
-        setsWon:  setsWon,
-      };
-      matches.push(m);
-      saveMatches();
-      clearCurrent();
-      renderMatch();
-      showToast(result === 'win' ? '🏆 ¡Victoria guardada!' : result === 'loss' ? '📝 Partido guardado' : '📝 Partido descartado');
-      if (result !== 'abandoned') {
-        // refresh stats if visible
-        if (document.getElementById('screen-stats').classList.contains('active')) renderStats();
-      }
-    }
-
-    // ── RENDER: MATCH ──
-    function renderMatch() {
-      const el = document.getElementById('match-content');
-      document.getElementById('header-title').textContent = '🎾 Tennis Tracker';
-      document.getElementById('header-sub').textContent = current ? 'Partido en curso' : '';
-
-      if (current) {
-        renderScoreboard(el);
-      } else {
-        renderNewMatch(el);
-      }
-    }
-
-    function renderNewMatch(el) {
-      const rivalOptions = rivals.map(r =>
-        `<option value="${r.id}" ${r.id === selectedRivalId ? 'selected' : ''}>${r.name}</option>`
-      ).join('');
-
-      const hasResume = false; // already cleared if no current
-
-      el.innerHTML = `
-        <div class="card">
-          <div class="card-title">Nuevo partido</div>
-          <div class="players-row">
-            <div class="player-col">
-              <div class="avatar" onclick="openEditProfile()" style="cursor:pointer">
-                ${profile.photo ? `<img src="${profile.photo}" alt="">` : avatarSVG()}
-              </div>
-              <div class="player-name">${esc(profile.name)}</div>
-              <div class="player-edit-hint" onclick="openEditProfile()">✏️ editar</div>
-            </div>
-            <div class="vs-badge">VS</div>
-            <div class="player-col">
-              <div class="avatar" id="rival-avatar-preview">
-                ${avatarSVG()}
-              </div>
-              <div class="player-name" id="rival-name-preview">—</div>
-            </div>
-          </div>
-
-          <label>Selecciona rival</label>
-          <div class="rival-select-wrap">
-            <select id="rival-select" onchange="onRivalSelectChange()">
-              <option value="">-- Elige un rival --</option>
-              ${rivalOptions}
-            </select>
-          </div>
-
-          <label style="margin-top:10px">Tipo de tiebreak</label>
-          <div class="tb-options">
-            <div class="tb-opt selected" id="tb7" onclick="selectTB(7)">🎾 A 7 puntos<br><small style="opacity:0.7">Estándar</small></div>
-            <div class="tb-opt" id="tb10" onclick="selectTB(10)">⚡ A 10 puntos<br><small style="opacity:0.7">Super tiebreak</small></div>
-          </div>
-
-          <button class="btn btn-primary" onclick="handleStartMatch()" style="margin-top:8px">
-            Empezar partido
-          </button>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Perfiles</div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <button class="btn btn-ghost btn-sm" onclick="openEditProfile()">⚙️ Editar mi perfil</button>
-            <button class="btn btn-ghost btn-sm" onclick="openManageRivals()">👥 Gestionar rivales</button>
-          </div>
-        </div>
-      `;
-
-      // Set initial rival preview
-      if (selectedRivalId) {
-        updateRivalPreview(selectedRivalId);
-      } else if (rivals.length === 1) {
-        selectedRivalId = rivals[0].id;
-        document.getElementById('rival-select').value = selectedRivalId;
-        updateRivalPreview(selectedRivalId);
-      }
-    }
-
-    function updateRivalPreview(rivalId) {
-      const r = getRival(rivalId);
-      if (!r) return;
-      const avatarEl = document.getElementById('rival-avatar-preview');
-      const nameEl   = document.getElementById('rival-name-preview');
-      if (avatarEl) avatarEl.innerHTML = r.photo ? `<img src="${r.photo}" alt="">` : avatarSVG();
-      if (nameEl)   nameEl.textContent = r.name;
-    }
-
-    function onRivalSelectChange() {
-      const val = document.getElementById('rival-select').value;
-      selectedRivalId = val || null;
-      if (val) updateRivalPreview(val);
-    }
-
-    function selectTB(target) {
-      tiebreakTarget = target;
-      document.getElementById('tb7').classList.toggle('selected', target === 7);
-      document.getElementById('tb10').classList.toggle('selected', target === 10);
-    }
-
-    function handleStartMatch() {
-      const sel = document.getElementById('rival-select');
-      const rivalId = sel ? sel.value : selectedRivalId;
-      if (!rivalId) { showToast('Selecciona un rival'); return; }
-      startMatch(rivalId, tiebreakTarget);
-    }
-
-    function renderScoreboard(el) {
-      const setsWon = getSetsWon();
-      const rival   = getRival(current.rivalId);
-      const rivalPhoto = rival ? rival.photo : null;
-
-      // Completed sets display
-      const setsHistory = current.completedSets.map(s => {
-        const cls = s.my > s.rival ? 'win' : 'loss';
-        const tb  = s.tiebreak ? `<sup style="font-size:0.6em">(${Math.min(s.tiebreak.my,s.tiebreak.rival)})</sup>` : '';
-        return `<div class="sb-set-chip" style="${s.my>s.rival?'background:rgba(67,160,71,0.3)':'background:rgba(229,57,53,0.25)'}">${s.my}-${s.rival}${tb}</div>`;
-      }).join('');
-
-      // Points display
-      let pointsDisplay;
-      if (current.isTiebreak) {
-        pointsDisplay = {
-          my:    String(current.tbPoints.my),
-          rival: String(current.tbPoints.rival),
-        };
-      } else {
-        pointsDisplay = getPointDisplay(current.gamePoints.my, current.gamePoints.rival);
-      }
-
-      const myPtClass    = (pointsDisplay.my === 'Ad') ? '' : '';
-      const rivalPtClass = (pointsDisplay.rival === 'Ad') ? '' : '';
-      const myPtMuted    = (pointsDisplay.my === '—');
-      const rivalPtMuted = (pointsDisplay.rival === '—');
-
-      el.innerHTML = `
-        <div class="scoreboard">
-          <div class="sb-players">
-            <div class="sb-player">
-              ${profile.photo
-                ? `<div class="avatar" style="width:56px;height:56px;border-color:rgba(255,255,255,0.3)"><img src="${profile.photo}" alt=""></div>`
-                : `<div class="avatar" style="width:56px;height:56px;border-color:rgba(255,255,255,0.3)">${avatarSVG(32)}</div>`}
-              <div class="sb-player-name">${esc(profile.name)}</div>
-            </div>
-            <div class="sb-divider">VS</div>
-            <div class="sb-player">
-              ${rivalPhoto
-                ? `<div class="avatar" style="width:56px;height:56px;border-color:rgba(255,255,255,0.3)"><img src="${rivalPhoto}" alt=""></div>`
-                : `<div class="avatar" style="width:56px;height:56px;border-color:rgba(255,255,255,0.3)">${avatarSVG(32)}</div>`}
-              <div class="sb-player-name">${esc(current.rivalName)}</div>
-            </div>
-          </div>
-
-          <div class="sb-scores">
-            <div class="sb-val">${setsWon.my}</div>
-            <div class="sb-label">SETS</div>
-            <div class="sb-val">${setsWon.rival}</div>
-
-            <div class="sb-val small">${current.currentSetGames.my}</div>
-            <div class="sb-label">JUEGOS</div>
-            <div class="sb-val small">${current.currentSetGames.rival}</div>
-
-            <div class="sb-val ${myPtMuted ? 'muted' : ''}">${pointsDisplay.my}</div>
-            <div class="sb-label">${current.isTiebreak ? 'TIEBREAK' : 'PUNTOS'}</div>
-            <div class="sb-val ${rivalPtMuted ? 'muted' : ''}">${pointsDisplay.rival}</div>
-          </div>
-
-          ${setsHistory ? `<div class="sb-sets-history">${setsHistory}</div>` : ''}
-          ${current.isTiebreak ? `<div class="sb-tiebreak-badge">🔥 Tiebreak — primero a ${current.tiebreakTarget}</div>` : ''}
-        </div>
-
-        <div class="point-btns">
-          <button class="btn-point btn-point-my" onclick="addPoint('my')">
-            <span style="font-size:1.6rem">+1</span>
-            <span class="btn-point-label">Punto — ${esc(profile.name)}</span>
-          </button>
-          <button class="btn-point btn-point-rival" onclick="addPoint('rival')">
-            <span style="font-size:1.6rem">+1</span>
-            <span class="btn-point-label">Punto — ${esc(current.rivalName)}</span>
-          </button>
-        </div>
-
-        <div class="match-actions">
-          <button class="btn-undo" onclick="undoLastPoint()">↩ Deshacer</button>
-          <button class="btn-finish" onclick="openFinishMatch()">🏁 Terminar</button>
-        </div>
-      `;
-    }
-
-    // ── RENDER: STATS ──
-    function renderStats() {
-      const el = document.getElementById('stats-content');
-      document.getElementById('header-title').textContent = '📊 Estadísticas';
-      document.getElementById('header-sub').textContent = '';
-
-      if (!matches.length) {
-        el.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">🎾</div>
-            <p>Aún no has registrado ningún partido.<br>¡Empieza a jugar!</p>
-          </div>`;
-        return;
-      }
-
-      const wins   = matches.filter(m => m.result === 'win').length;
-      const losses = matches.filter(m => m.result === 'loss').length;
-      const total  = wins + losses;
-      const pct    = total ? Math.round(wins/total*100) : 0;
-
-      // Streaks
-      const ordered = [...matches].filter(m => m.result !== 'abandoned').sort((a,b) => a.date.localeCompare(b.date));
-      let curStreak = 0, bestStreak = 0, tmp = 0;
-      for (const m of ordered) {
-        if (m.result === 'win') { tmp++; if(tmp>bestStreak) bestStreak=tmp; }
-        else tmp = 0;
-      }
-      if (ordered.length) {
-        let i = ordered.length - 1;
-        const lastResult = ordered[i].result;
-        if (lastResult === 'win') {
-          while (i >= 0 && ordered[i].result === 'win') { curStreak++; i--; }
-        }
-      }
-
-      // Per rival stats
-      const rivalMap = {};
-      for (const m of matches) {
-        if (m.result === 'abandoned') continue;
-        if (!rivalMap[m.rivalId]) rivalMap[m.rivalId] = { name: m.rivalName, wins: 0, losses: 0 };
-        if (m.result === 'win') rivalMap[m.rivalId].wins++;
-        else rivalMap[m.rivalId].losses++;
-      }
-
-      // Avg games per set
-      let myGamesTotal = 0, rivalGamesTotal = 0, setCount = 0;
-      for (const m of matches) {
-        if (!m.sets) continue;
-        for (const s of m.sets) {
-          myGamesTotal += s.my;
-          rivalGamesTotal += s.rival;
-          setCount++;
-        }
-      }
-      const avgMy    = setCount ? (myGamesTotal/setCount).toFixed(1) : '—';
-      const avgRival = setCount ? (rivalGamesTotal/setCount).toFixed(1) : '—';
-
-      // Chart data
-      const chartData = buildChartData(statsFilter);
-
-      // Recent matches
-      const recent = [...matches].reverse().slice(0, 10);
-
-      el.innerHTML = `
-        <!-- Summary -->
-        <div class="card">
-          <div class="card-title">Resumen general</div>
-          <div class="summary-grid">
-            <div class="summary-cell">
-              <div class="summary-num win">${wins}</div>
-              <div class="summary-lbl">Victorias</div>
-            </div>
-            <div class="summary-cell">
-              <div class="summary-num loss">${losses}</div>
-              <div class="summary-lbl">Derrotas</div>
-            </div>
-            <div class="summary-cell">
-              <div class="summary-num" style="color:var(--accent)">${pct}%</div>
-              <div class="summary-lbl">Win rate</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Streaks -->
-        <div class="card">
-          <div class="card-title">Rachas</div>
-          <div class="streak-row">
-            <div class="streak-cell">
-              <div class="streak-icon">🔥</div>
-              <div>
-                <div class="streak-num">${curStreak}</div>
-                <div class="streak-lbl">Racha actual</div>
-              </div>
-            </div>
-            <div class="streak-cell">
-              <div class="streak-icon">🏆</div>
-              <div>
-                <div class="streak-num">${bestStreak}</div>
-                <div class="streak-lbl">Mejor racha</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Chart -->
-        <div class="card">
-          <div class="card-title">Victorias / Derrotas</div>
-          <div class="chart-filter">
-            <button class="filter-btn ${statsFilter==='semana'?'active':''}" onclick="setStatsFilter('semana')">Semana</button>
-            <button class="filter-btn ${statsFilter==='mes'?'active':''}" onclick="setStatsFilter('mes')">Mes</button>
-            <button class="filter-btn ${statsFilter==='año'?'active':''}" onclick="setStatsFilter('año')">Año</button>
-          </div>
-          ${renderBarChart(chartData)}
-          <div class="chart-legend">
-            <span><span class="legend-dot" style="background:var(--win)"></span>Victorias</span>
-            <span><span class="legend-dot" style="background:var(--loss)"></span>Derrotas</span>
-          </div>
-        </div>
-
-        <!-- Per rival -->
-        <div class="card">
-          <div class="card-title">Por rival</div>
-          ${Object.values(rivalMap).sort((a,b)=>(b.wins+b.losses)-(a.wins+a.losses)).map(r => {
-            const t = r.wins + r.losses;
-            const p = Math.round(r.wins/t*100);
-            return `<div class="rival-stat">
-              <div class="rival-stat-info">
-                <div class="rival-stat-name">${esc(r.name)}</div>
-                <div class="rival-stat-record">${r.wins}V — ${r.losses}D (${t} partidos)</div>
-              </div>
-              <div class="rival-stat-pct">${p}%</div>
-            </div>`;
-          }).join('') || '<p style="color:var(--text-muted);font-size:0.85rem">Sin datos</p>'}
-        </div>
-
-        <!-- Avg games per set -->
-        <div class="card">
-          <div class="card-title">Juegos por set (media)</div>
-          <div class="stat-row">
-            <div class="stat-key">🎾 ${esc(profile.name)}</div>
-            <div class="stat-val">${avgMy}</div>
-          </div>
-          <div class="stat-row">
-            <div class="stat-key">🎾 Rivales</div>
-            <div class="stat-val">${avgRival}</div>
-          </div>
-          <div class="stat-row">
-            <div class="stat-key">Sets analizados</div>
-            <div class="stat-val">${setCount}</div>
-          </div>
-        </div>
-
-        <!-- Recent matches -->
-        <div class="card">
-          <div class="card-title">Últimos partidos</div>
-          ${recent.map(m => {
-            const isWin = m.result === 'win';
-            const setsStr = (m.sets||[]).map(s=>`${s.my}-${s.rival}`).join(', ') || '—';
-            return `<div class="match-item">
-              <div class="match-result-badge ${isWin?'win':'loss'}">${isWin?'V':'D'}</div>
-              <div class="match-info">
-                <div class="match-rival">${esc(m.rivalName)}</div>
-                <div class="match-date-score">${formatDateDisplay(m.date)} · ${setsStr}</div>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
-      `;
-    }
-
-    function setStatsFilter(f) {
-      statsFilter = f;
-      renderStats();
-    }
-
-    function buildChartData(filter) {
-      const now = new Date();
-      let periods = [];
-
-      if (filter === 'semana') {
-        // Last 7 days
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date(now);
-          d.setDate(d.getDate() - i);
-          const key = d.toISOString().slice(0,10);
-          const label = d.toLocaleDateString('es-ES', { weekday: 'narrow' });
-          periods.push({ key, label, wins: 0, losses: 0 });
-        }
-        for (const m of matches) {
-          if (m.result === 'abandoned') continue;
-          const p = periods.find(p => p.key === m.date);
-          if (p) { if (m.result === 'win') p.wins++; else p.losses++; }
-        }
-      } else if (filter === 'mes') {
-        // Last 30 days, grouped by week
-        for (let w = 3; w >= 0; w--) {
-          const from = new Date(now); from.setDate(from.getDate() - (w+1)*7 + 1);
-          const to   = new Date(now); to.setDate(to.getDate() - w*7);
-          const fKey = from.toISOString().slice(0,10);
-          const tKey = to.toISOString().slice(0,10);
-          const label = from.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
-          periods.push({ fromKey: fKey, toKey: tKey, label, wins: 0, losses: 0 });
-        }
-        for (const m of matches) {
-          if (m.result === 'abandoned') continue;
-          const p = periods.find(p => m.date >= p.fromKey && m.date <= p.toKey);
-          if (p) { if (m.result === 'win') p.wins++; else p.losses++; }
-        }
-      } else {
-        // Year: last 12 months
-        for (let i = 11; i >= 0; i--) {
-          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          const mStr = String(d.getMonth()+1).padStart(2,'0');
-          const yStr = String(d.getFullYear());
-          const prefix = `${yStr}-${mStr}`;
-          const label = d.toLocaleDateString('es-ES',{month:'short'});
-          periods.push({ prefix, label, wins: 0, losses: 0 });
-        }
-        for (const m of matches) {
-          if (m.result === 'abandoned') continue;
-          const p = periods.find(p => m.date.startsWith(p.prefix));
-          if (p) { if (m.result === 'win') p.wins++; else p.losses++; }
-        }
-      }
-      return periods;
-    }
-
-    function renderBarChart(data) {
-      const maxVal = Math.max(...data.map(d => d.wins + d.losses), 1);
-      const bars = data.map(d => {
-        const total = d.wins + d.losses;
-        const winH  = Math.round((d.wins/maxVal) * 70);
-        const lossH = Math.round((d.losses/maxVal) * 70);
-        return `<div class="bar-group">
-          <div class="bar-stack">
-            ${d.wins  ? `<div class="bar-win"  style="height:${winH}px"></div>` : ''}
-            ${d.losses? `<div class="bar-loss" style="height:${lossH}px"></div>` : ''}
-          </div>
-          <div class="bar-label">${d.label}</div>
-        </div>`;
-      }).join('');
-      return `<div class="bar-chart">${bars}</div>`;
-    }
-
-    // ── MODALS ──
-    function openModal(html) {
-      document.getElementById('modal-box').innerHTML = html;
-      document.getElementById('modal-overlay').classList.remove('hidden');
-    }
-    function closeModal() {
-      document.getElementById('modal-overlay').classList.add('hidden');
-    }
-    function handleModalOverlayClick(e) {
-      if (e.target === document.getElementById('modal-overlay')) closeModal();
-    }
-
-    function openEditProfile() {
-      openModal(`
-        <div class="modal-title">Mi perfil</div>
-        <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:16px">
-          <div class="avatar" onclick="pickPhoto('profile')" style="cursor:pointer;width:90px;height:90px;margin-bottom:8px" id="profile-avatar-modal">
-            ${profile.photo ? `<img src="${profile.photo}" alt="">` : avatarSVG(50)}
-          </div>
-          <small style="color:var(--text-muted)">Toca para cambiar foto</small>
-        </div>
-        <label>Nombre</label>
-        <input type="text" id="profile-name-input" value="${esc(profile.name)}" maxlength="20" placeholder="Tu nombre">
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-          <button class="btn btn-primary" onclick="saveProfileEdit()">Guardar</button>
-        </div>
-      `);
-    }
-
-    function saveProfileEdit() {
-      const name = document.getElementById('profile-name-input').value.trim();
-      if (!name) { showToast('Escribe un nombre'); return; }
-      profile.name = name;
-      saveProfile();
-      closeModal();
-      renderMatch();
-      showToast('Perfil guardado');
-    }
-
-    function openManageRivals() {
-      const rivalList = rivals.map(r => `
-        <div class="rival-item">
-          <div class="avatar avatar-sm" onclick="pickPhoto('rival','${r.id}')" style="cursor:pointer">
-            ${r.photo ? `<img src="${r.photo}" alt="">` : avatarSVG(28)}
-          </div>
-          <div class="rival-item-info">
-            <div class="rival-item-name">${esc(r.name)}</div>
-          </div>
-          <div class="rival-item-actions">
-            <button class="btn-icon" onclick="openEditRival('${r.id}')">✏️</button>
-            ${r.id !== 'default' ? `<button class="btn-icon danger" onclick="deleteRival('${r.id}')">✕</button>` : ''}
-          </div>
+  }
+
+  saveCurrent();
+  renderMatch();
+}
+
+function addGame(player) {
+  if (!current) return;
+  if (current.isTiebreak) { showToast('Estás en tiebreak — usa +Punto'); return; }
+
+  current.history.push(snapshotCurrent());
+  if (current.history.length > 30) current.history.shift();
+
+  current.currentSetGames[player]++;
+  current.gamePoints = { my: 0, rival: 0 };
+  checkAfterGame();
+
+  saveCurrent();
+  renderMatch();
+}
+
+function undoLastPoint() {
+  if (!current || current.history.length === 0) { showToast('Nada que deshacer'); return; }
+  const snap = current.history.pop();
+  current.completedSets   = snap.completedSets;
+  current.currentSetGames = snap.currentSetGames;
+  current.isTiebreak      = snap.isTiebreak;
+  current.tbPoints        = snap.tbPoints;
+  current.gamePoints      = snap.gamePoints;
+  saveCurrent();
+  renderMatch();
+}
+
+function getSetsWon() {
+  let my = 0, rival = 0;
+  for (const s of current.completedSets) {
+    if (s.my > s.rival) my++; else rival++;
+  }
+  return { my, rival };
+}
+
+// ── MATCH LIFECYCLE ────────────────────────────────
+
+function startMatch() {
+  const sel = document.querySelector('#rival-select-list .rival-option.selected');
+  if (!sel) { showToast('Selecciona un rival'); return; }
+
+  const numSets  = parseInt(document.querySelector('#rg-numsets  .radio-option.selected')?.dataset.val || '3');
+  const tbTarget = parseInt(document.querySelector('#rg-tiebreak .radio-option.selected')?.dataset.val ?? '7');
+
+  current = {
+    rivalId:         sel.dataset.id,
+    rivalName:       sel.dataset.name,
+    format:          { numSets, tiebreakTarget: tbTarget },
+    completedSets:   [],
+    currentSetGames: { my: 0, rival: 0 },
+    isTiebreak:      false,
+    tbPoints:        { my: 0, rival: 0 },
+    gamePoints:      { my: 0, rival: 0 },
+    history:         [],
+    startDate:       new Date().toISOString().slice(0,10),
+  };
+  saveCurrent();
+  closeModal('modal-new-match');
+  renderMatch();
+}
+
+function openFinishModal() {
+  if (!current) return;
+  _finishResult = null;
+
+  const sw = getSetsWon();
+  if (sw.my > sw.rival) _finishResult = 'win';
+  else if (sw.rival > sw.my) _finishResult = 'loss';
+
+  const allSets = [...current.completedSets];
+  if (current.currentSetGames.my > 0 || current.currentSetGames.rival > 0) {
+    allSets.push({ my: current.currentSetGames.my, rival: current.currentSetGames.rival, tiebreak: null });
+  }
+
+  const myName  = profile.name || 'Yo';
+  const rivName = current.rivalName || 'Rival';
+
+  document.getElementById('finish-sets-list').innerHTML = allSets.length === 0
+    ? '<p style="color:var(--muted);font-size:.85rem;">Sin sets completados aún</p>'
+    : allSets.map((s, i) => `
+        <div class="finish-set-row">
+          <span style="color:var(--muted);width:50px">Set ${i+1}:</span>
+          <strong>${esc(myName)} ${s.my} — ${s.rival} ${esc(rivName)}</strong>
+          ${s.tiebreak ? `<span style="font-size:.75rem;color:var(--muted)">(TB ${s.tiebreak.my}-${s.tiebreak.rival})</span>` : ''}
         </div>`).join('');
 
-      openModal(`
-        <div class="modal-title">Rivales</div>
-        <div id="rivals-list">${rivalList}</div>
-        <div class="divider">Añadir rival</div>
-        <div class="add-rival-form">
-          <label>Nombre</label>
-          <div class="input-row">
-            <input type="text" id="new-rival-name" placeholder="Nombre del rival" maxlength="20">
-            <button class="btn btn-primary btn-sm" onclick="addRivalInline()">Añadir</button>
+  document.querySelectorAll('#result-options .result-opt').forEach(el => {
+    el.classList.toggle('sel', _finishResult !== null && el.dataset.r === _finishResult);
+  });
+
+  openModal('modal-finish');
+}
+
+function selectResult(r) {
+  _finishResult = r;
+  document.querySelectorAll('#result-options .result-opt').forEach(el => {
+    el.classList.toggle('sel', el.dataset.r === r);
+  });
+}
+
+function confirmFinish() {
+  if (!_finishResult) { showToast('Selecciona el resultado'); return; }
+
+  const allSets = [...current.completedSets];
+  if (current.currentSetGames.my > 0 || current.currentSetGames.rival > 0) {
+    allSets.push({ my: current.currentSetGames.my, rival: current.currentSetGames.rival, tiebreak: null });
+  }
+
+  const sw = getSetsWon();
+  const m = {
+    id:        uid(),
+    date:      current.startDate || new Date().toISOString().slice(0,10),
+    rivalId:   current.rivalId,
+    rivalName: current.rivalName,
+    result:    _finishResult,
+    sets:      allSets,
+    setsWon:   sw,
+    format:    current.format,
+  };
+  matches.unshift(m);
+  saveMatches();
+  clearCurrent();
+  closeModal('modal-finish');
+  renderMatch();
+  showToast('Partido guardado ✓');
+}
+
+// ── RENDER: MATCH TAB ───────────────────────────────
+
+function renderMatch() {
+  const noMatch     = document.getElementById('no-match');
+  const matchScreen = document.getElementById('match-screen');
+
+  if (!current) {
+    noMatch.style.display     = '';
+    matchScreen.style.display = 'none';
+    return;
+  }
+  noMatch.style.display     = 'none';
+  matchScreen.style.display = '';
+
+  const myName  = profile.name || 'Yo';
+  const rivName = current.rivalName || 'Rival';
+
+  document.getElementById('my-name-btn').textContent    = myName;
+  document.getElementById('rival-name-btn').textContent = rivName;
+
+  // Players row
+  const rival    = rivals.find(r => r.id === current.rivalId);
+  const myPhoto  = profile.photo;
+  const rivPhoto = rival?.photo || null;
+
+  document.getElementById('players-row').innerHTML = `
+    <div class="player-info">
+      <div class="avatar avatar-md">${avatarHTML(myPhoto, myName)}</div>
+      <span class="player-name">${esc(myName)}</span>
+    </div>
+    <span class="players-vs">VS</span>
+    <div class="player-info">
+      <div class="avatar avatar-md">${avatarHTML(rivPhoto, rivName)}</div>
+      <span class="player-name">${esc(rivName)}</span>
+    </div>`;
+
+  // Tiebreak banner
+  const banner = document.getElementById('tb-banner');
+  if (current.isTiebreak) {
+    banner.textContent = `🔥 Tiebreak — primero a ${current.format.tiebreakTarget}`;
+    banner.classList.add('visible');
+  } else {
+    banner.classList.remove('visible');
+  }
+
+  // Scoreboard
+  const sw = getSetsWon();
+  const pt = current.isTiebreak
+    ? { my: String(current.tbPoints.my), rival: String(current.tbPoints.rival) }
+    : getPointDisplay(current.gamePoints.my, current.gamePoints.rival);
+
+  const isSpecial = pt.my === 'Deuce' || pt.my === 'Ad' || pt.rival === 'Ad';
+
+  const chipsHTML = current.completedSets.map(s => {
+    const won = s.my > s.rival;
+    const tb  = s.tiebreak ? `<sup style="font-size:.65em">(${s.tiebreak.my}-${s.tiebreak.rival})</sup>` : '';
+    return `<span class="set-chip ${won ? 'won' : 'lost'}">${s.my}-${s.rival}${tb}</span>`;
+  }).join('');
+
+  document.getElementById('scoreboard').innerHTML = `
+    ${current.completedSets.length > 0 ? `<div class="sets-history">${chipsHTML}</div>` : ''}
+    <div class="score-row">
+      <div class="score-label">Sets</div>
+      <div class="score-val highlight">${sw.my}</div>
+      <div class="score-sep">—</div>
+      <div class="score-val">${sw.rival}</div>
+    </div>
+    <div class="score-row">
+      <div class="score-label">Juegos</div>
+      <div class="score-val highlight">${current.currentSetGames.my}</div>
+      <div class="score-sep">—</div>
+      <div class="score-val">${current.currentSetGames.rival}</div>
+    </div>
+    <div class="score-row">
+      <div class="score-label">${current.isTiebreak ? 'TB pts' : 'Puntos'}</div>
+      <div class="score-val highlight${isSpecial ? ' special' : ''}">${esc(pt.my)}</div>
+      <div class="score-sep">—</div>
+      <div class="score-val${isSpecial ? ' special' : ''}">${esc(pt.rival)}</div>
+    </div>`;
+}
+
+// ── RENDER: STATS TAB ──────────────────────────────
+
+function renderStats() {
+  const fin    = matches.filter(m => m.result !== 'abandoned');
+  const wins   = fin.filter(m => m.result === 'win').length;
+  const losses = fin.filter(m => m.result === 'loss').length;
+  const total  = wins + losses;
+  const pct    = total > 0 ? Math.round(wins / total * 100) : 0;
+
+  document.getElementById('summary-grid').innerHTML = `
+    <div class="summary-box win"><div class="sb-val">${wins}</div><div class="sb-label">Victorias</div></div>
+    <div class="summary-box loss"><div class="sb-val">${losses}</div><div class="sb-label">Derrotas</div></div>
+    <div class="summary-box"><div class="sb-val">${pct}%</div><div class="sb-label">% victorias</div></div>`;
+
+  // Streaks — sorted ascending by date
+  const sorted = [...fin].sort((a,b) => a.date.localeCompare(b.date));
+  let bestStreak = 0, tmp = 0, curStreak = 0;
+  for (const m of sorted) {
+    if (m.result === 'win') { tmp++; bestStreak = Math.max(bestStreak, tmp); }
+    else tmp = 0;
+  }
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    if (sorted[i].result === 'win') curStreak++;
+    else break;
+  }
+
+  document.getElementById('streak-row').innerHTML = `
+    <div class="streak-box"><div class="sv">${curStreak}</div><div class="sl">Racha actual</div></div>
+    <div class="streak-box"><div class="sv">${bestStreak}</div><div class="sl">Mejor racha</div></div>`;
+
+  renderChart(_chartFilter);
+
+  // By rival
+  const rivalMap = {};
+  for (const m of fin) {
+    if (!rivalMap[m.rivalId]) rivalMap[m.rivalId] = { name: m.rivalName, w: 0, l: 0 };
+    if (m.result === 'win') rivalMap[m.rivalId].w++;
+    else rivalMap[m.rivalId].l++;
+  }
+  const rivalEntries = Object.values(rivalMap).sort((a,b) => (b.w+b.l)-(a.w+a.l));
+
+  document.getElementById('rivals-stats').innerHTML = rivalEntries.length === 0
+    ? '<div class="empty-state"><div class="es-icon">🎾</div><p>Sin partidos registrados</p></div>'
+    : rivalEntries.map(r => `
+        <div class="rival-row">
+          <div class="rival-name">${esc(r.name)}</div>
+          <div class="rival-record"><span class="rw">${r.w}V</span> <span class="rl">${r.l}D</span></div>
+        </div>`).join('');
+
+  // Match history
+  document.getElementById('match-history').innerHTML = matches.length === 0
+    ? '<div class="empty-state"><div class="es-icon">📋</div><p>Aún no hay partidos</p></div>'
+    : matches.map(m => {
+        const setsStr  = m.sets && m.sets.length > 0 ? m.sets.map(s => `${s.my}-${s.rival}`).join(', ') : '—';
+        const resLabel = m.result === 'win' ? 'Victoria' : m.result === 'loss' ? 'Derrota' : 'Abandonado';
+        return `
+          <div class="match-item">
+            <div class="match-result-dot ${m.result}"></div>
+            <div class="match-info">
+              <div class="match-rival">${esc(m.rivalName)}</div>
+              <div class="match-meta">${m.date} · ${resLabel}</div>
+              <div class="match-sets">${setsStr}</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="openEditMatchModal('${m.id}')">✏️</button>
+          </div>`;
+      }).join('');
+}
+
+function renderChart(filter) {
+  _chartFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.f === filter));
+
+  const now = new Date();
+  let periods = [];
+
+  if (filter === 'semana') {
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      const key   = d.toISOString().slice(0,10);
+      const label = d.toLocaleDateString('es-ES', { weekday: 'narrow' });
+      periods.push({ key, label, w: 0, l: 0 });
+    }
+    const map = {};
+    for (const p of periods) map[p.key] = p;
+    for (const m of matches) {
+      if (m.result === 'abandoned') continue;
+      if (map[m.date]) { m.result === 'win' ? map[m.date].w++ : map[m.date].l++; }
+    }
+  } else if (filter === 'mes') {
+    // 4 weeks back, each period = 7 days
+    for (let w = 3; w >= 0; w--) {
+      const toDate   = new Date(now); toDate.setDate(toDate.getDate() - w * 7);
+      const fromDate = new Date(toDate); fromDate.setDate(fromDate.getDate() - 6);
+      const toKey    = toDate.toISOString().slice(0,10);
+      const fromKey  = fromDate.toISOString().slice(0,10);
+      const label    = fromDate.toLocaleDateString('es-ES', { day:'numeric', month:'short' }).replace('.','');
+      periods.push({ fromKey, toKey, label, w: 0, l: 0 });
+    }
+    for (const m of matches) {
+      if (m.result === 'abandoned') continue;
+      for (const p of periods) {
+        if (m.date >= p.fromKey && m.date <= p.toKey) {
+          m.result === 'win' ? p.w++ : p.l++;
+          break;
+        }
+      }
+    }
+  } else {
+    // año — last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const d     = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key   = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      const label = d.toLocaleDateString('es-ES', { month: 'short' }).slice(0,3);
+      periods.push({ key, label, w: 0, l: 0 });
+    }
+    const map = {};
+    for (const p of periods) map[p.key] = p;
+    for (const m of matches) {
+      if (m.result === 'abandoned') continue;
+      const mk = m.date.slice(0,7);
+      if (map[mk]) { m.result === 'win' ? map[mk].w++ : map[mk].l++; }
+    }
+  }
+
+  const maxVal = Math.max(...periods.map(p => p.w + p.l), 1);
+  document.getElementById('chart-bars').innerHTML = periods.map(p => {
+    const wPct = (p.w / maxVal * 100).toFixed(1);
+    const lPct = (p.l / maxVal * 100).toFixed(1);
+    return `
+      <div class="chart-col">
+        <div class="bar-stack">
+          <div class="bar-win"  style="height:${wPct}%"></div>
+          <div class="bar-loss" style="height:${lPct}%"></div>
+        </div>
+        <div class="bar-label">${esc(p.label)}</div>
+      </div>`;
+  }).join('');
+}
+
+// ── MODAL: NEW MATCH ────────────────────────────────
+
+function openNewMatchModal() {
+  const list = document.getElementById('rival-select-list');
+  if (rivals.length === 0) {
+    list.innerHTML = '<p style="color:var(--muted);font-size:.85rem;margin-bottom:8px;">No tienes rivales aún. Añade uno primero.</p>';
+  } else {
+    list.innerHTML = rivals.map((r, i) => `
+      <div class="rival-option${i === 0 ? ' selected' : ''}" data-id="${r.id}" data-name="${esc(r.name)}" onclick="selectRivalOption(this)">
+        <div class="avatar avatar-sm">${avatarHTML(r.photo, r.name)}</div>
+        <span class="rival-option-name">${esc(r.name)}</span>
+      </div>`).join('');
+  }
+  openModal('modal-new-match');
+}
+
+function selectRivalOption(el) {
+  document.querySelectorAll('#rival-select-list .rival-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ── MODAL: EDIT MATCH ──────────────────────────────
+
+function openEditMatchModal(id) {
+  const m = matches.find(x => x.id === id);
+  if (!m) return;
+  _editMatchId = id;
+  _editResult  = m.result;
+
+  document.getElementById('edit-date').value = m.date;
+
+  document.querySelectorAll('#edit-result-options .result-opt').forEach(el => {
+    el.classList.toggle('sel', el.dataset.r === m.result);
+  });
+
+  const container = document.getElementById('edit-sets-list');
+  container.innerHTML = '';
+  (m.sets || []).forEach((s, i) => appendEditSetRow(container, s.my, s.rival, i));
+
+  openModal('modal-edit-match');
+}
+
+function appendEditSetRow(container, myVal, rivalVal, idx) {
+  const div = document.createElement('div');
+  div.className = 'edit-set-row';
+  div.dataset.idx = idx;
+  div.innerHTML = `
+    <input class="form-input" type="number" min="0" max="99" value="${myVal}"    data-side="my">
+    <span class="set-sep">—</span>
+    <input class="form-input" type="number" min="0" max="99" value="${rivalVal}" data-side="rival">
+    <button class="btn btn-ghost btn-sm" onclick="editRemoveSet(this)">✕</button>`;
+  container.appendChild(div);
+}
+
+function editAddSet() {
+  const container = document.getElementById('edit-sets-list');
+  appendEditSetRow(container, 0, 0, container.children.length);
+}
+
+function editRemoveSet(btn) {
+  const rows = document.querySelectorAll('#edit-sets-list .edit-set-row');
+  if (rows.length <= 1) { showToast('Debe haber al menos 1 set'); return; }
+  btn.closest('.edit-set-row').remove();
+}
+
+function editSelectResult(r) {
+  _editResult = r;
+  document.querySelectorAll('#edit-result-options .result-opt').forEach(el => {
+    el.classList.toggle('sel', el.dataset.r === r);
+  });
+}
+
+function saveEditMatch() {
+  if (!_editResult) { showToast('Selecciona el resultado'); return; }
+  const m = matches.find(x => x.id === _editMatchId);
+  if (!m) return;
+
+  const rows = document.querySelectorAll('#edit-sets-list .edit-set-row');
+  const sets = Array.from(rows).map(row => ({
+    my:       parseInt(row.querySelector('[data-side="my"]').value)    || 0,
+    rival:    parseInt(row.querySelector('[data-side="rival"]').value) || 0,
+    tiebreak: null
+  }));
+
+  m.date   = document.getElementById('edit-date').value;
+  m.result = _editResult;
+  m.sets   = sets;
+
+  let myS = 0, rivS = 0;
+  for (const s of sets) { if (s.my > s.rival) myS++; else rivS++; }
+  m.setsWon = { my: myS, rival: rivS };
+
+  saveMatches();
+  closeModal('modal-edit-match');
+  renderStats();
+  showToast('Partido actualizado ✓');
+}
+
+function deleteMatch() {
+  if (!confirm('¿Eliminar este partido?')) return;
+  matches = matches.filter(m => m.id !== _editMatchId);
+  saveMatches();
+  closeModal('modal-edit-match');
+  renderStats();
+  showToast('Partido eliminado');
+}
+
+// ── MODAL: PROFILE ─────────────────────────────────
+
+function openProfileModal() {
+  _profilePhoto = profile.photo;
+  document.getElementById('profile-name-input').value = profile.name || '';
+  document.getElementById('profile-avatar-pick').innerHTML = avatarHTML(_profilePhoto, profile.name);
+  openModal('modal-profile');
+}
+
+function saveProfile() {
+  const name = document.getElementById('profile-name-input').value.trim();
+  if (!name) { showToast('Introduce un nombre'); return; }
+  profile.name  = name;
+  profile.photo = _profilePhoto;
+  saveProfileData();
+  closeModal('modal-profile');
+  renderMatch();
+  showToast('Perfil guardado ✓');
+}
+
+// ── MODAL: RIVALS ──────────────────────────────────
+
+function openRivalsModal(returnToNew = false) {
+  _pendingReturnToNew = returnToNew;
+  _editRivalId        = null;
+  _editRivalPhoto     = null;
+  closeRivalForm();
+  renderRivalsManagement();
+  openModal('modal-rivals');
+}
+
+function renderRivalsManagement() {
+  const container = document.getElementById('rivals-list-mgmt');
+  if (rivals.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="es-icon">👥</div><p>Sin rivales. Añade uno.</p></div>';
+    return;
+  }
+
+  const wlMap = {};
+  for (const m of matches) {
+    if (m.result === 'abandoned') continue;
+    if (!wlMap[m.rivalId]) wlMap[m.rivalId] = { w:0, l:0 };
+    m.result === 'win' ? wlMap[m.rivalId].w++ : wlMap[m.rivalId].l++;
+  }
+
+  container.innerHTML = rivals.map(r => {
+    const wl = wlMap[r.id] || { w:0, l:0 };
+    return `
+      <div class="rivals-mgmt-item">
+        <div class="avatar avatar-sm" style="cursor:pointer" onclick="editRivalPhoto('${r.id}')">${avatarHTML(r.photo, r.name)}</div>
+        <div style="flex:1;">
+          <div class="rivals-mgmt-name">${esc(r.name)}</div>
+          <div style="font-size:.75rem;color:var(--muted)">
+            <span style="color:var(--win);font-weight:700">${wl.w}V</span>
+            <span style="color:var(--loss);font-weight:700"> ${wl.l}D</span>
           </div>
         </div>
-        <div style="margin-top:12px">
-          <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
+        <div class="rivals-mgmt-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openEditRival('${r.id}')">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteRival('${r.id}')">🗑</button>
         </div>
-      `);
-    }
+      </div>`;
+  }).join('');
+}
 
-    function addRivalInline() {
-      const name = document.getElementById('new-rival-name').value.trim();
-      if (!name) { showToast('Escribe un nombre'); return; }
-      const r = { id: uid(), name, photo: null };
-      rivals.push(r);
-      saveRivals();
-      showToast('Rival añadido');
-      openManageRivals(); // refresh
-    }
+function openAddRivalForm() {
+  _editRivalId    = null;
+  _editRivalPhoto = null;
+  document.getElementById('rival-name-input').value = '';
+  document.getElementById('rival-avatar-pick').innerHTML = avatarHTML(null, '');
+  document.getElementById('rival-form').style.display = '';
+}
 
-    function openEditRival(id) {
-      const r = getRival(id);
-      if (!r) return;
-      openModal(`
-        <div class="modal-title">Editar rival</div>
-        <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:16px">
-          <div class="avatar" onclick="pickPhoto('rival','${id}')" style="cursor:pointer;width:90px;height:90px;margin-bottom:8px" id="rival-avatar-modal">
-            ${r.photo ? `<img src="${r.photo}" alt="">` : avatarSVG(50)}
-          </div>
-          <small style="color:var(--text-muted)">Toca para cambiar foto</small>
-        </div>
-        <label>Nombre</label>
-        <input type="text" id="edit-rival-name" value="${esc(r.name)}" maxlength="20">
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="openManageRivals()">Cancelar</button>
-          <button class="btn btn-primary" onclick="saveRivalEdit('${id}')">Guardar</button>
-        </div>
-      `);
-    }
+function openEditRival(id) {
+  const r = rivals.find(x => x.id === id);
+  if (!r) return;
+  _editRivalId    = id;
+  _editRivalPhoto = r.photo;
+  document.getElementById('rival-name-input').value = r.name;
+  document.getElementById('rival-avatar-pick').innerHTML = avatarHTML(r.photo, r.name);
+  document.getElementById('rival-form').style.display = '';
+}
 
-    function saveRivalEdit(id) {
-      const r = getRival(id);
-      if (!r) return;
-      const name = document.getElementById('edit-rival-name').value.trim();
-      if (!name) { showToast('Escribe un nombre'); return; }
-      r.name = name;
-      // Update name in matches too
-      for (const m of matches) { if (m.rivalId === id) m.rivalName = name; }
-      if (current && current.rivalId === id) { current.rivalName = name; saveCurrent(); }
-      saveRivals();
-      saveMatches();
-      closeModal();
-      renderMatch();
-      showToast('Rival actualizado');
-    }
+function editRivalPhoto(id) {
+  openEditRival(id);
+  pickPhoto('rival');
+}
 
-    function deleteRival(id) {
-      if (id === 'default') return;
-      const r = getRival(id);
-      if (!r) return;
-      openModal(`
-        <div class="modal-title">¿Eliminar rival?</div>
-        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px">Se eliminará <strong>${esc(r.name)}</strong> de la lista. Los partidos registrados se conservan.</p>
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="openManageRivals()">Cancelar</button>
-          <button class="btn btn-danger" onclick="confirmDeleteRival('${id}')">Eliminar</button>
-        </div>
-      `);
-    }
+function closeRivalForm() {
+  document.getElementById('rival-form').style.display = 'none';
+}
 
-    function confirmDeleteRival(id) {
-      rivals = rivals.filter(r => r.id !== id);
-      saveRivals();
-      if (selectedRivalId === id) selectedRivalId = null;
-      closeModal();
-      renderMatch();
-      showToast('Rival eliminado');
-    }
+function saveRivalForm() {
+  const name = document.getElementById('rival-name-input').value.trim();
+  if (!name) { showToast('Introduce un nombre'); return; }
+  if (_editRivalId) {
+    const r = rivals.find(x => x.id === _editRivalId);
+    if (r) { r.name = name; r.photo = _editRivalPhoto; }
+  } else {
+    rivals.push({ id: uid(), name, photo: _editRivalPhoto });
+  }
+  saveRivals();
+  closeRivalForm();
+  renderRivalsManagement();
+  showToast(_editRivalId ? 'Rival actualizado ✓' : 'Rival añadido ✓');
+}
 
-    function openFinishMatch() {
-      const setsWon = getSetsWon();
-      const setsStr = buildSetsString();
-      const suggestedResult = setsWon.my > setsWon.rival ? 'win' : setsWon.rival > setsWon.my ? 'loss' : null;
-      let selectedResult = suggestedResult;
+function deleteRival(id) {
+  const hasMatches = matches.some(m => m.rivalId === id);
+  const msg = hasMatches
+    ? 'Este rival tiene partidos guardados. ¿Eliminar igualmente?'
+    : '¿Eliminar este rival?';
+  if (!confirm(msg)) return;
+  rivals = rivals.filter(r => r.id !== id);
+  saveRivals();
+  renderRivalsManagement();
+  showToast('Rival eliminado');
+}
 
-      const summary = setsStr ? `<div style="text-align:center;margin:12px 0;font-size:0.9rem;color:var(--text-muted)">Sets: <strong>${setsStr}</strong></div>` : '';
+// ── PHOTO UPLOAD ────────────────────────────────────
 
-      openModal(`
-        <div class="modal-title">🏁 Terminar partido</div>
-        ${summary}
-        <label>¿Cuál fue el resultado?</label>
-        <div class="result-btns">
-          <div class="result-btn win ${suggestedResult==='win'?'selected':''}" id="result-win" onclick="selectResult('win')">
-            🏆 Victoria
-          </div>
-          <div class="result-btn loss ${suggestedResult==='loss'?'selected':''}" id="result-loss" onclick="selectResult('loss')">
-            😤 Derrota
-          </div>
-        </div>
-        <div style="margin-top:8px">
-          <button class="btn btn-ghost btn-sm" onclick="selectResult('abandoned');confirmFinishMatch()">Descartar sin guardar</button>
-        </div>
-        <div class="modal-actions" style="margin-top:8px">
-          <button class="btn btn-ghost" onclick="closeModal()">Seguir jugando</button>
-          <button class="btn btn-primary" onclick="confirmFinishMatch()">Guardar partido</button>
-        </div>
-      `);
-    }
+function pickPhoto(target) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const dataUrl = ev.target.result;
+      if (target === 'profile') {
+        _profilePhoto = dataUrl;
+        document.getElementById('profile-avatar-pick').innerHTML = avatarHTML(dataUrl, '');
+      } else {
+        _editRivalPhoto = dataUrl;
+        document.getElementById('rival-avatar-pick').innerHTML = avatarHTML(dataUrl, '');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  inp.click();
+}
 
-    let _selectedResult = null;
-    function selectResult(r) {
-      _selectedResult = r;
-      const winBtn  = document.getElementById('result-win');
-      const lossBtn = document.getElementById('result-loss');
-      if (winBtn)  winBtn.classList.toggle('selected',  r === 'win');
-      if (lossBtn) lossBtn.classList.toggle('selected', r === 'loss');
-    }
+// ── MODALS GENERIC ──────────────────────────────────
 
-    function confirmFinishMatch() {
-      const result = _selectedResult;
-      if (!result && result !== 'abandoned') { showToast('Selecciona el resultado'); return; }
-      finishMatch(result || 'abandoned');
-      closeModal();
-    }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'modal-rivals' && _pendingReturnToNew) {
+    _pendingReturnToNew = false;
+    openNewMatchModal();
+  }
+}
 
-    // ── PHOTO UPLOAD ──
-    function pickPhoto(type, rivalId) {
-      const inp = document.createElement('input');
-      inp.type = 'file';
-      inp.accept = 'image/*';
-      inp.onchange = e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => {
-          const dataUrl = ev.target.result;
-          if (type === 'profile') {
-            profile.photo = dataUrl;
-            saveProfile();
-            const el = document.getElementById('profile-avatar-modal');
-            if (el) el.innerHTML = `<img src="${dataUrl}" alt="">`;
-          } else {
-            const r = getRival(rivalId);
-            if (r) {
-              r.photo = dataUrl;
-              saveRivals();
-              const el = document.getElementById('rival-avatar-modal');
-              if (el) el.innerHTML = `<img src="${dataUrl}" alt="">`;
-            }
-          }
-          showToast('Foto actualizada');
-        };
-        reader.readAsDataURL(file);
-      };
-      inp.click();
-    }
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeModal(overlay.id);
+  });
+});
 
-    // ── NAVIGATION ──
-    let currentTab = 'match';
-    function switchTab(tab) {
-      currentTab = tab;
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(`screen-${tab}`).classList.add('active');
-      document.getElementById(`nav-${tab}`).classList.add('active');
-      if (tab === 'match') renderMatch();
-      if (tab === 'stats') renderStats();
-    }
+// ── RADIO GROUPS ────────────────────────────────────
 
-    // ── TOAST ──
-    let toastTimer = null;
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.classList.add('show');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
-    }
+document.querySelectorAll('.radio-group').forEach(group => {
+  group.addEventListener('click', e => {
+    const opt = e.target.closest('.radio-option');
+    if (!opt) return;
+    group.querySelectorAll('.radio-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+  });
+});
 
-    // ── HELPERS ──
-    function esc(str) {
-      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
+// ── NAVIGATION ──────────────────────────────────────
 
-    // ── INIT ──
-    loadData();
-    renderMatch();
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t    => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (tab === 'match') {
+    document.getElementById('match-tab').classList.add('active');
+    document.getElementById('nav-match').classList.add('active');
+  } else {
+    document.getElementById('stats-tab').classList.add('active');
+    document.getElementById('nav-stats').classList.add('active');
+    renderStats();
+  }
+}
 
-    // Service Worker registration
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
-    }
-  </script>
+document.getElementById('chart-filters').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (btn) renderChart(btn.dataset.f);
+});
+
+// ── TOAST ───────────────────────────────────────────
+
+let _toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── HELPERS ─────────────────────────────────────────
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function avatarHTML(photo, name) {
+  if (photo) {
+    return `<img src="${photo}" alt="${esc(name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  }
+  const letter = (String(name || '?')[0] || '?').toUpperCase();
+  return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+    <circle cx="20" cy="20" r="20" fill="#2d6a4f"/>
+    <text x="20" y="27" text-anchor="middle" font-size="18" font-family="sans-serif" fill="#fff" font-weight="bold">${esc(letter)}</text>
+  </svg>`;
+}
+
+// ── SERVICE WORKER ──────────────────────────────────
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ── INIT ────────────────────────────────────────────
+
+loadAll();
+renderMatch();
+</script>
 </body>
 </html>
