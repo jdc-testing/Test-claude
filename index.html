@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mis proyectos</title>
+  <style>
+    :root {
+      --bg: #f5f5f5;
+      --surface: #ffffff;
+      --text: #212121;
+      --text-muted: #757575;
+      --border: #e0e0e0;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 60px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 6px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: box-shadow 0.15s, transform 0.1s;
+    }
+    .card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+    }
+    .card:active { transform: translateY(0); }
+
+    .card-icon {
+      font-size: 2.4rem;
+      flex-shrink: 0;
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+    }
+
+    .card-body { flex: 1; min-width: 0; }
+    .card-title { font-size: 1rem; font-weight: 700; }
+    .card-desc  { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+
+    .card-arrow {
+      font-size: 1.1rem;
+      color: var(--border);
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mis proyectos</h1>
+    <p>Selecciona una app para abrirla</p>
+  </header>
+
+  <div class="grid">
+    <a class="card" href="proyectos/habit-tracker/index.html">
+      <div class="card-icon" style="background:#e8f5e9">💊</div>
+      <div class="card-body">
+        <div class="card-title">Habit Tracker</div>
+        <div class="card-desc">Seguimiento de hábitos diarios, rachas e historial</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </a>
+
+    <a class="card" href="proyectos/tennis-tracker/index.html">
+      <div class="card-icon" style="background:#d8f3dc">🎾</div>
+      <div class="card-body">
+        <div class="card-title">Tennis Tracker</div>
+        <div class="card-desc">Marcador de partidos, estadísticas y rachas</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </a>
+  </div>
+</body>
+</html>

@@ -16,6 +16,12 @@ App web progresiva (PWA) para el seguimiento de hábitos diarios desde el móvil
 
 **Tecnología:** HTML + CSS + JS vanilla · localStorage · Service Worker
 
+### 🎾 [tennis-tracker](proyectos/tennis-tracker/)
+
+App web progresiva (PWA) para gestionar partidos de tenis. Permite llevar el marcador en tiempo real con la lógica completa de puntuación (puntos, juegos, sets, deuce, ventaja, tiebreak a 7 o 10). Guarda el historial de partidos y muestra estadísticas con gráficos (victorias/derrotas, rachas, stats por rival). Funciona offline y se puede instalar en el móvil.
+
+**Tecnología:** HTML + CSS + JS vanilla · localStorage · Service Worker
+
 ---
 
 ## ¿Cómo usar este repositorio?
