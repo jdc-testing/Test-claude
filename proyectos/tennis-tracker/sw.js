@@ -1,6 +1,6 @@
-const CACHE_NAME = 'tennis-tracker-v6';
+const CACHE_NAME = 'tennis-tracker-v7';
 
-// Assets locales a cachear
+// Assets locales a cachear en el install
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -15,15 +15,16 @@ const ASSETS = [
   './js/match.js',
   './js/render.js',
   './js/app.js',
+  // Supabase JS client (CDN) — se pre-cachea para que no bloquee en mobile
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
 ];
 
-// URLs externas que nunca se cachean (Supabase, CDN, Google Auth)
+// URLs de API/auth que NUNCA se cachean (siempre red directa)
 const NO_CACHE_PATTERNS = [
   'supabase.co',
   'supabase.io',
   'googleapis.com',
   'accounts.google.com',
-  'cdn.jsdelivr.net',
 ];
 
 function shouldSkipCache(url) {
@@ -46,13 +47,27 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Network-first: las requests a Supabase/Google siempre van a la red
 self.addEventListener('fetch', e => {
   const url = e.request.url;
 
-  // Peticiones de API/auth: directo a la red, sin cachear
+  // Peticiones de API/auth: directo a la red, sin cachear nunca
   if (shouldSkipCache(url)) {
     e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // Scripts CDN (supabase-js): cache-first + actualización en segundo plano
+  // Evita bloquear el arranque en mobile con red lenta
+  if (url.includes('cdn.jsdelivr.net')) {
+    e.respondWith(
+      caches.match(e.request).then(cached => {
+        const networkFetch = fetch(e.request).then(res => {
+          caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
+          return res;
+        }).catch(() => cached);
+        return cached || networkFetch;
+      })
+    );
     return;
   }
 
