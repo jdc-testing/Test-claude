@@ -1524,7 +1524,9 @@ function handleImportFile(input) {
     (data.matches || []).forEach(m => matches.push(m));
     if (data.profile) Object.assign(profile, data.profile);
 
-    save();
+    saveRivals();
+    saveMatches();
+    saveProfileData();
     renderRivalList();
     showToast(`✓ Datos reemplazados: ${rivals.length} rival(es), ${matches.length} partido(s)`);
   };
