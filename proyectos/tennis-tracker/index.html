@@ -23,6 +23,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* ── LAYOUT ── */
 #app-header{position:sticky;top:0;z-index:100;background:var(--accent);color:#fff;height:var(--hdr-h);display:flex;align-items:center;padding:0 16px;gap:10px}
 #app-header h1{font-size:1.1rem;font-weight:700;flex:1}
+#header-user{display:flex;align-items:center;gap:8px}
+#header-user .avatar{cursor:pointer;border:2px solid rgba(255,255,255,.4)}
 #main-content{flex:1;overflow-y:auto;padding-bottom:calc(var(--nav-h) + 8px)}
 #bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:var(--nav-h);background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:0.68rem;font-weight:600;transition:color .15s}
@@ -54,33 +56,51 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .av-sm{width:36px;height:36px}.av-md{width:52px;height:52px}.av-lg{width:72px;height:72px}.av-xl{width:88px;height:88px}
 
 /* ═══════════════════════════
+   AUTH SCREENS
+═══════════════════════════ */
+.auth-screen{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:16px;text-align:center}
+.auth-screen .alogo{font-size:3.5rem;margin-bottom:4px}
+.auth-screen h1{font-size:1.5rem;font-weight:800;color:var(--text)}
+.auth-screen p{font-size:.88rem;color:var(--muted);max-width:300px;line-height:1.5}
+.auth-form{width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 24px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;cursor:pointer;font-family:inherit;font-size:.95rem;font-weight:600;color:var(--text);transition:all .15s;width:100%}
+.btn-google:hover{border-color:var(--accent);background:var(--accent-light)}
+.btn-google:active{transform:scale(.97)}
+.btn-google svg{width:20px;height:20px;flex-shrink:0}
+.spinner{width:36px;height:36px;border:3px solid var(--accent-light);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.avatar-picker-center{display:flex;flex-direction:column;align-items:center;gap:8px}
+.avatar-picker-center .avatar{cursor:pointer;border:3px dashed var(--border);transition:border-color .15s}
+.avatar-picker-center .avatar:hover{border-color:var(--accent)}
+.avatar-picker-center small{font-size:.75rem;color:var(--muted)}
+
+/* ═══════════════════════════
    TAB 1 — PARTIDO
 ═══════════════════════════ */
-
-/* ── No-match screen (redesigned) ── */
 #no-match{padding:16px;display:flex;flex-direction:column;gap:14px}
 
+/* Waiting panel (shown when no partner yet) */
+.waiting-panel{display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px 16px;gap:14px}
+.waiting-panel .wi{font-size:3rem}
+.waiting-panel h2{font-size:1.2rem;font-weight:800;color:var(--text)}
+.waiting-panel p{font-size:.85rem;color:var(--muted);max-width:280px;line-height:1.5}
+.invite-box{background:var(--surface);border:1.5px solid var(--accent-light);border-radius:12px;padding:12px 14px;font-size:.78rem;color:var(--accent-dark);word-break:break-all;width:100%;text-align:left;cursor:pointer;transition:background .15s}
+.invite-box:hover{background:var(--accent-light)}
+
 /* My profile hero */
-.my-hero{background:var(--accent);border-radius:20px;padding:20px 20px 24px;display:flex;align-items:center;gap:16px;color:#fff}
+.my-hero{background:var(--accent);border-radius:20px;padding:20px 20px 24px;display:flex;align-items:center;gap:16px;color:#fff;cursor:pointer}
 .my-hero .hero-info h2{font-size:1.3rem;font-weight:800}
 .my-hero .hero-info p{font-size:.82rem;opacity:.8;margin-top:2px}
 
-/* Rival picker on home */
+/* Rival/partner card on home */
 .rival-picker-label{font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
 .rival-cards{display:flex;flex-direction:column;gap:8px}
-.rival-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:2px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s}
-.rival-card:active{opacity:.8}
+.rival-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:2px solid var(--border);border-radius:14px;transition:all .15s}
 .rival-card.selected{border-color:var(--accent);background:var(--accent-light)}
 .rival-card-name{flex:1;font-weight:600;font-size:.92rem}
 .rival-card-record{font-size:.75rem;color:var(--muted)}
 .rival-card-record .rw{color:var(--win);font-weight:700}
 .rival-card-record .rl{color:var(--loss);font-weight:700}
-.rival-card .check{width:20px;height:20px;border-radius:50%;background:var(--accent);display:none;align-items:center;justify-content:center;color:#fff;font-size:.7rem;flex-shrink:0}
-.rival-card.selected .check{display:flex}
-
-.no-rivals-empty{text-align:center;padding:24px 16px;color:var(--muted)}
-.no-rivals-empty .ei{font-size:2.2rem;margin-bottom:8px}
-.no-rivals-empty p{font-size:.85rem;margin-bottom:12px}
 
 /* Start button area */
 .start-area{display:flex;gap:8px}
@@ -146,7 +166,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .streak-box .sv{font-size:1.4rem;font-weight:800;color:var(--accent)}
 .streak-box .sl{font-size:.72rem;color:var(--muted);font-weight:600}
 
-/* Chart — fixed with px heights */
 .chart-filters{display:flex;gap:6px;margin-bottom:10px}
 .filter-btn{border:1px solid var(--border);background:var(--surface);border-radius:20px;padding:5px 12px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--muted);font-family:inherit;transition:all .15s}
 .filter-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -157,15 +176,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bar-loss{background:var(--loss);border-radius:3px;min-height:0}
 .bar-label{font-size:.6rem;color:var(--muted);margin-top:4px;text-align:center}
 
-/* Rivals stats */
-.rival-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.rival-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
 .rival-row:last-child{border-bottom:none}
 .rival-rname{flex:1;font-weight:600;font-size:.9rem}
 .rival-rec{font-size:.8rem;color:var(--muted)}
 .rival-rec .rw{color:var(--win);font-weight:700}
 .rival-rec .rl{color:var(--loss);font-weight:700}
 
-/* Match history */
 .match-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
 .match-item:last-child{border-bottom:none}
 .m-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -181,7 +198,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 #profile-tab{padding:0 0 16px}
 .profile-section{margin:12px 16px}
 
-/* My profile card */
 .my-profile-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px}
 .my-profile-top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
 .my-profile-top .avatar{cursor:pointer;border:3px dashed var(--border);transition:border-color .15s}
@@ -190,30 +206,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .my-profile-top .pinfo h3{font-size:1rem;font-weight:700}
 .my-profile-top .pinfo small{font-size:.75rem;color:var(--muted)}
 
-/* Rivals inline */
-.rivals-inline-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
-.rivals-inline-item:last-child{border-bottom:none}
-.ri-name{flex:1;font-weight:600;font-size:.9rem}
-.ri-sub{font-size:.74rem;color:var(--muted)}
-.ri-actions{display:flex;gap:6px}
+/* Partner card */
+.partner-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px}
+.partner-card .pinfo{flex:1}
+.partner-card .pinfo h3{font-size:1rem;font-weight:700}
+.partner-card .pinfo small{font-size:.75rem;color:var(--muted)}
+.partner-card.pending{opacity:.65;border-style:dashed}
 
-/* Rival inline form */
-.rival-inline-form{background:var(--bg);border-radius:12px;padding:14px;margin-bottom:10px;display:none}
+/* Avatar picker inline */
 .avatar-picker{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:12px}
 .avatar-picker .avatar{cursor:pointer;border:3px dashed var(--border)}
 .avatar-picker .avatar:hover{border-color:var(--accent)}
 .avatar-picker small{font-size:.75rem;color:var(--muted)}
 
-/* Default rival select */
-.form-select{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:.95rem;font-family:inherit;background:var(--bg);color:var(--text);outline:none}
-.form-select:focus{border-color:var(--accent)}
-
-/* Export section */
+/* Export card */
 .export-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px}
 .export-card .ei{font-size:2rem}
 .export-card .et{flex:1}
 .export-card .et h4{font-size:.9rem;font-weight:700}
 .export-card .et p{font-size:.78rem;color:var(--muted)}
+
+/* Form elements */
+.form-select{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:.95rem;font-family:inherit;background:var(--bg);color:var(--text);outline:none}
+.form-select:focus{border-color:var(--accent)}
 
 /* ── MODALS ── */
 .modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center}
@@ -222,7 +237,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
 .modal-title{font-size:1.1rem;font-weight:700;margin-bottom:16px}
 
-/* Form elements */
+/* Form elements (modal) */
 .form-group{margin-bottom:14px}
 .form-label{font-size:.82rem;font-weight:600;color:var(--muted);margin-bottom:6px;display:block}
 .form-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:.95rem;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border-color .2s}
@@ -232,20 +247,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .radio-option{flex:1;min-width:70px;border:2px solid var(--border);border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer;font-size:.82rem;font-weight:600;color:var(--muted);transition:all .15s;user-select:none}
 .radio-option.selected{border-color:var(--accent);background:var(--accent-light);color:var(--accent-dark)}
 
-/* Rival select list in modal */
-.rival-search-wrap{margin-bottom:8px}
-.rival-select-list{display:flex;flex-direction:column;gap:6px;margin-bottom:6px;max-height:200px;overflow-y:auto}
-.rival-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:all .15s}
-.rival-opt.selected{border-color:var(--accent);background:var(--accent-light)}
-.rival-opt-name{font-weight:600;font-size:.9rem}
-.rival-opt.hidden{display:none}
 /* Finish result badge */
 .finish-result-badge{border-radius:14px;padding:14px 16px;text-align:center;font-size:1.1rem;font-weight:800;margin-bottom:12px}
 .finish-result-badge.win{background:#e8f5e9;color:var(--win)}
 .finish-result-badge.loss{background:#ffebee;color:var(--loss)}
 .finish-result-badge.tie{background:var(--bg);color:var(--muted)}
 
-/* Finish / Edit result options */
+/* Finish/Edit result options */
 .result-options{display:flex;gap:8px;margin-bottom:16px}
 .result-opt{flex:1;padding:12px 8px;border-radius:12px;border:2px solid var(--border);text-align:center;cursor:pointer;font-weight:700;font-size:.88rem;transition:all .15s;color:var(--muted)}
 .result-opt.win.sel{border-color:var(--win);background:#e8f5e9;color:var(--win)}
@@ -296,9 +304,60 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </head>
 <body>
 
+<!-- ═══════════════════════════════════════════
+     AUTH SCREENS (por encima del app)
+═══════════════════════════════════════════ -->
+
+<!-- Cargando -->
+<div id="screen-loading" class="auth-screen">
+  <div class="spinner"></div>
+  <p style="color:var(--muted)">Cargando...</p>
+</div>
+
+<!-- Login con Google -->
+<div id="screen-auth" class="auth-screen" style="display:none">
+  <div class="alogo">🎾</div>
+  <h1>Tennis Tracker</h1>
+  <p>Marca tus partidos en tiempo real con tu compañero</p>
+  <div class="auth-form">
+    <button class="btn-google" onclick="signInWithGoogle()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Entrar con Google
+    </button>
+  </div>
+</div>
+
+<!-- Configurar perfil (primer uso) -->
+<div id="screen-profile-setup" class="auth-screen" style="display:none">
+  <div class="alogo">👤</div>
+  <h1>Configura tu perfil</h1>
+  <p>Así te verá tu compañero en el marcador</p>
+  <div class="auth-form">
+    <div class="avatar-picker-center">
+      <div class="avatar av-xl" id="setup-avatar" onclick="pickSetupPhoto()"></div>
+      <small>Toca para añadir foto (opcional)</small>
+    </div>
+    <input type="text" class="form-input" id="setup-name-input" placeholder="Tu nombre" maxlength="30" autocomplete="off">
+    <button class="btn btn-primary btn-lg btn-full" onclick="saveProfileSetup()">Empezar →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     APP PRINCIPAL
+═══════════════════════════════════════════ -->
+<div id="main-app" style="display:none;flex-direction:column;min-height:100dvh">
+
 <header id="app-header">
   <span>🎾</span>
   <h1>Tennis Tracker</h1>
+  <div id="header-user">
+    <div class="avatar av-sm" id="header-avatar"></div>
+  </div>
 </header>
 
 <main id="main-content">
@@ -306,9 +365,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <!-- ══ TAB 1: PARTIDO ══ -->
   <div id="match-tab" class="tab active">
 
-    <!-- No match: professional home screen -->
+    <!-- Esperando compañero -->
+    <div id="waiting-panel" class="waiting-panel" style="display:none">
+      <div class="wi">🎾</div>
+      <h2>Esperando a tu compañero</h2>
+      <p>Comparte este enlace para que tu amigo se una:</p>
+      <div class="invite-box" id="invite-link-text" onclick="copyInviteLink()">—</div>
+      <button class="btn btn-secondary btn-md" onclick="copyInviteLink()">Copiar enlace</button>
+      <p style="font-size:.75rem;color:var(--muted)">Cuando tu amigo abra el enlace e inicie sesión, el partido comenzará automáticamente.</p>
+    </div>
+
+    <!-- Sin partido activo -->
     <div id="no-match" style="display:none">
-      <!-- My hero card -->
       <div class="my-hero" id="home-hero" onclick="switchTab('profile')">
         <div class="avatar av-xl" id="home-avatar"></div>
         <div class="hero-info">
@@ -317,43 +385,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
       </div>
 
-      <!-- Rival picker -->
-      <div id="home-rivals-section">
-        <div class="rival-picker-label">Jugar contra:</div>
-        <div class="rival-cards" id="home-rival-cards"></div>
-        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="switchTab('profile')">
-          + Gestionar rivales
-        </button>
-      </div>
+      <div id="home-partner-section"></div>
 
-      <!-- Start button -->
       <div class="start-area">
-        <button class="btn btn-primary btn-lg btn-full" id="btn-start-match" onclick="openNewMatchModal()" style="display:none">
+        <button class="btn btn-primary btn-lg btn-full" id="btn-start-match" onclick="openNewMatchModal()">
           Empezar partido →
         </button>
       </div>
     </div>
 
-    <!-- Match in progress -->
+    <!-- Partido en curso -->
     <div id="match-screen" style="display:none">
       <div class="players-row" id="players-row"></div>
       <div class="tb-banner" id="tb-banner"></div>
       <div class="scoreboard" id="scoreboard"></div>
 
       <div class="action-grid">
-        <button class="btn-pt btn-my" onclick="addPoint('my')">
-          <span>+PUNTO</span>
+        <button class="btn-pt btn-my" onclick="addMyPoint()">
+          <span>+MI PUNTO</span>
           <span class="sub" id="my-name-btn">Yo</span>
         </button>
-        <button class="btn-pt btn-rv" onclick="addPoint('rival')">
-          <span>+PUNTO</span>
+        <button class="btn-pt btn-rv" onclick="addRivPoint()">
+          <span>+SU PUNTO</span>
           <span class="sub" id="rival-name-btn">Rival</span>
         </button>
       </div>
 
       <div class="game-row">
-        <button class="btn-gm btn-gm-my btn-full" onclick="addGame('my')">+Juego Yo</button>
-        <button class="btn-gm btn-gm-rv btn-full" onclick="addGame('rival')">+Juego Rival</button>
+        <button class="btn-gm btn-gm-my btn-full" onclick="addMyGame()">+Juego Yo</button>
+        <button class="btn-gm btn-gm-rv btn-full" onclick="addRivGame()">+Juego Rival</button>
       </div>
 
       <div class="footer-row">
@@ -367,7 +427,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <!-- ══ TAB 2: ESTADÍSTICAS ══ -->
   <div id="stats-tab" class="tab">
 
-    <!-- Period filter -->
     <div class="stat-block" style="margin-bottom:0">
       <div class="sec-title">Periodo</div>
       <div class="period-filter" id="period-year-filter"></div>
@@ -395,7 +454,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
 
     <div class="stat-block">
-      <div class="sec-title">Por rival <small style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">— toca para ver detalles</small></div>
+      <div class="sec-title">Contra tu compañero <small style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">— toca para ver detalles</small></div>
       <div id="rivals-stats"></div>
     </div>
 
@@ -414,10 +473,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="sec-title">Mi perfil</div>
       <div class="my-profile-card">
         <div class="my-profile-top">
-          <div class="avatar av-lg" id="profile-av" onclick="pickPhoto('profile')"></div>
+          <div class="avatar av-lg" id="profile-av" onclick="pickProfilePhoto()"></div>
           <div class="pinfo">
             <h3>Toca la foto para cambiarla</h3>
-            <small>Tu nombre aparecerá en el marcador</small>
+            <small>Tu nombre aparece en el marcador</small>
           </div>
         </div>
         <div class="form-group" style="margin-bottom:10px">
@@ -427,70 +486,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
     </div>
 
-    <!-- Rival por defecto -->
+    <!-- Mi compañero -->
     <div class="profile-section">
-      <div class="sec-title">Rival por defecto</div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
-        <div class="form-label" style="margin-bottom:6px">Se preseleccionará al iniciar partido</div>
-        <select class="form-select" id="default-rival-select" onchange="saveDefaultRival()">
-          <option value="">— Sin rival por defecto —</option>
-        </select>
-      </div>
+      <div class="sec-title">Mi compañero</div>
+      <div id="partner-card-container"></div>
     </div>
 
-    <!-- Mis rivales -->
-    <div class="profile-section">
-      <div class="sec-title">Mis rivales</div>
-
-      <!-- Inline add/edit form -->
-      <div class="rival-inline-form" id="rival-form">
-        <div class="avatar-picker">
-          <div class="avatar av-lg" id="rival-av" onclick="pickPhoto('rival')"></div>
-          <small>Toca para cambiar foto</small>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Nombre</label>
-          <input type="text" class="form-input" id="rival-name-input" placeholder="Nombre del rival">
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-primary btn-md" style="flex:1" onclick="saveRivalForm()">Guardar</button>
-          <button class="btn btn-ghost btn-md" onclick="closeRivalForm()">Cancelar</button>
-        </div>
-      </div>
-
-      <button class="btn btn-secondary btn-md btn-full" onclick="openAddRivalForm()" style="margin-bottom:10px">+ Añadir rival</button>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:4px 14px">
-        <div id="rivals-list-inline"></div>
-      </div>
-    </div>
-
-    <!-- Exportar / Importar datos -->
+    <!-- Datos -->
     <div class="profile-section">
       <div class="sec-title">Datos</div>
       <div class="export-card">
         <div class="ei">📥</div>
         <div class="et">
           <h4>Exportar datos</h4>
-          <p>Descarga todos tus partidos y rivales en JSON</p>
+          <p>Descarga todos tus partidos en JSON</p>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="downloadData()">Descargar</button>
       </div>
-      <div class="export-card" style="margin-top:10px">
-        <div class="ei">📤</div>
-        <div class="et">
-          <h4>Importar datos</h4>
-          <p>Fusiona partidos y rivales desde otro JSON</p>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="importData()">Importar</button>
-      </div>
-      <input type="file" id="import-file-input" accept=".json,application/json" style="display:none" onchange="handleImportFile(this)">
+    </div>
+
+    <!-- Cerrar sesión -->
+    <div class="profile-section">
+      <button class="btn btn-ghost btn-md btn-full" onclick="signOut()" style="color:var(--loss);border-color:var(--loss)">Cerrar sesión</button>
     </div>
 
   </div><!-- /profile-tab -->
 
 </main>
 
-<!-- BOTTOM NAV (3 tabs) -->
+<!-- BOTTOM NAV -->
 <nav id="bottom-nav">
   <button class="nav-btn active" id="nav-match" onclick="switchTab('match')">
     <span class="ni">🎾</span><span>Partido</span>
@@ -503,25 +527,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </button>
 </nav>
 
+</div><!-- /main-app -->
+
 <div id="toast"></div>
 
 <!-- ═══════════════════════════════════════════
      MODALS
 ═══════════════════════════════════════════ -->
 
-<!-- New Match -->
+<!-- New Match (sin selector de rival) -->
 <div class="modal-overlay" id="modal-new-match">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">Configurar partido</div>
-
-    <div class="form-group">
-      <div class="form-label">Rival</div>
-      <div class="rival-search-wrap">
-        <input type="text" class="form-input" id="rival-search" placeholder="Buscar rival..." oninput="filterRivalList(this.value)" autocomplete="off">
-      </div>
-      <div class="rival-select-list" id="rival-select-list"></div>
-    </div>
 
     <div class="form-group">
       <div class="form-label">Número de sets</div>
@@ -561,9 +579,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="modal-title">Terminar partido</div>
     <div class="sec-title" style="margin-bottom:6px">Sets jugados</div>
     <div id="finish-sets-list" style="margin-bottom:12px"></div>
-    <!-- Auto result badge -->
     <div id="finish-result-badge"></div>
-    <!-- Override (hidden by default) -->
     <div id="finish-override" style="display:none;margin-bottom:10px">
       <div class="result-options" id="result-options">
         <div class="result-opt win"       data-r="win"       onclick="selectResult('win')">Victoria</div>
@@ -595,7 +611,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
     </div>
     <div class="form-group">
-      <div class="form-label">Sets <small style="color:var(--muted)">(Yo — Rival)</small></div>
+      <div class="form-label">Sets <small style="color:var(--muted)" id="edit-sets-label">(Yo — Rival)</small></div>
       <div id="edit-sets-list"></div>
       <button class="btn btn-ghost btn-sm" onclick="editAddSet()" style="margin-top:6px">+ Añadir set</button>
     </div>
@@ -624,1008 +640,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <!-- ═══════════════════════════════════════════
-     JAVASCRIPT
+     SCRIPTS (carga en orden)
 ═══════════════════════════════════════════ -->
-<script>
-'use strict';
-
-// ── STATE ──────────────────────────────────────────
-let profile = { name: 'Yo', photo: null, defaultRivalId: null };
-let rivals  = [];
-let matches = [];
-let current = null;
-
-// Transient UI
-let _finishResult       = null;
-let _editMatchId        = null;
-let _editResult         = null;
-let _editRivalId        = null;
-let _editRivalPhoto     = null;
-let _profilePhoto       = null;
-let _chartFilter        = 'semana';
-let _homeSelectedRival  = null;  // rivalId selected on home screen
-let _statsYear          = null;  // null = all years
-let _statsMonth         = null;  // null = all months (only valid when _statsYear set)
-
-// ── STORAGE ────────────────────────────────────────
-const SK = { profile:'tt_profile', rivals:'tt_rivals', matches:'tt_matches', current:'tt_current' };
-
-function loadAll() {
-  try { profile = { name:'Yo', photo:null, defaultRivalId:null, ...JSON.parse(localStorage.getItem(SK.profile)) }; } catch(e){}
-  try { rivals  = JSON.parse(localStorage.getItem(SK.rivals))  || []; } catch(e){}
-  try { matches = JSON.parse(localStorage.getItem(SK.matches)) || []; } catch(e){}
-  try { current = JSON.parse(localStorage.getItem(SK.current)) || null; } catch(e){}
-}
-function saveProfileData() { localStorage.setItem(SK.profile,  JSON.stringify(profile)); }
-function saveRivals()      { localStorage.setItem(SK.rivals,   JSON.stringify(rivals)); }
-function saveMatches()     { localStorage.setItem(SK.matches,  JSON.stringify(matches)); }
-function saveCurrent()     { localStorage.setItem(SK.current,  JSON.stringify(current)); }
-function clearCurrent()    { localStorage.removeItem(SK.current); current = null; }
-function uid()             { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-
-// ── TENNIS LOGIC ────────────────────────────────────
-
-function getPointDisplay(my, rival) {
-  const L = ['0','15','30','40'];
-  const noDeuce = current && current.format.noDeuce;
-  if (my < 3 && rival < 3) return { my: L[my], rival: L[rival] };
-  // noDeuce: at 3-3 just show 40-40 (next point wins)
-  if (noDeuce) {
-    if (my === 3 && rival === 3) return { my: '40', rival: '40' };
-    // beyond 3-3 with noDeuce shouldn't happen (game already won), fallback
-    return { my: L[Math.min(my,3)], rival: L[Math.min(rival,3)] };
-  }
-  // Standard deuce rules
-  if (my === rival) return { my: 'Deuce', rival: 'Deuce' };
-  if (my - rival ===  1) return { my: 'Ad', rival: '—' };
-  if (rival - my ===  1) return { my: '—', rival: 'Ad' };
-  return { my: String(my), rival: String(rival) };
-}
-
-function gameWinner(my, rival) {
-  const noDeuce = current && current.format.noDeuce;
-  if (noDeuce) {
-    // First to 4 (= next point after 40-40 each) wins
-    if (my    >= 4 && my    > rival) return 'my';
-    if (rival >= 4 && rival > my)    return 'rival';
-  } else {
-    if (my    >= 4 && my    - rival >= 2) return 'my';
-    if (rival >= 4 && rival - my    >= 2) return 'rival';
-  }
-  return null;
-}
-
-function setWinner(myG, rivalG) {
-  if (myG    >= 6 && myG    - rivalG >= 2) return 'my';
-  if (rivalG >= 6 && rivalG - myG    >= 2) return 'rival';
-  return null;
-}
-
-function tiebreakWinner(my, rival, target) {
-  if (my    >= target && my    - rival >= 2) return 'my';
-  if (rival >= target && rival - my    >= 2) return 'rival';
-  return null;
-}
-
-function snapshotCurrent() {
-  return {
-    completedSets:   JSON.parse(JSON.stringify(current.completedSets)),
-    currentSetGames: { ...current.currentSetGames },
-    isTiebreak:      current.isTiebreak,
-    tbPoints:        { ...current.tbPoints },
-    gamePoints:      { ...current.gamePoints },
-  };
-}
-
-function closeCurrentSet() {
-  current.completedSets.push({
-    my:       current.currentSetGames.my,
-    rival:    current.currentSetGames.rival,
-    tiebreak: current.isTiebreak
-      ? { my: current.tbPoints.my, rival: current.tbPoints.rival, target: current.format.tiebreakTarget }
-      : null
-  });
-  current.currentSetGames = { my: 0, rival: 0 };
-  current.isTiebreak      = false;
-  current.tbPoints        = { my: 0, rival: 0 };
-  current.gamePoints      = { my: 0, rival: 0 };
-}
-
-function checkAfterGame() {
-  const sw = setWinner(current.currentSetGames.my, current.currentSetGames.rival);
-  if (sw) { closeCurrentSet(); return; }
-  if (current.currentSetGames.my === 6 && current.currentSetGames.rival === 6) {
-    if (current.format.tiebreakTarget > 0) current.isTiebreak = true;
-  }
-}
-
-function addPoint(player) {
-  if (!current) return;
-  current.history.push(snapshotCurrent());
-  if (current.history.length > 30) current.history.shift();
-
-  if (current.isTiebreak) {
-    current.tbPoints[player]++;
-    if (tiebreakWinner(current.tbPoints.my, current.tbPoints.rival, current.format.tiebreakTarget)) closeCurrentSet();
-  } else {
-    current.gamePoints[player]++;
-    const gw = gameWinner(current.gamePoints.my, current.gamePoints.rival);
-    if (gw) {
-      current.currentSetGames[gw]++;
-      current.gamePoints = { my: 0, rival: 0 };
-      checkAfterGame();
-    }
-  }
-  saveCurrent(); renderMatch();
-}
-
-function addGame(player) {
-  if (!current) return;
-  if (current.isTiebreak) { showToast('Estás en tiebreak — usa +Punto'); return; }
-  current.history.push(snapshotCurrent());
-  if (current.history.length > 30) current.history.shift();
-  current.currentSetGames[player]++;
-  current.gamePoints = { my: 0, rival: 0 };
-  checkAfterGame();
-  saveCurrent(); renderMatch();
-}
-
-function undoLastPoint() {
-  if (!current || current.history.length === 0) { showToast('Nada que deshacer'); return; }
-  const snap = current.history.pop();
-  current.completedSets   = snap.completedSets;
-  current.currentSetGames = snap.currentSetGames;
-  current.isTiebreak      = snap.isTiebreak;
-  current.tbPoints        = snap.tbPoints;
-  current.gamePoints      = snap.gamePoints;
-  saveCurrent(); renderMatch();
-}
-
-function getSetsWon() {
-  let my = 0, rival = 0;
-  for (const s of current.completedSets) { if (s.my > s.rival) my++; else rival++; }
-  return { my, rival };
-}
-
-// ── MATCH LIFECYCLE ────────────────────────────────
-
-function filterRivalList(query) {
-  const q = query.trim().toLowerCase();
-  document.querySelectorAll('#rival-select-list .rival-opt').forEach(el => {
-    el.classList.toggle('hidden', q.length > 0 && !el.dataset.name.toLowerCase().includes(q));
-  });
-}
-
-function openNewMatchModal() {
-  // Clear search on open
-  const searchEl = document.getElementById('rival-search');
-  if (searchEl) searchEl.value = '';
-  // Populate rival list (pre-select home selection or default)
-  const preferredId = _homeSelectedRival || profile.defaultRivalId;
-  const list = document.getElementById('rival-select-list');
-  if (rivals.length === 0) {
-    list.innerHTML = '<p style="color:var(--muted);font-size:.85rem;margin-bottom:8px">No hay rivales. Ve a la pestaña Perfil para añadir uno.</p>';
-  } else {
-    list.innerHTML = rivals.map(r => {
-      const isSel = r.id === preferredId || (!preferredId && rivals[0].id === r.id);
-      return `<div class="rival-opt${isSel ? ' selected' : ''}" data-id="${r.id}" data-name="${esc(r.name)}" onclick="selectRivalOpt(this)">
-        <div class="avatar av-sm">${avatarHTML(r.photo, r.name)}</div>
-        <span class="rival-opt-name">${esc(r.name)}</span>
-      </div>`;
-    }).join('');
-    // Ensure exactly one is selected
-    if (!list.querySelector('.rival-opt.selected')) list.querySelector('.rival-opt').classList.add('selected');
-  }
-  openModal('modal-new-match');
-}
-
-function selectRivalOpt(el) {
-  document.querySelectorAll('#rival-select-list .rival-opt').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
-}
-
-function startMatch() {
-  const sel = document.querySelector('#rival-select-list .rival-opt.selected');
-  if (!sel) { showToast('Selecciona un rival'); return; }
-  const numSets  = parseInt(document.querySelector('#rg-numsets  .radio-option.selected')?.dataset.val || '3');
-  const tbTarget = parseInt(document.querySelector('#rg-tiebreak .radio-option.selected')?.dataset.val ?? '7');
-  const noDeuce  = document.querySelector('#rg-deuce .radio-option.selected')?.dataset.val === 'nodeuce';
-
-  current = {
-    rivalId:         sel.dataset.id,
-    rivalName:       sel.dataset.name,
-    format:          { numSets, tiebreakTarget: tbTarget, noDeuce },
-    completedSets:   [],
-    currentSetGames: { my: 0, rival: 0 },
-    isTiebreak:      false,
-    tbPoints:        { my: 0, rival: 0 },
-    gamePoints:      { my: 0, rival: 0 },
-    history:         [],
-    startDate:       new Date().toISOString().slice(0,10),
-  };
-  saveCurrent();
-  closeModal('modal-new-match');
-  renderMatch();
-}
-
-function openFinishModal() {
-  if (!current) return;
-  _finishResult = null;
-  const sw = getSetsWon();
-  if (sw.my > sw.rival) _finishResult = 'win';
-  else if (sw.rival > sw.my) _finishResult = 'loss';
-
-  const allSets = [...current.completedSets];
-  if (current.currentSetGames.my > 0 || current.currentSetGames.rival > 0)
-    allSets.push({ my: current.currentSetGames.my, rival: current.currentSetGames.rival, tiebreak: null });
-
-  const myName  = profile.name || 'Yo';
-  const rivName = current.rivalName || 'Rival';
-
-  document.getElementById('finish-sets-list').innerHTML = allSets.length === 0
-    ? '<p style="color:var(--muted);font-size:.85rem">Sin sets completados aún</p>'
-    : allSets.map((s,i) => `
-        <div class="finish-set-row">
-          <span style="color:var(--muted);width:52px">Set ${i+1}:</span>
-          <strong>${esc(myName)} ${s.my} — ${s.rival} ${esc(rivName)}</strong>
-          ${s.tiebreak ? `<span style="font-size:.75rem;color:var(--muted)">(TB ${s.tiebreak.my}-${s.tiebreak.rival})</span>` : ''}
-        </div>`).join('');
-
-  // Show auto-calculated result badge
-  const badge = document.getElementById('finish-result-badge');
-  const isTie = sw.my === sw.rival;
-  if (_finishResult === 'win') {
-    badge.className = 'finish-result-badge win';
-    badge.textContent = '✓ Victoria';
-  } else if (_finishResult === 'loss') {
-    badge.className = 'finish-result-badge loss';
-    badge.textContent = '✗ Derrota';
-  } else {
-    badge.className = 'finish-result-badge tie';
-    badge.textContent = 'Sets empatados — elige resultado';
-  }
-
-  // Show override section if tie (must choose), hide "Cambiar" button if tie
-  document.getElementById('finish-override').style.display = isTie ? 'block' : 'none';
-  document.getElementById('finish-override-btn').style.display = isTie ? 'none' : '';
-
-  // Sync override buttons if tie
-  if (isTie) {
-    document.querySelectorAll('#result-options .result-opt').forEach(el => el.classList.remove('sel'));
-  }
-
-  openModal('modal-finish');
-}
-
-function toggleFinishOverride() {
-  const ov = document.getElementById('finish-override');
-  ov.style.display = ov.style.display === 'none' ? 'block' : 'none';
-}
-
-function selectResult(r) {
-  _finishResult = r;
-  document.querySelectorAll('#result-options .result-opt').forEach(el => el.classList.toggle('sel', el.dataset.r === r));
-  const badge = document.getElementById('finish-result-badge');
-  if (r === 'win')       { badge.className = 'finish-result-badge win';  badge.textContent = '✓ Victoria'; }
-  else if (r === 'loss') { badge.className = 'finish-result-badge loss'; badge.textContent = '✗ Derrota'; }
-  else                   { badge.className = 'finish-result-badge tie';  badge.textContent = '⊘ Abandonado'; }
-}
-
-function confirmFinish() {
-  if (!_finishResult) { showToast('Selecciona el resultado'); return; }
-  const allSets = [...current.completedSets];
-  if (current.currentSetGames.my > 0 || current.currentSetGames.rival > 0)
-    allSets.push({ my: current.currentSetGames.my, rival: current.currentSetGames.rival, tiebreak: null });
-  const sw = getSetsWon();
-  matches.unshift({
-    id: uid(), date: current.startDate || new Date().toISOString().slice(0,10),
-    rivalId: current.rivalId, rivalName: current.rivalName,
-    result: _finishResult, sets: allSets, setsWon: sw, format: current.format,
-  });
-  saveMatches(); clearCurrent();
-  closeModal('modal-finish');
-  renderMatch();
-  showToast('Partido guardado ✓');
-}
-
-// ── RENDER: MATCH TAB ──────────────────────────────
-
-function renderMatch() {
-  const noMatch     = document.getElementById('no-match');
-  const matchScreen = document.getElementById('match-screen');
-
-  if (current) {
-    noMatch.style.display     = 'none';
-    matchScreen.style.display = '';
-    renderMatchScreen();
-  } else {
-    noMatch.style.display     = '';
-    matchScreen.style.display = 'none';
-    renderHomeScreen();
-  }
-}
-
-function renderHomeScreen() {
-  // Hero
-  document.getElementById('home-name').textContent = profile.name || 'Yo';
-  document.getElementById('home-avatar').innerHTML = avatarHTML(profile.photo, profile.name);
-
-  const btn = document.getElementById('btn-start-match');
-
-  if (rivals.length === 0) {
-    document.getElementById('home-rivals-section').innerHTML = `
-      <div class="no-rivals-empty">
-        <div class="ei">👥</div>
-        <p>Añade un rival para empezar a jugar</p>
-        <button class="btn btn-secondary btn-md" onclick="switchTab('profile')">Ir a Perfil →</button>
-      </div>`;
-    btn.style.display = 'none';
-    return;
-  }
-
-  // W-L map
-  const wlMap = {};
-  for (const m of matches) {
-    if (m.result === 'abandoned') continue;
-    if (!wlMap[m.rivalId]) wlMap[m.rivalId] = { w:0, l:0 };
-    m.result === 'win' ? wlMap[m.rivalId].w++ : wlMap[m.rivalId].l++;
-  }
-
-  // Ensure selected rival is valid
-  if (!_homeSelectedRival || !rivals.find(r => r.id === _homeSelectedRival)) {
-    _homeSelectedRival = profile.defaultRivalId || rivals[0].id;
-  }
-
-  document.getElementById('home-rivals-section').innerHTML = `
-    <div class="rival-picker-label">Jugar contra:</div>
-    <div class="rival-cards" id="home-rival-cards">
-      ${rivals.map(r => {
-        const wl  = wlMap[r.id] || { w:0, l:0 };
-        const sel = r.id === _homeSelectedRival;
-        return `<div class="rival-card${sel ? ' selected' : ''}" onclick="selectHomeRival('${r.id}')">
-          <div class="avatar av-sm">${avatarHTML(r.photo, r.name)}</div>
-          <div style="flex:1">
-            <div class="rival-card-name">${esc(r.name)}</div>
-            <div class="rival-card-record"><span class="rw">${wl.w}V</span> <span class="rl">${wl.l}D</span></div>
-          </div>
-          <div class="check">✓</div>
-        </div>`;
-      }).join('')}
-    </div>
-    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="switchTab('profile')">+ Gestionar rivales</button>`;
-
-  btn.style.display = '';
-}
-
-function selectHomeRival(id) {
-  _homeSelectedRival = id;
-  document.querySelectorAll('#home-rival-cards .rival-card').forEach(c => {
-    c.classList.toggle('selected', c.getAttribute('onclick') === `selectHomeRival('${id}')`);
-  });
-}
-
-function renderMatchScreen() {
-  const myName  = profile.name || 'Yo';
-  const rivName = current.rivalName || 'Rival';
-
-  document.getElementById('my-name-btn').textContent    = myName;
-  document.getElementById('rival-name-btn').textContent = rivName;
-
-  const rival   = rivals.find(r => r.id === current.rivalId);
-  document.getElementById('players-row').innerHTML = `
-    <div class="player-info">
-      <div class="avatar av-md">${avatarHTML(profile.photo, myName)}</div>
-      <span class="pname">${esc(myName)}</span>
-    </div>
-    <span class="pvs">VS</span>
-    <div class="player-info">
-      <div class="avatar av-md">${avatarHTML(rival?.photo || null, rivName)}</div>
-      <span class="pname">${esc(rivName)}</span>
-    </div>`;
-
-  const banner = document.getElementById('tb-banner');
-  if (current.isTiebreak) {
-    banner.textContent = `🔥 Tiebreak — primero a ${current.format.tiebreakTarget}`;
-    banner.classList.add('visible');
-  } else {
-    banner.classList.remove('visible');
-  }
-
-  const sw = getSetsWon();
-  const pt = current.isTiebreak
-    ? { my: String(current.tbPoints.my), rival: String(current.tbPoints.rival) }
-    : getPointDisplay(current.gamePoints.my, current.gamePoints.rival);
-
-  const isSpecial = pt.my === 'Deuce' || pt.my === 'Ad' || pt.rival === 'Ad';
-
-  const chipsHTML = current.completedSets.map(s => {
-    const won = s.my > s.rival;
-    const tb  = s.tiebreak ? `<sup style="font-size:.65em">(${s.tiebreak.my}-${s.tiebreak.rival})</sup>` : '';
-    return `<span class="set-chip ${won ? 'won' : 'lost'}">${s.my}-${s.rival}${tb}</span>`;
-  }).join('');
-
-  document.getElementById('scoreboard').innerHTML = `
-    ${current.completedSets.length > 0 ? `<div class="sets-history">${chipsHTML}</div>` : ''}
-    <div class="score-row">
-      <div class="score-label">Sets</div>
-      <div class="score-val hi">${sw.my}</div><div class="score-sep">—</div><div class="score-val">${sw.rival}</div>
-    </div>
-    <div class="score-row">
-      <div class="score-label">Juegos</div>
-      <div class="score-val hi">${current.currentSetGames.my}</div><div class="score-sep">—</div><div class="score-val">${current.currentSetGames.rival}</div>
-    </div>
-    <div class="score-row">
-      <div class="score-label">${current.isTiebreak ? 'TB pts' : 'Puntos'}</div>
-      <div class="score-val hi${isSpecial ? ' special' : ''}">${esc(pt.my)}</div>
-      <div class="score-sep">—</div>
-      <div class="score-val${isSpecial ? ' special' : ''}">${esc(pt.rival)}</div>
-    </div>`;
-}
-
-// ── STATS: PERIOD FILTER ────────────────────────────
-
-function getFilteredMatches() {
-  return matches.filter(m => {
-    if (m.result === 'abandoned') return false;
-    if (_statsYear  !== null && m.date.slice(0,4)   !== String(_statsYear))  return false;
-    if (_statsMonth !== null && parseInt(m.date.slice(5,7)) !== _statsMonth)  return false;
-    return true;
-  });
-}
-
-function renderPeriodFilter() {
-  // Gather years present in data + current year
-  const years = [...new Set(matches.map(m => m.date.slice(0,4)))].sort().reverse();
-  const now   = new Date();
-  const curY  = String(now.getFullYear());
-  if (!years.includes(curY)) years.unshift(curY);
-
-  const yEl = document.getElementById('period-year-filter');
-  yEl.innerHTML =
-    `<button class="pf-chip${_statsYear === null ? ' active' : ''}" onclick="setPeriodYear(null)">Todo</button>` +
-    years.map(y =>
-      `<button class="pf-chip${_statsYear === y ? ' active' : ''}" onclick="setPeriodYear('${y}')">${y}</button>`
-    ).join('');
-
-  const mEl   = document.getElementById('period-month-filter');
-  const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  if (_statsYear !== null) {
-    mEl.style.display = '';
-    mEl.innerHTML =
-      `<button class="mf-chip${_statsMonth === null ? ' active' : ''}" onclick="setPeriodMonth(null)">Todos</button>` +
-      MONTHS.map((mn, i) =>
-        `<button class="mf-chip${_statsMonth === (i+1) ? ' active' : ''}" onclick="setPeriodMonth(${i+1})">${mn}</button>`
-      ).join('');
-  } else {
-    mEl.style.display = 'none';
-  }
-}
-
-function setPeriodYear(y) {
-  _statsYear  = y;
-  _statsMonth = null;
-  renderStats();
-}
-
-function setPeriodMonth(m) {
-  _statsMonth = m;
-  renderStats();
-}
-
-// ── RENDER: STATS TAB ──────────────────────────────
-
-function renderStats() {
-  renderPeriodFilter();
-  const fin = getFilteredMatches();
-
-  const wins   = fin.filter(m => m.result === 'win').length;
-  const losses = fin.filter(m => m.result === 'loss').length;
-  const total  = wins + losses;
-  const pct    = total > 0 ? Math.round(wins / total * 100) : 0;
-
-  document.getElementById('summary-grid').innerHTML = `
-    <div class="summary-box win"><div class="sbv">${wins}</div><div class="sbl">Victorias</div></div>
-    <div class="summary-box loss"><div class="sbv">${losses}</div><div class="sbl">Derrotas</div></div>
-    <div class="summary-box"><div class="sbv">${pct}%</div><div class="sbl">% victorias</div></div>`;
-
-  const sorted = [...fin].sort((a,b) => a.date.localeCompare(b.date));
-  let bestStreak = 0, tmp = 0, curStreak = 0;
-  for (const m of sorted) { if (m.result === 'win') { tmp++; bestStreak = Math.max(bestStreak, tmp); } else tmp = 0; }
-  for (let i = sorted.length - 1; i >= 0; i--) { if (sorted[i].result === 'win') curStreak++; else break; }
-
-  document.getElementById('streak-row').innerHTML = `
-    <div class="streak-box"><div class="sv">${curStreak}</div><div class="sl">Racha actual</div></div>
-    <div class="streak-box"><div class="sv">${bestStreak}</div><div class="sl">Mejor racha</div></div>`;
-
-  renderChart(_chartFilter);
-
-  // By rival (filtered)
-  const rivalMap = {};
-  for (const m of fin) {
-    if (!rivalMap[m.rivalId]) rivalMap[m.rivalId] = { id: m.rivalId, name: m.rivalName, w:0, l:0 };
-    m.result === 'win' ? rivalMap[m.rivalId].w++ : rivalMap[m.rivalId].l++;
-  }
-  const rivalEntries = Object.values(rivalMap).sort((a,b) => (b.w+b.l)-(a.w+a.l));
-  const rival = id => rivals.find(r => r.id === id);
-  document.getElementById('rivals-stats').innerHTML = rivalEntries.length === 0
-    ? '<div class="empty-state"><div class="es-icon">🎾</div><p>Sin partidos en este periodo</p></div>'
-    : rivalEntries.map(r => `
-        <div class="rival-row" style="cursor:pointer" onclick="openRivalDetail('${r.id}')">
-          <div class="avatar av-sm">${avatarHTML(rival(r.id)?.photo || null, r.name)}</div>
-          <div class="rival-rname">${esc(r.name)}</div>
-          <div class="rival-rec"><span class="rw">${r.w}V</span> <span class="rl">${r.l}D</span></div>
-          <span style="color:var(--muted);font-size:.8rem">›</span>
-        </div>`).join('');
-
-  // Match history (filtered)
-  document.getElementById('match-history').innerHTML = fin.length === 0
-    ? '<div class="empty-state"><div class="es-icon">📋</div><p>Sin partidos en este periodo</p></div>'
-    : fin.map(m => {
-        const setsStr  = m.sets?.length > 0 ? m.sets.map(s => `${s.my}-${s.rival}`).join(', ') : '—';
-        const resLabel = m.result === 'win' ? 'Victoria' : 'Derrota';
-        return `<div class="match-item">
-          <div class="m-dot ${m.result}"></div>
-          <div class="m-info">
-            <div class="m-rival">${esc(m.rivalName)}</div>
-            <div class="m-meta">${m.date} · ${resLabel}</div>
-            <div class="m-sets">${setsStr}</div>
-          </div>
-          <button class="btn btn-ghost btn-sm" onclick="openEditMatchModal('${m.id}')">✏️</button>
-        </div>`;
-      }).join('');
-}
-
-// ── RIVAL DETAIL ────────────────────────────────────
-
-function openRivalDetail(rivalId) {
-  // All non-abandoned matches against this rival
-  const ms = matches.filter(m => m.rivalId === rivalId && m.result !== 'abandoned')
-                    .sort((a,b) => b.date.localeCompare(a.date));
-
-  const r = rivals.find(x => x.id === rivalId) || { name: ms[0]?.rivalName || '?', photo: null };
-
-  // From rival's perspective: their wins = our losses, their losses = our wins
-  const theirWins   = ms.filter(m => m.result === 'loss').length;
-  const theirLosses = ms.filter(m => m.result === 'win').length;
-  const total       = ms.length;
-  const pct         = total > 0 ? Math.round(theirWins / total * 100) : 0;
-
-  document.getElementById('rd-avatar').innerHTML = avatarHTML(r.photo, r.name);
-  document.getElementById('rd-name').textContent  = r.name;
-
-  document.getElementById('rd-summary').innerHTML = `
-    <div class="rd-box win"><div class="rbv">${theirWins}</div><div class="rbl">Sus victorias</div></div>
-    <div class="rd-box loss"><div class="rbv">${theirLosses}</div><div class="rbl">Sus derrotas</div></div>
-    <div class="rd-box"><div class="rbv">${pct}%</div><div class="rbl">% victorias</div></div>`;
-
-  const myName = profile.name || 'Yo';
-  document.getElementById('rd-matches').innerHTML = ms.length === 0
-    ? '<p style="color:var(--muted);font-size:.85rem">Sin partidos</p>'
-    : ms.map(m => {
-        const theirResult = m.result === 'loss' ? 'win' : 'loss';
-        const label       = theirResult === 'win' ? 'Gana' : 'Pierde';
-        // Invert set scores to show from rival's POV
-        const setsStr     = m.sets?.length > 0
-          ? m.sets.map(s => `${s.rival}-${s.my}`).join(', ') : '—';
-        return `<div class="rd-match-row">
-          <div class="rd-match-res ${theirResult}">${label}</div>
-          <div class="rd-match-sets">${setsStr} vs ${esc(myName)}</div>
-          <div class="rd-match-date">${m.date}</div>
-        </div>`;
-      }).join('');
-
-  openModal('modal-rival-detail');
-}
-
-function renderChart(filter) {
-  _chartFilter = filter;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.f === filter));
-
-  const now = new Date();
-  let periods = [];
-
-  if (filter === 'semana') {
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now); d.setDate(d.getDate() - i);
-      periods.push({ key: d.toISOString().slice(0,10), label: d.toLocaleDateString('es-ES',{weekday:'narrow'}), w:0, l:0 });
-    }
-    const map = {}; for (const p of periods) map[p.key] = p;
-    for (const m of matches) {
-      if (m.result === 'abandoned') continue;
-      if (map[m.date]) m.result === 'win' ? map[m.date].w++ : map[m.date].l++;
-    }
-  } else if (filter === 'mes') {
-    for (let w = 3; w >= 0; w--) {
-      const toD = new Date(now); toD.setDate(toD.getDate() - w * 7);
-      const frD = new Date(toD); frD.setDate(frD.getDate() - 6);
-      periods.push({ fromKey: frD.toISOString().slice(0,10), toKey: toD.toISOString().slice(0,10),
-        label: frD.toLocaleDateString('es-ES',{day:'numeric',month:'short'}).replace('.',''), w:0, l:0 });
-    }
-    for (const m of matches) {
-      if (m.result === 'abandoned') continue;
-      for (const p of periods) {
-        if (m.date >= p.fromKey && m.date <= p.toKey) { m.result === 'win' ? p.w++ : p.l++; break; }
-      }
-    }
-  } else {
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      periods.push({ key, label: d.toLocaleDateString('es-ES',{month:'short'}).slice(0,3), w:0, l:0 });
-    }
-    const map = {}; for (const p of periods) map[p.key] = p;
-    for (const m of matches) {
-      if (m.result === 'abandoned') continue;
-      const mk = m.date.slice(0,7);
-      if (map[mk]) m.result === 'win' ? map[mk].w++ : map[mk].l++;
-    }
-  }
-
-  // Fixed px heights to avoid percentage-in-flex rendering issues
-  const BAR_H = 80;
-  const maxVal = Math.max(...periods.map(p => p.w + p.l), 1);
-  document.getElementById('chart-wrap').innerHTML = periods.map(p => {
-    const wH = Math.round(p.w / maxVal * BAR_H);
-    const lH = Math.round(p.l / maxVal * BAR_H);
-    return `<div class="chart-col">
-      <div class="bar-stack">
-        <div class="bar-win"  style="height:${wH}px"></div>
-        <div class="bar-loss" style="height:${lH}px"></div>
-      </div>
-      <div class="bar-label">${esc(p.label)}</div>
-    </div>`;
-  }).join('');
-}
-
-// ── RENDER: PROFILE TAB ────────────────────────────
-
-function renderProfileTab() {
-  // My profile — only reset temp state if entering the tab fresh (not on rival save)
-  _profilePhoto = profile.photo;
-  document.getElementById('profile-name-input').value = profile.name || '';
-  document.getElementById('profile-av').innerHTML = avatarHTML(profile.photo, profile.name);
-
-  // Default rival select
-  const sel = document.getElementById('default-rival-select');
-  sel.innerHTML = '<option value="">— Sin rival por defecto —</option>' +
-    rivals.map(r => `<option value="${r.id}"${r.id === profile.defaultRivalId ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
-
-  // Rivals list
-  renderRivalsInline();
-}
-
-function renderRivalsInline() {
-  const container = document.getElementById('rivals-list-inline');
-  const wlMap = {};
-  for (const m of matches) {
-    if (m.result === 'abandoned') continue;
-    if (!wlMap[m.rivalId]) wlMap[m.rivalId] = { w:0, l:0 };
-    m.result === 'win' ? wlMap[m.rivalId].w++ : wlMap[m.rivalId].l++;
-  }
-
-  if (rivals.length === 0) {
-    container.innerHTML = '<div class="empty-state" style="padding:16px"><div class="es-icon">👥</div><p>Sin rivales. Añade uno.</p></div>';
-    return;
-  }
-  container.innerHTML = rivals.map(r => {
-    const wl = wlMap[r.id] || { w:0, l:0 };
-    const isDef = r.id === profile.defaultRivalId;
-    return `<div class="rivals-inline-item">
-      <div class="avatar av-sm" style="cursor:pointer" onclick="openEditRival('${r.id}')">${avatarHTML(r.photo, r.name)}</div>
-      <div style="flex:1">
-        <div class="ri-name">${esc(r.name)}${isDef ? ' <span style="font-size:.7rem;color:var(--accent)">★ defecto</span>' : ''}</div>
-        <div class="ri-sub"><span style="color:var(--win);font-weight:700">${wl.w}V</span> <span style="color:var(--loss);font-weight:700">${wl.l}D</span></div>
-      </div>
-      <div class="ri-actions">
-        <button class="btn btn-ghost btn-sm" onclick="openEditRival('${r.id}')">✏️</button>
-        <button class="btn btn-ghost btn-sm" onclick="deleteRival('${r.id}')">🗑</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ── PROFILE SAVE ───────────────────────────────────
-
-function saveProfile() {
-  const name = document.getElementById('profile-name-input').value.trim();
-  if (!name) { showToast('Introduce un nombre'); return; }
-  profile.name  = name;
-  profile.photo = _profilePhoto;
-  saveProfileData();
-  // Refresh home screen if on match tab
-  if (document.getElementById('match-tab').classList.contains('active')) renderMatch();
-  showToast('Perfil guardado ✓');
-  // Update hero avatar in profile tab
-  document.getElementById('profile-av').innerHTML = avatarHTML(profile.photo, profile.name);
-}
-
-function saveDefaultRival() {
-  profile.defaultRivalId = document.getElementById('default-rival-select').value || null;
-  saveProfileData();
-  _homeSelectedRival = profile.defaultRivalId;
-  renderRivalsInline(); // refresh ★ marker
-}
-
-// ── RIVALS MANAGEMENT ──────────────────────────────
-
-function openAddRivalForm() {
-  _editRivalId    = null;
-  _editRivalPhoto = null;
-  document.getElementById('rival-name-input').value = '';
-  document.getElementById('rival-av').innerHTML = avatarHTML(null, '');
-  document.getElementById('rival-form').style.display = 'block';
-  document.getElementById('rival-name-input').focus();
-}
-
-function openEditRival(id) {
-  const r = rivals.find(x => x.id === id);
-  if (!r) return;
-  _editRivalId    = id;
-  _editRivalPhoto = r.photo;
-  document.getElementById('rival-name-input').value = r.name;
-  document.getElementById('rival-av').innerHTML = avatarHTML(r.photo, r.name);
-  document.getElementById('rival-form').style.display = 'block';
-}
-
-function closeRivalForm() {
-  document.getElementById('rival-form').style.display = 'none';
-  _editRivalId = null; _editRivalPhoto = null;
-}
-
-function saveRivalForm() {
-  const name = document.getElementById('rival-name-input').value.trim();
-  if (!name) { showToast('Introduce un nombre'); return; }
-
-  if (_editRivalId) {
-    const r = rivals.find(x => x.id === _editRivalId);
-    if (r) { r.name = name; r.photo = _editRivalPhoto; }
-    // Sync name in all historical matches
-    for (const m of matches) { if (m.rivalId === _editRivalId) m.rivalName = name; }
-    saveMatches();
-  } else {
-    rivals.push({ id: uid(), name, photo: _editRivalPhoto });
-  }
-  saveRivals();
-  closeRivalForm();
-  // Refresh only the rivals list and default-rival select (not full tab, to avoid resetting _profilePhoto)
-  renderRivalsInline();
-  const selEl = document.getElementById('default-rival-select');
-  if (selEl) {
-    selEl.innerHTML = '<option value="">— Sin rival por defecto —</option>' +
-      rivals.map(r => `<option value="${r.id}"${r.id === profile.defaultRivalId ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
-  }
-  // If on match tab, refresh home rival cards
-  if (document.getElementById('match-tab').classList.contains('active')) renderMatch();
-  showToast(_editRivalId ? 'Rival actualizado ✓' : 'Rival añadido ✓');
-}
-
-function deleteRival(id) {
-  const hasMatches = matches.some(m => m.rivalId === id);
-  const msg = hasMatches ? 'Este rival tiene partidos guardados. ¿Eliminar igualmente?' : '¿Eliminar este rival?';
-  if (!confirm(msg)) return;
-  rivals = rivals.filter(r => r.id !== id);
-  if (profile.defaultRivalId === id) { profile.defaultRivalId = null; saveProfileData(); }
-  if (_homeSelectedRival === id) _homeSelectedRival = null;
-  saveRivals();
-  renderRivalsInline();
-  const selElD = document.getElementById('default-rival-select');
-  if (selElD) {
-    selElD.innerHTML = '<option value="">— Sin rival por defecto —</option>' +
-      rivals.map(r => `<option value="${r.id}"${r.id === profile.defaultRivalId ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
-  }
-  if (document.getElementById('match-tab').classList.contains('active')) renderMatch();
-  showToast('Rival eliminado');
-}
-
-// ── EDIT MATCH ─────────────────────────────────────
-
-function openEditMatchModal(id) {
-  const m = matches.find(x => x.id === id);
-  if (!m) return;
-  _editMatchId = id; _editResult = m.result;
-  document.getElementById('edit-date').value = m.date;
-  document.querySelectorAll('#edit-result-options .result-opt').forEach(el =>
-    el.classList.toggle('sel', el.dataset.r === m.result));
-  const container = document.getElementById('edit-sets-list');
-  container.innerHTML = '';
-  (m.sets || []).forEach((s, i) => appendEditSetRow(container, s.my, s.rival, i));
-  openModal('modal-edit-match');
-}
-
-function appendEditSetRow(container, myVal, rivalVal, idx) {
-  const div = document.createElement('div');
-  div.className = 'edit-set-row'; div.dataset.idx = idx;
-  div.innerHTML = `
-    <input class="form-input" type="number" min="0" max="99" value="${myVal}"    data-side="my">
-    <span class="set-sep">—</span>
-    <input class="form-input" type="number" min="0" max="99" value="${rivalVal}" data-side="rival">
-    <button class="btn btn-ghost btn-sm" onclick="editRemoveSet(this)">✕</button>`;
-  container.appendChild(div);
-}
-
-function editAddSet() {
-  const c = document.getElementById('edit-sets-list');
-  appendEditSetRow(c, 0, 0, c.children.length);
-}
-
-function editRemoveSet(btn) {
-  const rows = document.querySelectorAll('#edit-sets-list .edit-set-row');
-  if (rows.length <= 1) { showToast('Debe haber al menos 1 set'); return; }
-  btn.closest('.edit-set-row').remove();
-}
-
-function editSelectResult(r) {
-  _editResult = r;
-  document.querySelectorAll('#edit-result-options .result-opt').forEach(el => el.classList.toggle('sel', el.dataset.r === r));
-}
-
-function saveEditMatch() {
-  if (!_editResult) { showToast('Selecciona el resultado'); return; }
-  const m = matches.find(x => x.id === _editMatchId);
-  if (!m) return;
-  const rows = document.querySelectorAll('#edit-sets-list .edit-set-row');
-  const sets = Array.from(rows).map(row => ({
-    my: parseInt(row.querySelector('[data-side="my"]').value) || 0,
-    rival: parseInt(row.querySelector('[data-side="rival"]').value) || 0,
-    tiebreak: null
-  }));
-  m.date = document.getElementById('edit-date').value;
-  m.result = _editResult; m.sets = sets;
-  let myS = 0, rivS = 0;
-  for (const s of sets) { if (s.my > s.rival) myS++; else rivS++; }
-  m.setsWon = { my: myS, rival: rivS };
-  saveMatches(); closeModal('modal-edit-match'); renderStats();
-  showToast('Partido actualizado ✓');
-}
-
-function deleteMatch() {
-  if (!confirm('¿Eliminar este partido?')) return;
-  matches = matches.filter(m => m.id !== _editMatchId);
-  saveMatches(); closeModal('modal-edit-match'); renderStats();
-  showToast('Partido eliminado');
-}
-
-// ── EXPORT DATA ────────────────────────────────────
-
-function downloadData() {
-  const data = { exportDate: new Date().toISOString(), profile, rivals, matches };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = `tennis-tracker-${new Date().toISOString().slice(0,10)}.json`;
-  a.click(); URL.revokeObjectURL(url);
-  showToast('Datos descargados ✓');
-}
-
-// ── IMPORT DATA ────────────────────────────────────
-
-function importData() {
-  document.getElementById('import-file-input').value = '';
-  document.getElementById('import-file-input').click();
-}
-
-function handleImportFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    let data;
-    try { data = JSON.parse(ev.target.result); }
-    catch { showToast('❌ JSON inválido'); return; }
-
-    if (!data.rivals && !data.matches) {
-      showToast('❌ Formato no reconocido'); return;
-    }
-
-    // Replace all data
-    rivals.length = 0;
-    (data.rivals || []).forEach(r => rivals.push(r));
-    matches.length = 0;
-    (data.matches || []).forEach(m => matches.push(m));
-    if (data.profile) Object.assign(profile, data.profile);
-
-    saveRivals();
-    saveMatches();
-    saveProfileData();
-    renderRivalList();
-    showToast(`✓ Datos reemplazados: ${rivals.length} rival(es), ${matches.length} partido(s)`);
-  };
-  reader.readAsText(file);
-}
-
-// ── PHOTO UPLOAD ────────────────────────────────────
-
-function pickPhoto(target) {
-  const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = 'image/*';
-  inp.onchange = e => {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const url = ev.target.result;
-      if (target === 'profile') {
-        _profilePhoto = url;
-        document.getElementById('profile-av').innerHTML = avatarHTML(url, '');
-      } else {
-        _editRivalPhoto = url;
-        document.getElementById('rival-av').innerHTML = avatarHTML(url, '');
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-  inp.click();
-}
-
-// ── MODALS ─────────────────────────────────────────
-
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-document.querySelectorAll('.modal-overlay').forEach(ov =>
-  ov.addEventListener('click', e => { if (e.target === ov) closeModal(ov.id); }));
-
-// ── RADIO GROUPS ───────────────────────────────────
-
-document.querySelectorAll('.radio-group').forEach(g =>
-  g.addEventListener('click', e => {
-    const opt = e.target.closest('.radio-option'); if (!opt) return;
-    g.querySelectorAll('.radio-option').forEach(o => o.classList.remove('selected'));
-    opt.classList.add('selected');
-  }));
-
-// ── NAVIGATION ─────────────────────────────────────
-
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t    => t.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const tabEl = document.getElementById(tab + '-tab');
-  const navEl = document.getElementById('nav-' + tab);
-  if (tabEl) tabEl.classList.add('active');
-  if (navEl) navEl.classList.add('active');
-  if (tab === 'stats')   renderStats();
-  if (tab === 'profile') renderProfileTab();
-  if (tab === 'match')   renderMatch();
-}
-
-document.getElementById('chart-filters').addEventListener('click', e => {
-  const btn = e.target.closest('.filter-btn');
-  if (btn) renderChart(btn.dataset.f);
-});
-
-// ── TOAST ──────────────────────────────────────────
-
-let _toastTimer;
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
-}
-
-// ── HELPERS ────────────────────────────────────────
-
-function esc(str) {
-  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function avatarHTML(photo, name) {
-  if (photo) return `<img src="${photo}" alt="${esc(name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-  const letter = (String(name||'?')[0]||'?').toUpperCase();
-  return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
-    <circle cx="20" cy="20" r="20" fill="#2d6a4f"/>
-    <text x="20" y="27" text-anchor="middle" font-size="18" font-family="sans-serif" fill="#fff" font-weight="bold">${esc(letter)}</text>
-  </svg>`;
-}
-
-// ── SERVICE WORKER ─────────────────────────────────
-
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
-
-// ── INIT ───────────────────────────────────────────
-
-loadAll();
-_homeSelectedRival = profile.defaultRivalId || (rivals[0]?.id || null);
-renderMatch();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/tennis-logic.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/realtime.js"></script>
+<script src="js/match.js"></script>
+<script src="js/render.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
