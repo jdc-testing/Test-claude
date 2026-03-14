@@ -1,102 +1,64 @@
 /**
  * realtime.js — Suscripciones Supabase Realtime
  *
- * subscribeToLiveMatch()   — escucha cambios en live_state para sync del partido
- * subscribeToFriendship()  — escucha cuando player2 se une (estado 'waiting')
+ * subscribeToFriendships() — detecta cuando alguien acepta una invitación
  * unsubscribeAll()         — limpia todas las suscripciones
+ *
+ * NOTA: El marcador ya NO se sincroniza en tiempo real punto a punto.
+ * La sincronización ocurre solo al terminar el partido (INSERT en matches).
  */
 
 'use strict';
 
-// ── PARTIDO EN CURSO ──────────────────────────────────
+// ── DETECTAR NUEVOS AMIGOS ────────────────────────────
 
 /**
- * Suscribe a cambios en live_state para esta friendship.
- * Cuando llega un update, actualiza `current` y re-renderiza el marcador.
- * Usa JSON.stringify para evitar re-renders innecesarios si el estado no cambió.
+ * Suscribe a cambios en friendships donde soy player1 (el que invitó).
+ * Cuando alguien acepta la invitación (status → 'active'), actualiza
+ * el array friends[] y notifica al usuario.
  */
-function subscribeToLiveMatch() {
-  if (realtimeChannel) {
-    sb.removeChannel(realtimeChannel);
-    realtimeChannel = null;
-  }
-
-  if (!friendship) return;
-
-  realtimeChannel = sb
-    .channel('live-match-' + friendship.id)
-    .on(
-      'postgres_changes',
-      {
-        event:  '*',
-        schema: 'public',
-        table:  'live_state',
-        filter: `friendship_id=eq.${friendship.id}`,
-      },
-      payload => {
-        const incoming = payload.new?.state || null;
-
-        // Evitar re-render si el estado es idéntico (p.ej. echo de nuestro propio write)
-        if (JSON.stringify(incoming) === JSON.stringify(current)) return;
-
-        current = incoming;
-        renderMatch();
-      }
-    )
-    .subscribe(status => {
-      if (status === 'CHANNEL_ERROR') {
-        console.warn('Realtime channel error — reintentando en 5s');
-        setTimeout(subscribeToLiveMatch, 5000);
-      }
-    });
-}
-
-// ── ESPERAR COMPAÑERO ─────────────────────────────────
-
-/**
- * Suscribe a cambios en la friendship para detectar cuando player2 se une.
- * Cuando status pasa a 'active', recarga el estado y muestra la app completa.
- */
-function subscribeToFriendship() {
+function subscribeToFriendships() {
   if (friendshipChannel) {
     sb.removeChannel(friendshipChannel);
     friendshipChannel = null;
   }
 
-  if (!friendship) return;
+  if (!currentUser) return;
 
   friendshipChannel = sb
-    .channel('friendship-' + friendship.id)
+    .channel('my-pending-friendships-' + currentUser.id)
     .on(
       'postgres_changes',
       {
         event:  'UPDATE',
         schema: 'public',
         table:  'friendships',
-        filter: `id=eq.${friendship.id}`,
+        filter: `player1_id=eq.${currentUser.id}`,
       },
       async payload => {
-        if (payload.new?.status === 'active' && payload.new?.player2_id) {
-          // Player2 se ha unido
-          friendship = payload.new;
+        if (payload.new?.status !== 'active' || !payload.new?.player2_id) return;
 
-          // Cargar perfil del compañero
-          await loadPartnerProfile();
+        const newFriendship = payload.new;
 
-          // Cambiar a suscripción de partido
-          sb.removeChannel(friendshipChannel);
-          friendshipChannel = null;
-          subscribeToLiveMatch();
+        // Evitar duplicados si ya está en la lista
+        if (friends.find(f => f.id === newFriendship.id)) return;
 
-          // Recargar partidos y estado
-          await loadMatches();
-          await loadLiveState();
+        // Cargar perfil del nuevo amigo
+        let profile = null;
+        try {
+          const { data } = await sb
+            .from('profiles')
+            .select('*')
+            .eq('id', newFriendship.player2_id)
+            .single();
+          profile = data || null;
+        } catch {}
 
-          // Mostrar app completa (quitar waiting panel)
-          renderMatch(false);
-          renderProfileTab();
-          showToast('¡Tu compañero se ha unido! 🎾');
-        }
+        friends.push({ ...newFriendship, otherProfile: profile });
+
+        renderMatch();
+        renderProfileTab();
+        showToast(`¡${profile?.name || 'Tu amigo'} se ha unido! 🎾`);
       }
     )
     .subscribe();
@@ -109,10 +71,6 @@ function subscribeToFriendship() {
  * Llamado al cerrar sesión.
  */
 function unsubscribeAll() {
-  if (realtimeChannel) {
-    sb.removeChannel(realtimeChannel);
-    realtimeChannel = null;
-  }
   if (friendshipChannel) {
     sb.removeChannel(friendshipChannel);
     friendshipChannel = null;

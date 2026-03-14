@@ -67,7 +67,7 @@ function switchTab(tab) {
 
   if (tab === 'stats')   renderStats();
   if (tab === 'profile') renderProfileTab();
-  if (tab === 'match')   renderMatch(friendship?.status === 'pending');
+  if (tab === 'match')   renderMatch();
 }
 
 // ── FOTO DE PERFIL ────────────────────────────────────

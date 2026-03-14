@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tennis-tracker-v3';
+const CACHE_NAME = 'tennis-tracker-v4';
 
 // Assets locales a cachear
 const ASSETS = [
