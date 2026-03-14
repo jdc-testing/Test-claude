@@ -1,7 +1,7 @@
-const CACHE_NAME = 'tennis-tracker-v7';
+const CACHE_NAME = 'tennis-tracker-v8';
 
-// Assets locales a cachear en el install
-const ASSETS = [
+// Assets locales (críticos — SW no instala si fallan)
+const LOCAL_ASSETS = [
   './index.html',
   './manifest.json',
   './sw.js',
@@ -15,9 +15,10 @@ const ASSETS = [
   './js/match.js',
   './js/render.js',
   './js/app.js',
-  // Supabase JS client (CDN) — se pre-cachea para que no bloquee en mobile
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
 ];
+
+// URL exacta del script CDN en index.html (se cachea best-effort, no bloquea install)
+const CDN_SUPABASE = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
 
 // URLs de API/auth que NUNCA se cachean (siempre red directa)
 const NO_CACHE_PATTERNS = [
@@ -33,7 +34,15 @@ function shouldSkipCache(url) {
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(c => c.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(c =>
+      // Assets locales: críticos (fallo aquí impide el install)
+      c.addAll(LOCAL_ASSETS).then(() =>
+        // CDN de Supabase: best-effort (no bloquea el install si la red falla)
+        fetch(CDN_SUPABASE)
+          .then(res => c.put(CDN_SUPABASE, res))
+          .catch(() => {})
+      )
+    )
   );
   self.skipWaiting();
 });
@@ -56,9 +65,9 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Scripts CDN (supabase-js): cache-first + actualización en segundo plano
+  // Supabase JS (CDN): cache-first + revalidación en background
   // Evita bloquear el arranque en mobile con red lenta
-  if (url.includes('cdn.jsdelivr.net')) {
+  if (url === CDN_SUPABASE) {
     e.respondWith(
       caches.match(e.request).then(cached => {
         const networkFetch = fetch(e.request).then(res => {

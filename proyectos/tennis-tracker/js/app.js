@@ -39,6 +39,32 @@ document.getElementById('chart-filters').addEventListener('click', e => {
   if (btn) renderChart(btn.dataset.f);
 });
 
+// ── SOFT REFRESH (evita recargas de página en mobile) ─
+
+/**
+ * Refresca los datos cuando el usuario vuelve a la app
+ * (cambio de pestaña, bloqueo/desbloqueo del móvil, etc.)
+ * y cada 5 minutos si la app está activa.
+ * Evita la necesidad de hacer un full reload que puede colgar en mobile.
+ */
+let _lastRefresh = 0;
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  const minsSince = (Date.now() - _lastRefresh) / 60000;
+  if (minsSince >= 1) {
+    _lastRefresh = Date.now();
+    softRefresh();
+  }
+});
+
+setInterval(() => {
+  if (document.visibilityState === 'visible') {
+    _lastRefresh = Date.now();
+    softRefresh();
+  }
+}, 5 * 60 * 1000);
+
 // ── INIT ──────────────────────────────────────────────
 
 /**
