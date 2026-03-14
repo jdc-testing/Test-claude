@@ -1,0 +1,12 @@
+# Backups locales de Supabase (generados por backup-tennis.sh)
+backup_tennis_*/
+
+# El propio script de backup (contiene la URL del proyecto; no hace falta en el repo)
+backup-tennis.sh
+
+# Entornos / editores
+.DS_Store
+*.swp
+*.swo
+.env
+.env.local
