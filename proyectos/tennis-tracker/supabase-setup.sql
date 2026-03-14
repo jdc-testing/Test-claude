@@ -51,12 +51,22 @@ CREATE POLICY "friendships_insert" ON friendships
   FOR INSERT WITH CHECK (auth.uid() = player1_id);
 
 -- UPDATE:
---   · player1 puede modificar sus friendships
---   · Cualquier otro usuario puede actualizar una friendship PENDIENTE (para unirse)
+--   USING   → qué filas se pueden modificar (se evalúa sobre la fila ANTIGUA)
+--   WITH CHECK → cómo debe quedar la fila NUEVA tras la modificación
+--
+--   Caso 1: player1 actualiza su propia friendship (siempre permitido)
+--   Caso 2: player2 se une a una friendship pendiente
+--     · USING: la fila era pending sin player2 y yo no soy player1
+--     · WITH CHECK: tras el update, yo soy player2 (ya no se puede revisar 'pending')
 CREATE POLICY "friendships_update" ON friendships
-  FOR UPDATE USING (
+  FOR UPDATE
+  USING (
     auth.uid() = player1_id OR
     (status = 'pending' AND player2_id IS NULL AND auth.uid() != player1_id)
+  )
+  WITH CHECK (
+    auth.uid() = player1_id OR
+    auth.uid() = player2_id
   );
 
 -- ── MATCHES ──────────────────────────────────────────────────────

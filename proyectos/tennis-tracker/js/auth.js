@@ -198,14 +198,14 @@ async function loadFriends() {
  */
 async function _joinViaToken(token) {
   try {
-    const { data: inv } = await sb
+    const { data: inv, error: selErr } = await sb
       .from('friendships')
       .select('*')
       .eq('invite_token', token)
       .eq('status', 'pending')
       .single();
 
-    if (!inv) {
+    if (selErr || !inv) {
       showToast('Enlace de invitación inválido o ya usado');
       return;
     }
@@ -214,16 +214,22 @@ async function _joinViaToken(token) {
     if (inv.player1_id === currentUser.id) return;
 
     // Unirse como player2
-    const { error } = await sb
+    const { error: updErr } = await sb
       .from('friendships')
       .update({ player2_id: currentUser.id, status: 'active' })
       .eq('id', inv.id);
 
-    if (error) throw error;
+    if (updErr) {
+      console.error('_joinViaToken UPDATE error:', updErr);
+      showToast('Error al unirse: ' + (updErr.message || updErr.code));
+      return;
+    }
+
     showToast('¡Te has unido! 🎾');
 
   } catch (e) {
     console.error('_joinViaToken error:', e);
+    showToast('Error al procesar el enlace');
   }
 }
 
