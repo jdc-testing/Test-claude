@@ -436,6 +436,7 @@ async function deleteMatch() {
     matches = matches.filter(m => m.id !== _editMatchId);
     closeModal('modal-edit-match');
     renderStats();
+    renderMatch();
     showToast('Partido eliminado');
   } catch (e) {
     console.error('deleteMatch error:', e);
