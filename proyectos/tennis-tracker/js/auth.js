@@ -32,16 +32,24 @@ function setScreen(name) {
 
 // ── GOOGLE AUTH ───────────────────────────────────────
 
-/** Inicia el flujo de Sign-In con Google (popup). */
+/** Inicia el flujo de Sign-In con Google (redirect). */
 async function signInWithGoogle() {
   try {
-    const redirectTo = window.location.href; // conserva ?invite=TOKEN si existe
+    // Conservar ?invite=TOKEN si existe; usar pathname limpio si no
+    const base = window.location.origin + window.location.pathname;
+    const token = new URLSearchParams(window.location.search).get('invite');
+    const redirectTo = token ? `${base}?invite=${token}` : base;
+
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },
     });
-    if (error) showToast('Error al conectar con Google');
+    if (error) {
+      console.error('OAuth error:', error);
+      showToast('Error: ' + (error.message || 'no se pudo conectar con Google'));
+    }
   } catch (e) {
+    console.error('signInWithGoogle error:', e);
     showToast('Error al iniciar sesión');
   }
 }
