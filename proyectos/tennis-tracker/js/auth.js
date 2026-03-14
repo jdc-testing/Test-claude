@@ -290,12 +290,28 @@ async function copyInviteLink() {
 async function initMainApp() {
   await loadMatches();
 
+  window._appInitialized = true;
   setScreen('app');
   document.getElementById('main-app').style.display = 'flex';
 
   renderMatch();
   renderProfileTab();
   updateHeaderAvatar();
+}
+
+/**
+ * Refresca datos (partidos) sin recargar la página.
+ * Usado por el listener de visibilidad y el intervalo de 5 min.
+ */
+async function softRefresh() {
+  if (!currentUser || !myProfile) return;
+  try {
+    await loadMatches();
+    renderMatch();
+    renderProfileTab();
+  } catch (e) {
+    console.error('softRefresh error:', e);
+  }
 }
 
 /** Actualiza el avatar pequeño del header. */
