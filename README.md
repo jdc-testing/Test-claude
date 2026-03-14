@@ -18,9 +18,9 @@ App web progresiva (PWA) para el seguimiento de hábitos diarios desde el móvil
 
 ### 🎾 [tennis-tracker](proyectos/tennis-tracker/)
 
-App web progresiva (PWA) para gestionar partidos de tenis. Permite llevar el marcador en tiempo real con la lógica completa de puntuación (puntos, juegos, sets, deuce, ventaja, tiebreak a 7 o 10). Guarda el historial de partidos y muestra estadísticas con gráficos (victorias/derrotas, rachas, stats por rival). Funciona offline y se puede instalar en el móvil.
+App web progresiva (PWA) multijugador para gestionar partidos de tenis entre dos jugadores. Marcador en tiempo real sincronizado entre dispositivos, lógica completa de puntuación (puntos, juegos, sets, deuce, ventaja, tiebreak a 7 o 10), historial y estadísticas personalizadas por jugador. Acceso con Google (sin contraseña), invite link para unir al compañero.
 
-**Tecnología:** HTML + CSS + JS vanilla · localStorage · Service Worker
+**Tecnología:** HTML + CSS + JS vanilla modular · Supabase (Auth + Realtime + PostgreSQL) · Service Worker · PWA
 
 ---
 

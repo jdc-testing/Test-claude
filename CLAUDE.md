@@ -43,11 +43,11 @@ Test-claude/
 
 ## Convenciones generales
 
-- **Stack:** HTML + CSS + JS vanilla. Sin frameworks, sin build, sin npm. Todo en un único `index.html` por proyecto.
+- **Stack:** HTML + CSS + JS vanilla. Sin frameworks, sin build, sin npm. Por defecto todo en un único `index.html` por proyecto; proyectos complejos pueden dividir el JS en múltiples archivos en `js/`.
 - **Despliegue:** GitHub Pages desde la rama principal. Las ramas de trabajo siguen el patrón `claude/<descripcion-corta>`.
-- **Persistencia:** localStorage. Sin backend ni base de datos externa.
+- **Persistencia:** localStorage por defecto. Proyectos multijugador pueden usar Supabase (Auth + PostgreSQL + Realtime) como excepción justificada.
 - **PWA:** Cada proyecto incluye `manifest.json` y `sw.js` con estrategia network-first.
-- **Sin dependencias externas:** No añadir CDNs ni paquetes npm salvo causa mayor.
+- **Sin dependencias externas:** No añadir CDNs ni paquetes npm salvo causa mayor (p.ej. Supabase JS client para funcionalidad multijugador en tiempo real).
 
 ---
 
