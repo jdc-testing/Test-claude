@@ -133,7 +133,11 @@ async function checkProfile() {
     await loadFriends();
   } catch (e) {
     console.error('checkProfile error:', e);
-    setScreen('profile-setup');
+    // Reset auth state so the guard in initAuth allows re-init on next attempt
+    currentUser = null;
+    myProfile   = null;
+    showToast('Error de conexión. Inténtalo de nuevo.');
+    setScreen('auth');
   }
 }
 
@@ -186,7 +190,11 @@ async function loadFriends() {
 
   } catch (e) {
     console.error('loadFriends error:', e);
-    showToast('Error al cargar amigos');
+    // Reset auth state so the guard in initAuth allows re-init on next attempt
+    currentUser = null;
+    myProfile   = null;
+    friends     = [];
+    showToast('Error al cargar datos. Inténtalo de nuevo.');
     setScreen('auth');
   }
 }
