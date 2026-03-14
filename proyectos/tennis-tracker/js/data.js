@@ -2,12 +2,10 @@
  * data.js — Operaciones de lectura/escritura con Supabase
  *
  * Funciones:
- *   loadMatches()       — carga partidos completados desde BD
- *   loadLiveState()     — carga el estado del partido en curso
- *   saveCurrent()       — guarda el estado del partido en curso (upsert)
- *   clearCurrent()      — limpia el partido en curso en BD
+ *   loadMatches()       — carga partidos completados del usuario
+ *   clearCurrent()      — limpia el partido en curso en memoria
  *   saveProfile()       — guarda perfil del usuario
- *   loadPartnerProfile()— carga el perfil del compañero
+ *   downloadData()      — exporta datos del usuario como JSON
  */
 
 'use strict';
@@ -15,16 +13,17 @@
 // ── PARTIDOS COMPLETADOS ──────────────────────────────
 
 /**
- * Carga todos los partidos completados de esta friendship desde Supabase.
+ * Carga todos los partidos completados en los que participo.
+ * Filtra por player1_id o player2_id (soporta múltiples rivales).
  * Actualiza el array global `matches`.
  */
 async function loadMatches() {
-  if (!friendship) return;
+  if (!currentUser) return;
   try {
     const { data, error } = await sb
       .from('matches')
       .select('*')
-      .eq('friendship_id', friendship.id)
+      .or(`player1_id.eq.${currentUser.id},player2_id.eq.${currentUser.id}`)
       .eq('status', 'completed')
       .order('start_date', { ascending: false });
 
@@ -39,74 +38,17 @@ async function loadMatches() {
 // ── ESTADO PARTIDO EN CURSO ───────────────────────────
 
 /**
- * Carga el estado del partido en curso desde live_state.
- * Actualiza `current`.
+ * Limpia el partido en curso en memoria.
+ * No escribe en Supabase: el marcador ya no se sincroniza por punto.
  */
-async function loadLiveState() {
-  if (!friendship) return;
-  try {
-    const { data } = await sb
-      .from('live_state')
-      .select('state')
-      .eq('friendship_id', friendship.id)
-      .single();
-
-    current = data?.state || null;
-  } catch {
-    current = null;
-  }
-}
-
-/**
- * Guarda el estado actual del partido en live_state (upsert por friendship_id).
- * Si current es null, no hace nada (usar clearCurrent para borrar).
- */
-async function saveCurrent() {
-  if (!friendship || !current) return;
-  try {
-    const { error } = await sb
-      .from('live_state')
-      .upsert({
-        friendship_id: friendship.id,
-        match_id:      current.matchId || null,
-        state:         current,
-        updated_at:    new Date().toISOString(),
-        updated_by:    currentUser.id,
-      }, { onConflict: 'friendship_id' });
-
-    if (error) throw error;
-  } catch (e) {
-    console.error('saveCurrent error:', e);
-    showToast('Error al sincronizar');
-  }
-}
-
-/**
- * Limpia el partido en curso en live_state (pone state = null).
- * También limpia la variable global `current`.
- */
-async function clearCurrent() {
+function clearCurrent() {
   current = null;
-  if (!friendship) return;
-  try {
-    await sb
-      .from('live_state')
-      .update({
-        match_id:   null,
-        state:      null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('friendship_id', friendship.id);
-  } catch (e) {
-    console.error('clearCurrent error:', e);
-  }
 }
 
 // ── PERFIL ────────────────────────────────────────────
 
 /**
  * Guarda el perfil del usuario actual en la tabla profiles.
- * @param {{ name: string, photo_url: string|null }} data
  */
 async function saveProfile() {
   const name = document.getElementById('profile-name-input').value.trim();
@@ -134,53 +76,37 @@ async function saveProfile() {
   }
 }
 
-/**
- * Carga el perfil del compañero y actualiza `partnerProfile`.
- */
-async function loadPartnerProfile() {
-  if (!friendship) return;
-  const partnerId = friendship[rivKey + '_id'] || friendship.player2_id;
-  if (!partnerId) { partnerProfile = null; return; }
-
-  try {
-    const { data } = await sb
-      .from('profiles')
-      .select('*')
-      .eq('id', partnerId)
-      .single();
-    partnerProfile = data || null;
-  } catch {
-    partnerProfile = null;
-  }
-}
-
 // ── EXPORTAR DATOS ────────────────────────────────────
 
 /**
  * Descarga todos los datos del usuario como JSON.
  */
 function downloadData() {
-  const exportMatches = matches.map(m => ({
-    id:         m.id,
-    date:       m.start_date,
-    format:     m.format,
-    result:     myResult(m),
-    sets:       (m.sets || []).map(s => ({
-      my:    s[myKey],
-      rival: s[rivKey],
-      tiebreak: s.tiebreak
-        ? { my: s.tiebreak[myKey], rival: s.tiebreak[rivKey], target: s.tiebreak.target }
-        : null,
-    })),
-    sets_won:   { my: m.sets_won?.[myKey] || 0, rival: m.sets_won?.[rivKey] || 0 },
-  }));
+  const exportMatches = matches.map(m => {
+    const mk = m.player1_id === currentUser.id ? 'p1' : 'p2';
+    const rk = mk === 'p1' ? 'p2' : 'p1';
+    return {
+      id:       m.id,
+      date:     m.start_date,
+      format:   m.format,
+      result:   myResult(m),
+      rival:    _getRivalName(m),
+      sets:     (m.sets || []).map(s => ({
+        my:    s[mk],
+        rival: s[rk],
+        tiebreak: s.tiebreak
+          ? { my: s.tiebreak[mk], rival: s.tiebreak[rk], target: s.tiebreak.target }
+          : null,
+      })),
+      sets_won: { my: m.sets_won?.[mk] || 0, rival: m.sets_won?.[rk] || 0 },
+    };
+  });
 
   const data = {
-    exportDate:  new Date().toISOString(),
-    me:          myProfile,
-    partner:     partnerProfile,
-    friendship:  { id: friendship.id, status: friendship.status },
-    matches:     exportMatches,
+    exportDate: new Date().toISOString(),
+    me:         myProfile,
+    friends:    friends.map(f => ({ id: f.id, profile: f.otherProfile })),
+    matches:    exportMatches,
   };
 
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

@@ -2,8 +2,9 @@
  * match.js — Ciclo de vida del partido
  *
  * Funciones expuestas al HTML:
- *   openNewMatchModal()  — abre modal de configuración
- *   startMatch()         — crea partido y estado inicial
+ *   openNewMatchModal()  — abre modal de configuración (con selector de rival)
+ *   selectRivalCard(el)  — selecciona un rival en el modal
+ *   startMatch()         — inicializa el estado local del partido
  *   addMyPoint()         — +1 punto para mí
  *   addRivPoint()        — +1 punto para el rival
  *   addMyGame()          — +1 juego para mí (atajo)
@@ -12,7 +13,11 @@
  *   openFinishModal()    — abre modal de fin de partido
  *   selectResult(r)      — selecciona resultado en modal finish
  *   toggleFinishOverride()
- *   confirmFinish()      — guarda partido y limpia estado
+ *   confirmFinish()      — guarda partido en Supabase y limpia estado
+ *
+ * IMPORTANTE: ya NO hay sync punto a punto con Supabase.
+ * El partido se guarda en BD únicamente al confirmar el resultado final.
+ * El creador del partido es siempre player1 (myKey='p1', rivKey='p2').
  */
 
 'use strict';
@@ -20,64 +25,96 @@
 // ── ABRIR MODAL NUEVO PARTIDO ─────────────────────────
 
 function openNewMatchModal() {
-  if (!partnerProfile) {
-    showToast('Espera a que tu compañero se una');
+  if (friends.length === 0) {
+    showToast('Primero invita a un amigo desde tu perfil');
     return;
   }
+
+  // Poblar lista de rivales
+  const container = document.getElementById('rival-cards-list');
+  container.innerHTML = friends.map((f, i) => {
+    const name  = f.otherProfile?.name     || 'Amigo';
+    const photo = f.otherProfile?.photo_url || null;
+
+    // Historial W-L contra este amigo
+    const fMatches = matches.filter(m => m.friendship_id === f.id);
+    let fw = 0, fl = 0;
+    for (const m of fMatches) {
+      const r = myResult(m);
+      if (r === 'win') fw++; else if (r === 'loss') fl++;
+    }
+
+    return `<div class="rival-card${i === 0 ? ' selected' : ''}" data-friend-id="${esc(f.id)}" onclick="selectRivalCard(this)">
+      <div class="avatar av-sm">${avatarHTML(photo, name)}</div>
+      <div style="flex:1">
+        <div class="rival-card-name">${esc(name)}</div>
+        <div class="rival-card-record"><span class="rw">${fw}V</span> <span class="rl">${fl}D</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
   openModal('modal-new-match');
+}
+
+/** Marca el rival seleccionado en el modal. */
+function selectRivalCard(el) {
+  document.querySelectorAll('#rival-cards-list .rival-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
 }
 
 // ── INICIAR PARTIDO ───────────────────────────────────
 
-async function startMatch() {
+/**
+ * Crea el estado local del partido.
+ * No escribe en Supabase hasta confirmFinish().
+ * El creador siempre es player1 → myKey='p1', rivKey='p2'.
+ */
+function startMatch() {
+  const selectedCard = document.querySelector('#rival-cards-list .rival-card.selected');
+  if (!selectedCard) { showToast('Selecciona un rival'); return; }
+
+  const friendId = selectedCard.dataset.friendId;
+  const selectedFriend = friends.find(f => f.id === friendId);
+  if (!selectedFriend) { showToast('Rival no encontrado'); return; }
+
+  const rivalId = selectedFriend.player1_id === currentUser.id
+    ? selectedFriend.player2_id
+    : selectedFriend.player1_id;
+
   const numSets  = parseInt(document.querySelector('#rg-numsets  .radio-option.selected')?.dataset.val || '3');
   const tbTarget = parseInt(document.querySelector('#rg-tiebreak .radio-option.selected')?.dataset.val ?? '7');
   const noDeuce  = document.querySelector('#rg-deuce .radio-option.selected')?.dataset.val === 'nodeuce';
 
-  try {
-    // Crear registro en matches (status 'active')
-    const { data: newMatch, error } = await sb
-      .from('matches')
-      .insert({
-        friendship_id: friendship.id,
-        player1_id:    friendship.player1_id,
-        player2_id:    friendship.player2_id,
-        format:        { numSets, tiebreakTarget: tbTarget, noDeuce },
-        status:        'active',
-        start_date:    new Date().toISOString().slice(0, 10),
-      })
-      .select()
-      .single();
+  // Creador es siempre p1
+  myKey  = 'p1';
+  rivKey = 'p2';
 
-    if (error) throw error;
+  // Perfil del rival para el marcador
+  partnerProfile = selectedFriend.otherProfile;
 
-    // Estado inicial del partido
-    current = {
-      matchId:         newMatch.id,
-      format:          { numSets, tiebreakTarget: tbTarget, noDeuce },
-      completedSets:   [],
-      currentSetGames: { p1: 0, p2: 0 },
-      isTiebreak:      false,
-      tbPoints:        { p1: 0, p2: 0 },
-      gamePoints:      { p1: 0, p2: 0 },
-      history:         [],
-      startDate:       newMatch.start_date,
-    };
+  // Estado local del partido (no se escribe en BD hasta el final)
+  current = {
+    friendshipId: selectedFriend.id,
+    player1_id:   currentUser.id,
+    player2_id:   rivalId,
+    format:       { numSets, tiebreakTarget: tbTarget, noDeuce },
+    completedSets:   [],
+    currentSetGames: { p1: 0, p2: 0 },
+    isTiebreak:      false,
+    tbPoints:        { p1: 0, p2: 0 },
+    gamePoints:      { p1: 0, p2: 0 },
+    history:         [],
+    startDate:       new Date().toISOString().slice(0, 10),
+  };
 
-    await saveCurrent();
-    closeModal('modal-new-match');
-    renderMatch();
-
-  } catch (e) {
-    console.error('startMatch error:', e);
-    showToast('Error al crear el partido');
-  }
+  closeModal('modal-new-match');
+  renderMatch();
 }
 
 // ── AÑADIR PUNTOS ─────────────────────────────────────
 
 /** Añade un punto para el jugador con clave 'p1' o 'p2'. */
-async function addPoint(key) {
+function addPoint(key) {
   if (!current) return;
 
   // Guardar snapshot para undo
@@ -106,7 +143,6 @@ async function addPoint(key) {
     }
   }
 
-  await saveCurrent();
   renderMatch();
 }
 
@@ -118,7 +154,7 @@ function addRivPoint() { addPoint(rivKey); }
 
 // ── AÑADIR JUEGOS (ATAJOS) ────────────────────────────
 
-async function addGame(key) {
+function addGame(key) {
   if (!current) return;
   if (current.isTiebreak) { showToast('Estás en tiebreak — usa +Punto'); return; }
 
@@ -129,7 +165,6 @@ async function addGame(key) {
   current.gamePoints = { p1: 0, p2: 0 };
   checkAfterGame();
 
-  await saveCurrent();
   renderMatch();
 }
 
@@ -138,7 +173,7 @@ function addRivGame() { addGame(rivKey); }
 
 // ── DESHACER ──────────────────────────────────────────
 
-async function undoLastPoint() {
+function undoLastPoint() {
   if (!current || current.history.length === 0) {
     showToast('Nada que deshacer');
     return;
@@ -150,7 +185,6 @@ async function undoLastPoint() {
   current.tbPoints        = snap.tbPoints;
   current.gamePoints      = snap.gamePoints;
 
-  await saveCurrent();
   renderMatch();
 }
 
@@ -177,8 +211,8 @@ function openFinishModal() {
     });
   }
 
-  const myName  = myProfile?.name  || 'Yo';
-  const rivName = partnerProfile?.name || 'Rival';
+  const myName  = myProfile?.name        || 'Yo';
+  const rivName = partnerProfile?.name   || 'Rival';
 
   document.getElementById('finish-sets-list').innerHTML = allSets.length === 0
     ? '<p style="color:var(--muted);font-size:.85rem">Sin sets completados aún</p>'
@@ -228,6 +262,10 @@ function selectResult(r) {
   else                   { badge.className = 'finish-result-badge tie';  badge.textContent = '⊘ Abandonado'; }
 }
 
+/**
+ * Guarda el partido en Supabase (INSERT directo como 'completed').
+ * El creador es siempre p1, así que result_p1 = _finishResult directamente.
+ */
 async function confirmFinish() {
   if (!_finishResult) { showToast('Selecciona el resultado'); return; }
 
@@ -241,28 +279,30 @@ async function confirmFinish() {
   }
   const sw = getSetsWon();
 
-  // Convertir resultado (desde mi POV) a result_p1 (desde perspectiva de p1)
-  const result_p1 = _finishResult === 'abandoned' ? 'abandoned'
-    : myKey === 'p1' ? _finishResult
-    : (_finishResult === 'win' ? 'loss' : 'win');
+  // myKey siempre es 'p1' (el creador), así que result_p1 = resultado desde mi POV
+  const result_p1 = _finishResult;
 
   try {
     const { data: saved, error } = await sb
       .from('matches')
-      .update({
-        status:       'completed',
+      .insert({
+        friendship_id: current.friendshipId,
+        player1_id:    current.player1_id,
+        player2_id:    current.player2_id,
+        format:        current.format,
+        status:        'completed',
         result_p1,
-        sets:         allSets,
-        sets_won:     sw,
-        completed_at: new Date().toISOString(),
+        sets:          allSets,
+        sets_won:      sw,
+        start_date:    current.startDate,
+        completed_at:  new Date().toISOString(),
       })
-      .eq('id', current.matchId)
       .select()
       .single();
 
     if (error) throw error;
 
-    await clearCurrent();
+    clearCurrent();
     matches.unshift(saved);
     closeModal('modal-finish');
     renderMatch();
@@ -282,19 +322,21 @@ function openEditMatchModal(id) {
   _editMatchId = id;
   _editResult  = myResult(m);
 
+  const mk = m.player1_id === currentUser.id ? 'p1' : 'p2';
+  const rk = mk === 'p1' ? 'p2' : 'p1';
+
   document.getElementById('edit-date').value = m.start_date || '';
   document.querySelectorAll('#edit-result-options .result-opt').forEach(el =>
     el.classList.toggle('sel', el.dataset.r === _editResult));
 
-  // Etiqueta dinámica con nombres reales
   const setLabel = document.getElementById('edit-sets-label');
   if (setLabel) {
-    setLabel.textContent = `(${esc(myProfile?.name || 'Yo')} — ${esc(partnerProfile?.name || 'Rival')})`;
+    setLabel.textContent = `(${esc(myProfile?.name || 'Yo')} — ${esc(_getRivalName(m))})`;
   }
 
   const container = document.getElementById('edit-sets-list');
   container.innerHTML = '';
-  (m.sets || []).forEach((s, i) => appendEditSetRow(container, s[myKey], s[rivKey], i));
+  (m.sets || []).forEach((s, i) => appendEditSetRow(container, s[mk], s[rk], i));
   openModal('modal-edit-match');
 }
 
@@ -332,14 +374,18 @@ async function saveEditMatch() {
   const m = matches.find(x => x.id === _editMatchId);
   if (!m) return;
 
+  // Perspectiva del usuario en este partido
+  const mk = m.player1_id === currentUser.id ? 'p1' : 'p2';
+  const rk = mk === 'p1' ? 'p2' : 'p1';
+
   const rows = document.querySelectorAll('#edit-sets-list .edit-set-row');
   const sets = Array.from(rows).map(row => {
     const myV  = parseInt(row.querySelector('[data-side="my"]').value)  || 0;
     const rivV = parseInt(row.querySelector('[data-side="riv"]').value) || 0;
     // Almacenar siempre en p1/p2 neutral
     return {
-      p1:       myKey === 'p1' ? myV : rivV,
-      p2:       myKey === 'p2' ? myV : rivV,
+      p1:       mk === 'p1' ? myV : rivV,
+      p2:       mk === 'p2' ? myV : rivV,
       tiebreak: null,
     };
   });
@@ -349,7 +395,7 @@ async function saveEditMatch() {
 
   // Convertir resultado (mi POV) a result_p1
   const result_p1 = _editResult === 'abandoned' ? 'abandoned'
-    : myKey === 'p1' ? _editResult
+    : mk === 'p1' ? _editResult
     : (_editResult === 'win' ? 'loss' : 'win');
 
   try {

@@ -318,7 +318,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="screen-auth" class="auth-screen" style="display:none">
   <div class="alogo">🎾</div>
   <h1>Tennis Tracker</h1>
-  <p>Marca tus partidos en tiempo real con tu compañero</p>
+  <p>Registra tus partidos de tenis y comparte los resultados con tus amigos</p>
   <div class="auth-form">
     <button class="btn-google" onclick="signInWithGoogle()">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -364,16 +364,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
   <!-- ══ TAB 1: PARTIDO ══ -->
   <div id="match-tab" class="tab active">
-
-    <!-- Esperando compañero -->
-    <div id="waiting-panel" class="waiting-panel" style="display:none">
-      <div class="wi">🎾</div>
-      <h2>Esperando a tu compañero</h2>
-      <p>Comparte este enlace para que tu amigo se una:</p>
-      <div class="invite-box" id="invite-link-text" onclick="copyInviteLink()">—</div>
-      <button class="btn btn-secondary btn-md" onclick="copyInviteLink()">Copiar enlace</button>
-      <p style="font-size:.75rem;color:var(--muted)">Cuando tu amigo abra el enlace e inicie sesión, el partido comenzará automáticamente.</p>
-    </div>
 
     <!-- Sin partido activo -->
     <div id="no-match" style="display:none">
@@ -454,7 +444,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
 
     <div class="stat-block">
-      <div class="sec-title">Contra tu compañero <small style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">— toca para ver detalles</small></div>
+      <div class="sec-title">Por rival <small style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">— toca para ver detalles</small></div>
       <div id="rivals-stats"></div>
     </div>
 
@@ -486,9 +476,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
     </div>
 
-    <!-- Mi compañero -->
+    <!-- Mis amigos -->
     <div class="profile-section">
-      <div class="sec-title">Mi compañero</div>
+      <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Mis amigos</span>
+        <button class="btn btn-secondary btn-sm" onclick="generateInviteLink()">+ Invitar</button>
+      </div>
       <div id="partner-card-container"></div>
     </div>
 
@@ -535,11 +528,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
      MODALS
 ═══════════════════════════════════════════ -->
 
-<!-- New Match (sin selector de rival) -->
+<!-- New Match -->
 <div class="modal-overlay" id="modal-new-match">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Configurar partido</div>
+    <div class="modal-title">Nuevo partido</div>
+
+    <div class="form-group">
+      <div class="form-label">Rival</div>
+      <div class="rival-cards" id="rival-cards-list"></div>
+    </div>
 
     <div class="form-group">
       <div class="form-label">Número de sets</div>
@@ -569,6 +567,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
     <button class="btn btn-primary btn-lg btn-full" onclick="startMatch()" style="margin-top:8px">Empezar partido</button>
     <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-new-match')" style="margin-top:8px">Cancelar</button>
+  </div>
+</div>
+
+<!-- Invite Friend -->
+<div class="modal-overlay" id="modal-invite">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Invitar amigo</div>
+    <p style="font-size:.88rem;color:var(--muted);margin-bottom:14px">Comparte este enlace. Cuando tu amigo lo abra e inicie sesión, quedaréis conectados y podrás crear partidos contra él.</p>
+    <div class="form-group">
+      <div class="form-label">Enlace de invitación</div>
+      <input type="text" class="form-input" id="invite-link-input" readonly onclick="this.select()" style="font-size:.78rem;word-break:break-all">
+    </div>
+    <button class="btn btn-primary btn-lg btn-full" onclick="copyInviteLink()">Copiar enlace</button>
+    <button class="btn btn-ghost btn-md btn-full" onclick="closeModal('modal-invite')" style="margin-top:8px">Cerrar</button>
   </div>
 </div>
 

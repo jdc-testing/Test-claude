@@ -2,7 +2,7 @@
 
 ## Descripción
 
-PWA multijugador para gestionar partidos de tenis entre dos jugadores. Marcador en tiempo real sincronizado entre dispositivos, lógica completa de puntuación (puntos, juegos, sets, deuce, ventaja, tiebreak a 7 o 10), historial y estadísticas personalizadas por jugador. Acceso con Google (sin contraseña), invite link para unir al compañero.
+PWA multijugador para gestionar partidos de tenis. Soporta **múltiples amigos/rivales**: cada usuario puede conectar con varios amigos via enlace de invitación y crear partidos contra cualquiera de ellos. El marcador funciona de forma **local** (sin sync por punto) y los resultados se sincronizan en Supabase solo al **terminar el partido**. Lógica completa de puntuación (puntos, juegos, sets, deuce, ventaja, tiebreak a 7 o 10), historial y estadísticas por rival. Acceso con Google (sin contraseña).
 
 **URL en GitHub Pages:** `https://jdc-testing.github.io/Test-claude/proyectos/tennis-tracker/`
 
@@ -24,12 +24,12 @@ Los scripts se cargan en este orden en `index.html`:
 | Archivo | Responsabilidad |
 |---------|----------------|
 | `js/config.js` | Credenciales Supabase y creación del cliente `sb` |
-| `js/state.js` | Variables globales mutables (currentUser, friendship, current, …) |
+| `js/state.js` | Variables globales mutables (currentUser, friends[], current, …) |
 | `js/tennis-logic.js` | Funciones puras de puntuación (p1/p2, sin efectos laterales) |
 | `js/ui.js` | Helpers de UI: esc(), avatarHTML(), showToast(), openModal(), switchTab() |
-| `js/data.js` | Lectura/escritura en Supabase (matches, live_state, profiles) |
-| `js/auth.js` | Flujo de autenticación, pantallas, invite flow, initMainApp() |
-| `js/realtime.js` | Suscripciones Realtime a live_state y friendships |
+| `js/data.js` | Lectura/escritura en Supabase (matches, profiles) |
+| `js/auth.js` | Flujo de autenticación, loadFriends(), generateInviteLink(), initMainApp() |
+| `js/realtime.js` | Suscripción Realtime a friendships (detectar nuevos amigos) |
 | `js/match.js` | Ciclo de vida del partido: startMatch(), addPoint(), confirmFinish() |
 | `js/render.js` | Renderizado: renderMatch(), renderStats(), renderProfileTab() |
 | `js/app.js` | Bootstrap: SW, event listeners globales, llama initAuth() |
@@ -71,12 +71,12 @@ start_date     date DEFAULT CURRENT_DATE
 completed_at   timestamptz
 ```
 
-### Tabla `live_state`
+### Tabla `live_state` _(ya no se usa activamente)_
 ```sql
 id             uuid PRIMARY KEY DEFAULT gen_random_uuid()
 friendship_id  uuid NOT NULL UNIQUE (FK → friendships.id)
 match_id       uuid (FK → matches.id, nullable)
-state          jsonb  -- estado completo del partido en curso
+state          jsonb  -- obsoleto: el marcador ahora es local hasta confirmFinish()
 updated_at     timestamptz DEFAULT now()
 updated_by     uuid (FK → profiles.id)
 ```
@@ -85,15 +85,12 @@ updated_by     uuid (FK → profiles.id)
 
 ## Perspectiva dinámica (clave de diseño)
 
-Los datos se almacenan siempre en neutro (`p1`/`p2`). La perspectiva se calcula al arrancar:
+Los datos se almacenan siempre en neutro (`p1`/`p2`). Reglas:
 
-```javascript
-myKey  = (currentUser.id === friendship.player1_id) ? 'p1' : 'p2';
-rivKey = myKey === 'p1' ? 'p2' : 'p1';
-```
-
-- `result_p1` siempre almacena el resultado desde el punto de vista de player1
-- `myResult(m)` convierte al punto de vista del usuario actual
+- **Partido activo:** el creador del partido es siempre `player1`, por lo que `myKey = 'p1'` y `rivKey = 'p2'` fijos durante el marcador.
+- **Partidos completados:** la perspectiva se calcula por partido: `mk = m.player1_id === currentUser.id ? 'p1' : 'p2'`.
+- `result_p1` almacena el resultado desde el punto de vista de `player1`.
+- `myResult(m)` calcula el resultado desde la perspectiva del usuario actual.
 
 ---
 
@@ -101,9 +98,9 @@ rivKey = myKey === 'p1' ? 'p2' : 'p1';
 
 | Tab | ID | Contenido |
 |-----|----|-----------|
-| 🎾 Partido | `match-tab` | Panel de espera / marcador en vivo |
-| 📊 Estadísticas | `stats-tab` | Resumen, rachas, gráfico, historial |
-| 👤 Perfil | `profile-tab` | Mi perfil, perfil del rival, exportar datos |
+| 🎾 Partido | `match-tab` | Balance total / marcador en curso |
+| 📊 Estadísticas | `stats-tab` | Resumen, rachas, gráfico, historial por rival |
+| 👤 Perfil | `profile-tab` | Mi perfil, lista de amigos (+ botón invitar), exportar datos |
 
 ---
 

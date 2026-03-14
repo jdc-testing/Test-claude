@@ -8,12 +8,11 @@
  *     - con sesión → checkProfile()
  *  3. checkProfile():
  *     - sin perfil en BD → setScreen('profile-setup')
- *     - con perfil → checkFriendship()
- *  4. checkFriendship():
- *     - friendship activa → iniciar app (setScreen('app'))
- *     - URL con ?invite=TOKEN → unirse como player2 → iniciar app
- *     - friendship pending propia → setScreen('app') + mostrar waiting panel
- *     - sin nada → crear friendship como player1 → waiting panel
+ *     - con perfil → loadFriends()
+ *  4. loadFriends():
+ *     - procesa ?invite=TOKEN si hay
+ *     - carga TODOS los amigos activos
+ *     - inicia la app (setScreen('app'))
  */
 
 'use strict';
@@ -71,7 +70,7 @@ async function saveProfileSetup() {
     if (error) throw error;
 
     myProfile = { id: currentUser.id, name, photo_url: _setupPhoto || null };
-    await checkFriendship();
+    await loadFriends();
   } catch (e) {
     showToast('Error al guardar perfil');
     console.error(e);
@@ -123,91 +122,74 @@ async function checkProfile() {
     }
 
     myProfile = data;
-    await checkFriendship();
+    await loadFriends();
   } catch (e) {
     console.error('checkProfile error:', e);
     setScreen('profile-setup');
   }
 }
 
-// ── FRIENDSHIP / INVITE ───────────────────────────────
+// ── CARGAR AMIGOS ─────────────────────────────────────
 
 /**
- * Determina el estado de pairing del usuario y prepara la app:
- *  - friendship activa → ready
- *  - URL con ?invite → unirse como player2
- *  - friendship pending propia → waiting
- *  - nada → crear nueva friendship como player1 → waiting
+ * Carga todos los amigos activos del usuario.
+ * Antes comprueba si hay token de invitación en la URL y lo procesa.
  */
-async function checkFriendship() {
+async function loadFriends() {
   try {
-    // 1. ¿Tengo ya una friendship activa?
-    const { data: active } = await sb
+    // 1. ¿Hay token de invitación en la URL?
+    const token = new URLSearchParams(window.location.search).get('invite');
+    if (token) {
+      window.history.replaceState({}, '', window.location.pathname);
+      await _joinViaToken(token);
+    }
+
+    // 2. Cargar todas las friendships activas donde participo
+    const { data: activeFriendships } = await sb
       .from('friendships')
       .select('*')
       .or(`player1_id.eq.${currentUser.id},player2_id.eq.${currentUser.id}`)
-      .eq('status', 'active')
-      .limit(1);
+      .eq('status', 'active');
 
-    if (active && active.length > 0) {
-      friendship = active[0];
-      _setPerspective();
-      await loadPartnerProfile();
-      await initMainApp();
-      return;
+    // 3. Cargar perfiles de los otros jugadores
+    const otherIds = (activeFriendships || [])
+      .map(f => f.player1_id === currentUser.id ? f.player2_id : f.player1_id)
+      .filter(Boolean);
+
+    let profilesMap = {};
+    if (otherIds.length > 0) {
+      const { data: profiles } = await sb
+        .from('profiles')
+        .select('*')
+        .in('id', otherIds);
+      for (const p of (profiles || [])) profilesMap[p.id] = p;
     }
 
-    // 2. ¿Hay token de invitación en la URL?
-    const token = new URLSearchParams(window.location.search).get('invite');
-    if (token) {
-      const joined = await _joinViaToken(token);
-      if (joined) return;
-    }
+    friends = (activeFriendships || []).map(f => {
+      const otherId = f.player1_id === currentUser.id ? f.player2_id : f.player1_id;
+      return { ...f, otherProfile: profilesMap[otherId] || null };
+    });
 
-    // 3. ¿Tengo una friendship pending como player1?
-    const { data: pending } = await sb
-      .from('friendships')
-      .select('*')
-      .eq('player1_id', currentUser.id)
-      .eq('status', 'pending')
-      .limit(1);
+    // 4. Suscribirse a cambios de friendships pendientes (para detectar nuevos amigos)
+    subscribeToFriendships();
 
-    if (pending && pending.length > 0) {
-      friendship = pending[0];
-      myKey  = 'p1';
-      rivKey = 'p2';
-      await initMainApp(true); // waiting=true
-      return;
-    }
-
-    // 4. Crear nueva friendship como player1
-    const { data: newF, error } = await sb
-      .from('friendships')
-      .insert({ player1_id: currentUser.id })
-      .select()
-      .single();
-
-    if (error) throw error;
-    friendship = newF;
-    myKey  = 'p1';
-    rivKey = 'p2';
-    await initMainApp(true); // waiting=true
+    // 5. Iniciar la app
+    await initMainApp();
 
   } catch (e) {
-    console.error('checkFriendship error:', e);
-    showToast('Error al verificar pairing');
+    console.error('loadFriends error:', e);
+    showToast('Error al cargar amigos');
     setScreen('auth');
   }
 }
 
 /**
  * Intenta unirse a una friendship via token de invitación.
+ * Solo hace la operación de BD; el caller se encarga de cargar el estado.
  * @param {string} token
- * @returns {boolean} true si se unió con éxito
  */
 async function _joinViaToken(token) {
   try {
-    // Busca la friendship por token (necesita RLS abierta para SELECT por token)
     const { data: inv } = await sb
       .from('friendships')
       .select('*')
@@ -217,92 +199,81 @@ async function _joinViaToken(token) {
 
     if (!inv) {
       showToast('Enlace de invitación inválido o ya usado');
-      return false;
+      return;
     }
 
-    // Si soy el player1, solo muestro waiting
-    if (inv.player1_id === currentUser.id) {
-      friendship = inv;
-      myKey  = 'p1';
-      rivKey = 'p2';
-      window.history.replaceState({}, '', window.location.pathname);
-      await initMainApp(true);
-      return true;
-    }
+    // Si soy el player1 (el que creó el enlace), no hacer nada
+    if (inv.player1_id === currentUser.id) return;
 
     // Unirse como player2
-    const { data: updated, error } = await sb
+    const { error } = await sb
       .from('friendships')
       .update({ player2_id: currentUser.id, status: 'active' })
-      .eq('id', inv.id)
+      .eq('id', inv.id);
+
+    if (error) throw error;
+    showToast('¡Te has unido! 🎾');
+
+  } catch (e) {
+    console.error('_joinViaToken error:', e);
+  }
+}
+
+// ── INVITE LINK ───────────────────────────────────────
+
+/**
+ * Crea una nueva friendship pending y muestra el modal con el enlace.
+ */
+async function generateInviteLink() {
+  try {
+    const { data: newF, error } = await sb
+      .from('friendships')
+      .insert({ player1_id: currentUser.id })
       .select()
       .single();
 
     if (error) throw error;
 
-    friendship = updated;
-    _setPerspective();
-    window.history.replaceState({}, '', window.location.pathname);
-    await loadPartnerProfile();
-    await initMainApp();
-    return true;
+    const url = `${window.location.origin}${window.location.pathname}?invite=${newF.invite_token}`;
+    document.getElementById('invite-link-input').value = url;
+    openModal('modal-invite');
+
+    // Suscribirse para detectar cuando alguien acepta
+    subscribeToFriendships();
 
   } catch (e) {
-    console.error('_joinViaToken error:', e);
-    return false;
+    console.error('generateInviteLink error:', e);
+    showToast('Error al generar enlace');
   }
 }
 
-/** Fija myKey y rivKey según la posición del usuario en la friendship. */
-function _setPerspective() {
-  myKey  = (friendship.player1_id === currentUser.id) ? 'p1' : 'p2';
-  rivKey = myKey === 'p1' ? 'p2' : 'p1';
-}
-
-// ── INIT APP ──────────────────────────────────────────
-
-/**
- * Carga datos y muestra la app principal.
- * @param {boolean} waiting - si true, muestra el panel de "esperando compañero"
- */
-async function initMainApp(waiting = false) {
-  // Cargar partidos completados
-  await loadMatches();
-
-  // Cargar estado de partido en curso
-  await loadLiveState();
-
-  // Suscripciones realtime
-  if (!waiting) {
-    subscribeToLiveMatch();
-  } else {
-    subscribeToFriendship(); // para detectar cuando se une el compañero
-  }
-
-  // Mostrar app
-  setScreen('app');
-  document.getElementById('main-app').style.display = 'flex';
-
-  // Render inicial
-  renderMatch(waiting);
-  updateHeaderAvatar();
-}
-
-// ── INVITE LINK ───────────────────────────────────────
-
-/** Genera y copia el enlace de invitación al portapapeles. */
+/** Copia el enlace de invitación del modal al portapapeles. */
 async function copyInviteLink() {
-  if (!friendship) return;
-
-  const url = `${window.location.origin}${window.location.pathname}?invite=${friendship.invite_token}`;
-  document.getElementById('invite-link-text').textContent = url;
-
+  const input = document.getElementById('invite-link-input');
+  const url = input?.value;
+  if (!url) return;
   try {
     await navigator.clipboard.writeText(url);
     showToast('Enlace copiado ✓');
   } catch {
     showToast('Copia el enlace manualmente');
   }
+}
+
+// ── INIT APP ──────────────────────────────────────────
+
+/**
+ * Carga datos y muestra la app principal.
+ */
+async function initMainApp() {
+  await loadMatches();
+
+  setScreen('app');
+  document.getElementById('main-app').style.display = 'flex';
+
+  renderMatch();
+  renderProfileTab();
+  updateHeaderAvatar();
 }
 
 /** Actualiza el avatar pequeño del header. */
@@ -325,11 +296,11 @@ function initAuth() {
       currentUser    = null;
       myProfile      = null;
       partnerProfile = null;
-      friendship     = null;
-      myKey          = null;
-      rivKey         = null;
+      friends        = [];
       matches        = [];
       current        = null;
+      myKey          = 'p1';
+      rivKey         = 'p2';
       unsubscribeAll();
       setScreen('auth');
       return;

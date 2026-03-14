@@ -10,20 +10,23 @@
 // ── USUARIO AUTENTICADO ──────────────────────────────
 let currentUser    = null;   // objeto auth.User de Supabase
 let myProfile      = null;   // { id, name, photo_url } desde tabla profiles
-let partnerProfile = null;   // perfil del compañero
 
-// ── PAIRING ─────────────────────────────────────────
-let friendship = null;       // { id, player1_id, player2_id, invite_token, status }
-let myKey      = null;       // 'p1' si soy player1, 'p2' si soy player2
-let rivKey     = null;       // opuesto a myKey
+// ── AMIGOS (múltiples) ───────────────────────────────
+// Cada elemento: { id, player1_id, player2_id, invite_token, status, otherProfile }
+let friends = [];
+
+// ── PARTIDO EN CURSO ─────────────────────────────────
+// Para el partido activo el creador es siempre p1 → myKey='p1', rivKey='p2'
+let myKey          = 'p1';
+let rivKey         = 'p2';
+let partnerProfile = null;   // perfil del rival en el partido activo
 
 // ── DATOS ────────────────────────────────────────────
 let matches = [];            // array de partidos completados (desde Supabase)
-let current = null;          // estado del partido en curso (desde live_state.state)
+let current = null;          // estado del partido en curso (local, sin sync por punto)
 
 // ── CANALES REALTIME ─────────────────────────────────
-let realtimeChannel    = null;
-let friendshipChannel  = null;
+let friendshipChannel  = null;  // para detectar nuevos amigos que aceptan invitación
 
 // ── UI TRANSIENT ─────────────────────────────────────
 let _finishResult  = null;
