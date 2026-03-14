@@ -132,11 +132,15 @@ Las funciones testeadas son las de `js/tennis-logic.js`, copiadas directamente e
 ## Configuración inicial (para el usuario)
 
 1. Ir a [supabase.com](https://supabase.com) → New project (gratis)
-2. En **SQL Editor** → ejecutar el script de tablas + RLS del plan
+2. En **SQL Editor** → ejecutar el contenido de `supabase-setup.sql`
 3. En **Authentication** → Providers → Google → activar con OAuth credentials de Google Cloud
-4. En **Authentication** → URL Configuration → añadir `https://jdc-testing.github.io` como Site URL
+4. En **Authentication** → URL Configuration:
+   - **Site URL:** `https://jdc-testing.github.io`
+   - **Redirect URLs:** `https://jdc-testing.github.io/Test-claude/proyectos/tennis-tracker/`
 5. En **Settings** → API → copiar `Project URL` y `anon public key`
 6. Pegar ambos valores en `js/config.js` (`SUPABASE_URL` y `SUPABASE_ANON`)
+
+> **Nota sobre el enlace de invitación:** La política RLS de `friendships` permite que usuarios autenticados lean friendships pendientes sin player2, lo que es necesario para que el flujo de invitación funcione. Ver comentarios en `supabase-setup.sql`.
 
 ---
 
@@ -162,6 +166,6 @@ VALUES ('...', '...', '...', '{"numSets":3,"tiebreakTarget":7,"noDeuce":false}':
 ## Convenciones
 
 - No añadir `import/export` ES modules — los scripts usan el scope global por compatibilidad con todos los navegadores sin build
-- Incrementar `CACHE_NAME` en `sw.js` al modificar cualquier asset local (actualmente `tennis-tracker-v3`)
+- Incrementar `CACHE_NAME` en `sw.js` al modificar cualquier asset local (actualmente `tennis-tracker-v4`)
 - Las URLs de Supabase/Google/CDN nunca se cachean en el SW (`NO_CACHE_PATTERNS`)
 - Al modificar el proyecto, actualizar `README.md` raíz si aplica
