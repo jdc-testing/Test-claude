@@ -6,7 +6,7 @@
  */
 
 const SUPABASE_URL  = 'https://bojenpvztesdjecpntjc.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_Bgf_wjUDiGMdmQqNCRynLA_iF_QdxZe';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvamVucHZ6dGVzZGplY3BudGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTEzOTIsImV4cCI6MjA4OTA4NzM5Mn0.SBFkL3fDsEzjzxrAtiTsy5WvKPDfWtUn9nu9VMAIdBk';
 
 // Cliente Supabase global
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
