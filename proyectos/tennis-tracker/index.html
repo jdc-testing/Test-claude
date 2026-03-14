@@ -1517,25 +1517,16 @@ function handleImportFile(input) {
       showToast('❌ Formato no reconocido'); return;
     }
 
-    // Merge rivals
-    const incomingRivals = data.rivals || [];
-    const existingRivalIds = new Set(rivals.map(r => r.id));
-    let newRivals = 0;
-    incomingRivals.forEach(r => {
-      if (!existingRivalIds.has(r.id)) { rivals.push(r); newRivals++; }
-    });
-
-    // Merge matches
-    const incomingMatches = data.matches || [];
-    const existingMatchIds = new Set(matches.map(m => m.id));
-    let newMatches = 0;
-    incomingMatches.forEach(m => {
-      if (!existingMatchIds.has(m.id)) { matches.push(m); newMatches++; }
-    });
+    // Replace all data
+    rivals.length = 0;
+    (data.rivals || []).forEach(r => rivals.push(r));
+    matches.length = 0;
+    (data.matches || []).forEach(m => matches.push(m));
+    if (data.profile) Object.assign(profile, data.profile);
 
     save();
     renderRivalList();
-    showToast(`✓ Importados: ${newRivals} rival(es), ${newMatches} partido(s)`);
+    showToast(`✓ Datos reemplazados: ${rivals.length} rival(es), ${matches.length} partido(s)`);
   };
   reader.readAsText(file);
 }
