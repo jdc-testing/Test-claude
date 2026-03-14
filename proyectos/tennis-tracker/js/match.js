@@ -431,8 +431,16 @@ async function saveEditMatch() {
 async function deleteMatch() {
   if (!confirm('¿Eliminar este partido?')) return;
   try {
-    const { error } = await sb.from('matches').delete().eq('id', _editMatchId);
+    const { data: deleted, error } = await sb
+      .from('matches')
+      .delete()
+      .eq('id', _editMatchId)
+      .select('id');
     if (error) throw error;
+    if (!deleted || deleted.length === 0) {
+      showToast('Sin permisos para eliminar este partido');
+      return;
+    }
     matches = matches.filter(m => m.id !== _editMatchId);
     closeModal('modal-edit-match');
     renderStats();
