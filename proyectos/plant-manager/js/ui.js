@@ -87,11 +87,49 @@ function daysSince(dateStr) {
 
 function waterStatus(plant) {
   const days = daysSince(plant.lastWatered);
-  if (days === null) return { ...WATER_STATUS.late, days: null, label: 'Sin regar' };
+  const mode = plant.wateringMode || 'schedule';
   const freq = plant.wateringFrequencyDays || 7;
+
+  if (mode === 'check') {
+    if (days === null || days >= freq) {
+      return { ...WATER_STATUS.check, days, label: '🔍 Revisar', isCheck: true };
+    }
+    return { ...WATER_STATUS.ok, days, isCheck: true };
+  }
+
+  // schedule mode
+  if (days === null) return { ...WATER_STATUS.late, days: null, label: 'Sin regar' };
   if (days <= freq * 0.75)  return { ...WATER_STATUS.ok,   days };
   if (days <= freq)          return { ...WATER_STATUS.soon, days };
   return { ...WATER_STATUS.late, days };
+}
+
+// ── Alerts helpers ──
+
+function getDaysUntilNext(p) {
+  const days = daysSince(p.lastWatered);
+  const freq = p.wateringFrequencyDays || 7;
+  if (days === null) return -999;
+  return freq - days; // negative = overdue
+}
+
+function getAlerts() {
+  const alerts = [];
+  for (const p of plants) {
+    const ws = waterStatus(p);
+    let urgency = null;
+    if (ws.isCheck && ws.label.includes('Revisar')) {
+      urgency = 'check';
+    } else if (ws.color === WATER_STATUS.late.color || ws.label === 'Sin regar') {
+      urgency = 'urgent';
+    } else if (ws.color === WATER_STATUS.soon.color) {
+      urgency = 'soon';
+    }
+    if (urgency) alerts.push({ plant: p, ws, urgency, daysUntilNext: getDaysUntilNext(p) });
+  }
+  const order = { urgent: 0, soon: 1, check: 2 };
+  alerts.sort((a, b) => order[a.urgency] - order[b.urgency]);
+  return alerts;
 }
 
 // ── Image helpers ──
