@@ -30,11 +30,23 @@ function openAddPlant(prefillFromEdit) {
 }
 
 function onBackBtn() {
-  // If in detail or room sub-view, go back to appropriate list
   if (currentScreen === 'screen-detail') {
     goHome();
   } else {
     goHome();
+  }
+}
+
+// ── Alert badge ──
+
+function updateAlertBadge(count) {
+  const badge = document.getElementById('alert-badge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
   }
 }
 
@@ -44,7 +56,33 @@ function quickWater(event, plantId) {
   event.stopPropagation();
   addCareLog(plantId, 'water');
   renderHome();
+  updateAlertBadgeFromState();
   showToast('💧 ¡Regada!');
+}
+
+// ── Quick actions from alerts screen ──
+
+function quickWaterAlert(event, plantId) {
+  event.stopPropagation();
+  addCareLog(plantId, 'water');
+  renderAlerts();
+  renderHome();
+  showToast('💧 ¡Regada!');
+}
+
+function markChecked(event, plantId) {
+  event.stopPropagation();
+  addCareLog(plantId, 'note', 'Tierra revisada ✅');
+  // Update lastWatered equivalent for check mode: store a pseudo-water entry
+  updatePlant(plantId, { lastWatered: todayKey() });
+  renderAlerts();
+  showToast('✅ ¡Revisada!');
+}
+
+function updateAlertBadgeFromState() {
+  const alerts = getAlerts();
+  const urgent = alerts.filter(a => a.urgency === 'urgent' || a.urgency === 'check').length;
+  updateAlertBadge(urgent);
 }
 
 // ── Care log actions (from detail) ──
@@ -61,6 +99,7 @@ function logCare(type) {
   const ct = CARE_TYPES[type];
   showToast(`${ct.emoji} ${ct.label} registrado`);
   renderDetail(currentPlantId);
+  updateAlertBadgeFromState();
 }
 
 function deleteLogEntry(plantId, entryId) {
@@ -87,18 +126,19 @@ async function submitPlantForm(e) {
   const editId  = form.dataset.editId;
   const isEdit  = !!editId;
 
-  const name     = document.getElementById('field-name').value.trim();
-  const nickname = document.getElementById('field-nickname').value.trim();
-  const freq     = parseInt(document.getElementById('field-freq').value) || 7;
-  const notes    = document.getElementById('field-notes').value.trim();
-  const emoji    = document.getElementById('field-emoji').value || '🌿';
-  const room     = document.getElementById('field-room').value || '';
-  const light    = document.querySelector('.light-btn.selected')?.dataset.light || 'indirect';
+  const name          = document.getElementById('field-name').value.trim();
+  const nickname      = document.getElementById('field-nickname').value.trim();
+  const freq          = parseInt(document.getElementById('field-freq').value) || 7;
+  const notes         = document.getElementById('field-notes').value.trim();
+  const emoji         = document.getElementById('field-emoji').value || '🌿';
+  const room          = document.getElementById('field-room').value || '';
+  const light         = document.querySelector('.light-btn.selected')?.dataset.light || 'indirect';
+  const wateringMode  = document.getElementById('field-watering-mode').value || 'schedule';
 
   if (!name) { showToast('⚠️ El nombre es obligatorio', 'error'); return; }
 
   // Photo
-  const fileInput  = document.getElementById('field-photo');
+  const fileInput     = document.getElementById('field-photo');
   const existingPhoto = isEdit ? getPlant(editId)?.image || null : null;
   let image = existingPhoto;
   if (fileInput.files[0]) {
@@ -108,9 +148,10 @@ async function submitPlantForm(e) {
   const plantData = {
     name, nickname, emoji, room, image,
     wateringFrequencyDays: freq,
+    wateringMode,
     lightRequirement: light,
     notes,
-    apiData: selectedApiPlant || (isEdit ? getPlant(editId)?.apiData : null),
+    apiData:        selectedApiPlant || (isEdit ? getPlant(editId)?.apiData : null),
     lastWatered:    isEdit ? getPlant(editId)?.lastWatered    : null,
     lastFertilized: isEdit ? getPlant(editId)?.lastFertilized : null,
     careLog:        isEdit ? getPlant(editId)?.careLog || []  : [],
@@ -128,6 +169,7 @@ async function submitPlantForm(e) {
 
   closeModal('modal-add-plant');
   renderHome();
+  updateAlertBadgeFromState();
 }
 
 // ── Delete plant ──
@@ -138,6 +180,7 @@ async function onDeletePlant() {
   deletePlant(currentPlantId);
   showToast('🗑️ Planta eliminada');
   goHome();
+  updateAlertBadgeFromState();
 }
 
 // ── Edit plant ──
@@ -199,14 +242,12 @@ async function selectApiPlant(perenualId) {
   document.getElementById('api-results').innerHTML = `<div class="search-loading">Cargando datos 🌿…</div>`;
   let detail = await getPlantDetail(perenualId);
   if (!detail) {
-    // Fallback to search result if detail fails
     detail = apiSearchResults.find(r => r.perenualId == perenualId) || null;
   }
   if (!detail) { showToast('Error al obtener datos', 'error'); return; }
 
   selectedApiPlant = detail;
 
-  // Pre-fill form fields
   document.getElementById('field-name').value = detail.name;
   if (detail.wateringFrequencyDays) document.getElementById('field-freq').value = detail.wateringFrequencyDays;
   if (detail.lightRequirement) {
@@ -215,7 +256,6 @@ async function selectApiPlant(perenualId) {
     });
   }
 
-  // Show selected result feedback
   document.getElementById('api-results').innerHTML =
     `<div class="search-selected">✅ Seleccionado: <strong>${detail.name}</strong></div>`;
 
@@ -247,6 +287,7 @@ function onImport() {
       renderHome();
       renderRooms();
       renderSettings();
+      updateAlertBadgeFromState();
       showToast('📥 Datos importados');
     } catch (err) {
       showToast('Error al importar', 'error');
@@ -277,8 +318,9 @@ function bindEvents() {
         openAddPlant();
         return;
       }
-      if (target === 'screen-rooms') { renderRooms(); }
+      if (target === 'screen-rooms')    { renderRooms(); }
       if (target === 'screen-settings') { renderSettings(); }
+      if (target === 'screen-alerts')   { renderAlerts(); }
       showScreen(target, { title: btn.dataset.title || '' });
     });
   });
@@ -294,6 +336,17 @@ function bindEvents() {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.light-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
+    });
+  });
+
+  // Watering mode buttons
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      const mode = btn.dataset.mode;
+      document.getElementById('field-watering-mode').value = mode;
+      document.getElementById('mode-desc').textContent = WATERING_MODES[mode].desc;
     });
   });
 
@@ -348,6 +401,7 @@ function init() {
   renderHome();
   showScreen('screen-home', { title: '🌿 Mis Plantas' });
   bindEvents();
+  updateAlertBadgeFromState();
 
   // Service worker registration
   if ('serviceWorker' in navigator) {

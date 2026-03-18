@@ -176,6 +176,14 @@ function renderPlantForm(plant = null) {
     b.classList.toggle('selected', b.dataset.light === (plant?.lightRequirement || 'indirect'));
   });
 
+  // Watering mode buttons
+  const currentMode = plant?.wateringMode || 'schedule';
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.mode === currentMode);
+  });
+  document.getElementById('field-watering-mode').value = currentMode;
+  document.getElementById('mode-desc').textContent = WATERING_MODES[currentMode].desc;
+
   // Photo preview
   const preview = document.getElementById('photo-preview');
   preview.style.backgroundImage = plant?.image ? `url('${plant.image}')` : 'none';
@@ -185,6 +193,7 @@ function renderPlantForm(plant = null) {
   apiSearchResults = [];
   selectedApiPlant = null;
   document.getElementById('api-results').innerHTML = '';
+  document.getElementById('api-results').style.display = 'none';
   document.getElementById('field-search').value   = '';
 
   // Emoji picker
@@ -201,6 +210,89 @@ function renderPlantForm(plant = null) {
 
   // Store editing ID
   document.getElementById('plant-form').dataset.editId = plant?.id || '';
+}
+
+// ── Alerts screen ──
+
+function renderAlerts() {
+  const alerts = getAlerts();
+  const el = document.getElementById('alerts-list');
+
+  if (!plants.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🌿</div><div class="empty-title">Sin plantas</div><div class="empty-desc">Añade plantas para ver sus avisos aquí</div></div>`;
+    updateAlertBadge(0);
+    return;
+  }
+
+  if (!alerts.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><div class="empty-title">¡Todo al día!</div><div class="empty-desc">Todas tus plantas están bien cuidadas 🌿</div></div>`;
+    updateAlertBadge(0);
+    return;
+  }
+
+  const groups = {
+    urgent: alerts.filter(a => a.urgency === 'urgent'),
+    soon:   alerts.filter(a => a.urgency === 'soon'),
+    check:  alerts.filter(a => a.urgency === 'check'),
+  };
+
+  let html = '';
+
+  if (groups.urgent.length) {
+    html += `<div class="alert-group-title">🔴 Necesitan riego</div>`;
+    html += groups.urgent.map(a => alertRow(a)).join('');
+  }
+  if (groups.soon.length) {
+    html += `<div class="alert-group-title">🟡 Toca pronto</div>`;
+    html += groups.soon.map(a => alertRow(a)).join('');
+  }
+  if (groups.check.length) {
+    html += `<div class="alert-group-title">🔍 Revisar tierra</div>`;
+    html += groups.check.map(a => alertRow(a)).join('');
+  }
+
+  el.innerHTML = html;
+
+  const urgentCount = groups.urgent.length + groups.check.length;
+  updateAlertBadge(urgentCount);
+}
+
+function alertRow(a) {
+  const { plant: p, ws, urgency } = a;
+  const room = rooms.find(r => r.id === p.room);
+  const bg = p.image
+    ? `background-image:url('${p.image}'); background-size:cover; background-position:center;`
+    : `background:linear-gradient(135deg,var(--green) 0%,var(--green-dark) 100%);`;
+
+  let statusMsg = '';
+  if (urgency === 'urgent') {
+    statusMsg = ws.days === null ? 'Nunca se ha regado' : `Lleva ${ws.days} día${ws.days !== 1 ? 's' : ''} sin regar`;
+  } else if (urgency === 'soon') {
+    const d = Math.abs(a.daysUntilNext);
+    statusMsg = d <= 0 ? 'Toca regar hoy' : `Toca regar en ${d} día${d !== 1 ? 's' : ''}`;
+  } else if (urgency === 'check') {
+    statusMsg = ws.days === null ? 'Comprueba si la tierra está seca' : `Han pasado ${ws.days} días — revisa si está seca`;
+  }
+
+  const waterBtn = `<button class="alert-action-btn water" onclick="quickWaterAlert(event,'${p.id}')">💧</button>`;
+  const checkBtn = urgency === 'check'
+    ? `<button class="alert-action-btn checked" onclick="markChecked(event,'${p.id}')">✅</button>`
+    : '';
+
+  return `
+    <div class="alert-row" onclick="openPlantDetail('${p.id}')">
+      <div class="alert-thumb" style="${bg}">
+        ${!p.image ? `<span>${p.emoji || '🌿'}</span>` : ''}
+      </div>
+      <div class="alert-body">
+        <div class="alert-plant-name">${p.nickname || p.name}</div>
+        ${room ? `<div class="alert-room">${room.emoji} ${room.label}</div>` : ''}
+        <div class="alert-status" style="color:${ws.color}">${statusMsg}</div>
+      </div>
+      <div class="alert-actions" onclick="event.stopPropagation()">
+        ${waterBtn}${checkBtn}
+      </div>
+    </div>`;
 }
 
 // ── Settings screen ──

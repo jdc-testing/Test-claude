@@ -42,7 +42,14 @@ const LIGHT_LEVELS = {
 
 // Watering status thresholds (days since last watered)
 const WATER_STATUS = {
-  ok:   { label: 'Bien',      color: '#52b788', bg: '#d8f3dc' },
-  soon: { label: 'Pronto',    color: '#f9844a', bg: '#ffe8d6' },
-  late: { label: '¡Toca!',   color: '#e63946', bg: '#ffe0e3' },
+  ok:    { label: 'Bien',       color: '#52b788', bg: '#d8f3dc' },
+  soon:  { label: 'Pronto',     color: '#f9844a', bg: '#ffe8d6' },
+  late:  { label: '¡Toca!',    color: '#e63946', bg: '#ffe0e3' },
+  check: { label: '🔍 Revisar', color: '#7b61ff', bg: '#f0edff' },
+};
+
+// Watering modes
+const WATERING_MODES = {
+  schedule: { label: 'Cada X días',       emoji: '📅', desc: 'Regar según un calendario fijo' },
+  check:    { label: 'Revisar la tierra', emoji: '🔍', desc: 'Te aviso que compruebes si la tierra está seca' },
 };
