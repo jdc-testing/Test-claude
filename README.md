@@ -22,6 +22,12 @@ App web progresiva (PWA) multijugador para gestionar partidos de tenis entre dos
 
 **Tecnología:** HTML + CSS + JS vanilla modular · Supabase (Auth + Realtime + PostgreSQL) · Service Worker · PWA
 
+### 🌿 [plant-manager](proyectos/plant-manager/)
+
+App web progresiva (PWA) para gestionar y cuidar plantas de interior. Registra riegos, abonos y trasplantes; asigna plantas a habitaciones; sube fotos y añade notas personalizadas. Integración opcional con la API de Perenual para buscar especies reales con datos de cuidado. Diseño cuqui con tonos verdes, soporte de emojis y personalización.
+
+**Tecnología:** HTML + CSS + JS vanilla modular · localStorage · Perenual API (opcional) · Service Worker · PWA
+
 ---
 
 ## ¿Cómo usar este repositorio?
