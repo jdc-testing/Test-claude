@@ -27,6 +27,7 @@ Test-claude/
     │   ├── CLAUDE.md      # Instrucciones específicas del proyecto
     │   └── REQUIREMENTS.md
     ├── tennis-tracker/    # PWA de gestión de partidos de tenis
+    ├── plant-manager/     # PWA de gestión de plantas de interior
     └── youtube-shorts-blocker/
 ```
 
@@ -38,6 +39,7 @@ Test-claude/
 |----------|------|---------------------|
 | Habit Tracker | `proyectos/habit-tracker/` | `https://jdc-testing.github.io/Test-claude/proyectos/habit-tracker/` |
 | Tennis Tracker | `proyectos/tennis-tracker/` | `https://jdc-testing.github.io/Test-claude/proyectos/tennis-tracker/` |
+| Plant Manager | `proyectos/plant-manager/` | `https://jdc-testing.github.io/Test-claude/proyectos/plant-manager/` |
 
 ---
 
