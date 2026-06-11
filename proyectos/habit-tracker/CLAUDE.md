@@ -2,14 +2,14 @@
 
 ## Qué es este proyecto
 
-PWA de seguimiento de hábitos diarios. Stack completamente vanilla: un solo `index.html` + `sw.js`. Sin frameworks, sin build, sin dependencias. Se despliega en GitHub Pages.
+PWA de seguimiento de hábitos diarios con autenticación Google y sincronización en la nube vía Supabase. Stack: un solo `index.html` + `sw.js` + Supabase JS client (CDN). Sin frameworks, sin build. Se despliega en GitHub Pages.
 
 ## Archivos
 
 ```
 habit-tracker/
 ├── index.html        # Toda la app: HTML + CSS + JS
-├── sw.js             # Service Worker (cache network-first)
+├── sw.js             # Service Worker (cache network-first, v5)
 ├── manifest.json     # Config PWA (nombre, iconos, colores)
 ├── icons/
 │   ├── icon-192.png
@@ -17,42 +17,114 @@ habit-tracker/
 └── REQUIREMENTS.md   # Spec completa de funcionalidades
 ```
 
-## Cómo funciona internamente
+## Arquitectura de datos
 
-**Estado en memoria:**
+### Estado en memoria
 ```js
-let habits  = []   // array de { id, label, emoji }
-let records = {}   // { "YYYY-MM-DD": { [habitId]: boolean } }
+let habits      = []   // array de { id, label, emoji }
+let records     = {}   // { "YYYY-MM-DD": { [habitId]: true } } (solo días cumplidos)
+let settings    = { notifEnabled: false, notifTime: '22:00' }
+let currentUser = null // objeto de Supabase auth
 ```
 
-**Persistencia — claves de localStorage:**
+### Supabase (fuente de verdad)
+| Tabla      | Columnas clave                                    |
+|------------|---------------------------------------------------|
+| `habits`   | `user_id`, `habit_id`, `label`, `emoji`, `position` |
+| `records`  | `user_id`, `date` (YYYY-MM-DD), `habit_id`        |
+| `settings` | `user_id`, `notif_enabled`, `notif_time`          |
+
+RLS activo en las tres tablas. Los usuarios solo acceden a sus propios datos.
+
+### localStorage (caché offline)
 | Clave         | Contenido                          |
 |---------------|------------------------------------|
-| `ht_habits`   | Array de hábitos (orden incluido)  |
-| `ht_records`  | Registro diario de cumplimiento    |
-| `ht_settings` | `{ notifEnabled, notifTime }`      |
+| `ht_habits`   | Copia local de habits              |
+| `ht_records`  | Copia local de records             |
+| `ht_settings` | Copia local de settings            |
 
-**Flujo de render:** cada pantalla tiene su propia función `renderX()` que regenera el innerHTML completo. No hay virtual DOM ni diffing.
+### Configuración Supabase
+```js
+// Al inicio de index.html — reemplazar con los valores reales del proyecto
+const SUPABASE_URL      = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+```
 
-**Service Worker:** estrategia _network-first_. Al cambiar contenido hay que subir `CACHE_NAME` (actualmente `habit-tracker-v3`).
+## SQL para crear las tablas en Supabase
+
+```sql
+-- Habits
+create table public.habits (
+  user_id  uuid references auth.users(id) on delete cascade not null,
+  habit_id text not null,
+  label    text not null,
+  emoji    text not null default '🎯',
+  position integer not null default 0,
+  primary key (user_id, habit_id)
+);
+alter table public.habits enable row level security;
+create policy "own habits" on public.habits for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Records
+create table public.records (
+  user_id  uuid references auth.users(id) on delete cascade not null,
+  date     text not null,
+  habit_id text not null,
+  primary key (user_id, date, habit_id)
+);
+alter table public.records enable row level security;
+create policy "own records" on public.records for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Settings
+create table public.settings (
+  user_id      uuid references auth.users(id) on delete cascade not null primary key,
+  notif_enabled boolean default false,
+  notif_time    text    default '22:00'
+);
+alter table public.settings enable row level security;
+create policy "own settings" on public.settings for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+```
+
+## Flujo de autenticación
+
+1. App carga → `onAuthStateChange` se registra (muestra spinner)
+2. Sin sesión → pantalla de login con botón "Continuar con Google"
+3. Con sesión → carga datos de Supabase → renderiza app
+4. Primera vez con datos locales → migración automática a Supabase
+5. Cerrar sesión → pantalla de login
+
+## Flujo de datos
+
+- **Lectura:** siempre desde estado en memoria (`habits`, `records`, `settings`)
+- **Escritura local:** actualiza estado en memoria + localStorage (síncrono, inmediato)
+- **Escritura remota:** `saveHabits()`, `toggleHabit()`, `saveSettings()` son async; el upsert a Supabase ocurre en background sin bloquear la UI
+- **Offline:** si Supabase falla, se usa la caché de localStorage
 
 ## Convenciones
 
 - Todo el código JS está en el `<script>` inline al final del HTML
 - Las secciones del JS están separadas por comentarios `// ── NOMBRE ──`
 - Las IDs del DOM siguen el patrón: `screen-X`, `nav-X`, `filter-X`
-- Las fechas se manejan siempre como strings `YYYY-MM-DD` (función `todayKey()` / `localKey()`)
+- Las fechas se manejan siempre como strings `YYYY-MM-DD`
 - `START_DATE = new Date(2026, 2, 1)` — no mostrar datos anteriores a esta fecha
 
 ## Restricciones importantes
 
-- **No añadir dependencias externas** (ni CDN, ni npm). Todo debe funcionar con un simple `open index.html`.
-- **No fragmentar en múltiples archivos JS/CSS** salvo que sea estrictamente necesario; la ventaja del proyecto es ser un único archivo desplegable.
-- **Máximo 10 hábitos** — límite hardcodeado, no cambiar sin actualizar la UI.
-- **No usar `seedNewHabits()`** — fue una función de migración que ya no debe llamarse en el init. Está en el código pero sin uso; se puede eliminar en una limpieza futura.
-- Las notificaciones usan `setTimeout` + Web Notifications API. Sin Push API (requeriría servidor). No intentar implementar notificaciones offline reales sin un backend.
+- **Supabase CDN permitido** — excepción justificada para auth + sync en la nube
+- **No fragmentar en múltiples archivos JS/CSS** salvo que sea estrictamente necesario
+- **Máximo 10 hábitos** — límite hardcodeado, no cambiar sin actualizar la UI
+- Las notificaciones usan `setTimeout` + Web Notifications API. Sin Push API (requeriría servidor)
 
 ## Tareas frecuentes
+
+### Cambiar credenciales de Supabase
+Buscar `SUPABASE_URL` y `SUPABASE_ANON_KEY` en `index.html` y reemplazar los valores.
+
+### Subir la versión del caché (tras cambios en assets)
+Cambiar `CACHE_NAME` en `sw.js`: `habit-tracker-vN` → `habit-tracker-v(N+1)`
 
 ### Añadir una nueva pantalla
 1. Añadir `<section id="screen-X" class="screen">` en el HTML
@@ -61,22 +133,8 @@ let records = {}   // { "YYYY-MM-DD": { [habitId]: boolean } }
 4. Añadir `if (name === 'X') renderX();` en `showScreen()`
 5. Implementar `function renderX() {}`
 
-### Añadir un campo a la configuración
-1. Añadir el campo al objeto por defecto en `loadSettings()`
-2. Añadir el elemento HTML en `#screen-manage > .settings-card`
-3. Leer/escribir en `handleNotifX()` o crear nuevo handler
-4. Actualizar `renderNotifSettings()` para reflejar el estado guardado
-
-### Subir la versión del caché (tras cambios en assets)
-Cambiar `CACHE_NAME` en `sw.js`: `habit-tracker-vN` → `habit-tracker-v(N+1)`
-
-### Cambiar `START_DATE`
-Línea en `index.html`: `const START_DATE = new Date(YYYY, M-1, D);`
-Afecta a: historial visible, cálculo de gráficos, racha de días.
-
 ## Despliegue
 
-- Rama de trabajo: `claude/setup-projects-folder-QWHC5`
+- Rama de trabajo: `claude/habit-tracker-supabase-google-f98mg4`
 - GitHub Pages sirve desde `main` automáticamente
 - URL: `https://jdc-testing.github.io/Test-claude/proyectos/habit-tracker/`
-- Tras merge a main, los usuarios verán la nueva versión en la siguiente carga (gracias al SW network-first)

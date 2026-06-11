@@ -10,6 +10,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Habits">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <!-- Supabase JS client (required for cloud sync + Google Auth) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     :root {
       --accent: #4caf50;
@@ -34,6 +36,49 @@
       display: flex;
       flex-direction: column;
     }
+
+    /* ── LOADING & AUTH OVERLAYS ── */
+    #loading-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .loading-spinner {
+      width: 40px; height: 40px;
+      border: 4px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #auth-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 999; padding: 32px 24px; text-align: center;
+    }
+    .auth-logo { font-size: 72px; margin-bottom: 20px; }
+    .auth-title { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+    .auth-desc {
+      font-size: 15px; color: var(--text-muted);
+      line-height: 1.6; margin-bottom: 40px;
+      max-width: 320px;
+    }
+    .google-btn {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; padding: 14px 24px;
+      background: var(--surface); border: 2px solid var(--border);
+      border-radius: 14px; font-size: 16px; font-weight: 600;
+      cursor: pointer; font-family: inherit; color: var(--text);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      transition: box-shadow 0.15s ease, transform 0.1s ease;
+      width: 100%; max-width: 320px;
+    }
+    .google-btn:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+    .google-btn:active { transform: scale(0.97); }
 
     /* ── HEADER ── */
     header {
@@ -352,6 +397,29 @@
     }
     .time-input:focus { outline: none; border-color: var(--accent); }
 
+    /* ── ACCOUNT CARD ── */
+    .account-row {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .user-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      overflow: hidden; flex-shrink: 0;
+      background: var(--accent-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 14px; font-weight: 600; }
+    .user-email { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sign-out-btn {
+      flex-shrink: 0; background: none;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 7px 14px; font-size: 13px; font-weight: 600;
+      cursor: pointer; color: var(--text-muted); font-family: inherit;
+    }
+    .sign-out-btn:active { background: var(--bg); }
+
     /* ── CONFIRM MODAL ── */
     #confirm-overlay {
       position: fixed; inset: 0;
@@ -471,6 +539,27 @@
 </head>
 <body>
 
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay">
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- AUTH OVERLAY -->
+<div id="auth-overlay">
+  <div class="auth-logo">📋</div>
+  <h1 class="auth-title">Habit Tracker</h1>
+  <p class="auth-desc">Inicia sesión con Google para guardar tus hábitos en la nube y acceder desde cualquier dispositivo.</p>
+  <button class="google-btn" onclick="signInWithGoogle()">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+    </svg>
+    Continuar con Google
+  </button>
+</div>
+
 <header>
   <h1 id="screen-title">Hoy</h1>
   <p id="screen-subtitle"></p>
@@ -549,7 +638,7 @@
     <button class="apply-btn" id="notif-test-btn" onclick="testNotification()" style="display:none">Probar ahora</button>
   </div>
 
-  <div class="settings-card" style="margin-bottom:16px">
+  <div class="settings-card">
     <h3>💾 Datos</h3>
     <div class="settings-row">
       <div>
@@ -564,6 +653,18 @@
         <div class="settings-sublabel">Abre en Excel o Google Sheets</div>
       </div>
       <button class="apply-btn" onclick="exportCSV()">Exportar</button>
+    </div>
+  </div>
+
+  <div class="settings-card" style="margin-bottom:16px">
+    <h3>👤 Cuenta</h3>
+    <div class="account-row">
+      <div class="user-avatar" id="user-avatar">👤</div>
+      <div class="user-info">
+        <div class="user-name" id="user-name"></div>
+        <div class="user-email" id="user-email"></div>
+      </div>
+      <button class="sign-out-btn" onclick="signOut()">Salir</button>
     </div>
   </div>
 </section>
@@ -603,13 +704,21 @@
 </div>
 
 <script>
+  // ── SUPABASE CONFIG ──
+  // Replace with your actual Supabase project values
+  const SUPABASE_URL      = 'YOUR_SUPABASE_URL';
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+  const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   // ── STATE ──
-  let habits = [];
-  let records = {};
+  let habits      = [];
+  let records     = {};
+  let settings    = { notifEnabled: false, notifTime: '22:00' };
+  let currentUser = null;
   let chartFilter = 'week';
-  let chartFrom = null; // 'YYYY-MM-DD'
-  let chartTo   = null;
-  const START_DATE = new Date(2026, 2, 1); // 1 de marzo de 2026
+  let chartFrom   = null;
+  let chartTo     = null;
+  const START_DATE = new Date(2026, 2, 1);
 
   const DEFAULT_HABITS = [
     { id: 'creatine', label: 'Tomar creatina', emoji: '💊' },
@@ -621,39 +730,220 @@
     { id: 'protein',  label: 'Proteína',          emoji: '🥩' },
   ];
 
-  // ── STORAGE ──
-  function loadData() {
-    try {
-      habits  = JSON.parse(localStorage.getItem('ht_habits'))  || DEFAULT_HABITS;
-      records = JSON.parse(localStorage.getItem('ht_records')) || {};
-    } catch { habits = DEFAULT_HABITS; records = {}; }
+  // ── AUTH ──
+  async function signInWithGoogle() {
+    const { error } = await sbClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href }
+    });
+    if (error) showToast('Error al iniciar sesión');
   }
 
-  function saveHabits() {
-    try { localStorage.setItem('ht_habits', JSON.stringify(habits)); }
-    catch { showToast('Error al guardar. Almacenamiento lleno.'); }
+  function signOut() {
+    customConfirm('Cerrar sesión', '¿Seguro que quieres cerrar sesión?', async () => {
+      await sbClient.auth.signOut();
+    }, true);
   }
 
-  function saveRecords() {
-    try { localStorage.setItem('ht_records', JSON.stringify(records)); }
-    catch { showToast('Error al guardar. Almacenamiento lleno.'); }
-  }
-
-  // Adds new default habits that don't exist yet (migration for existing users)
-  function seedNewHabits() {
-    const toSeed = [
-      { id: 'tennis',  label: 'Tenis',     emoji: '🎾' },
-      { id: 'sleep8h', label: 'Dormir 8h', emoji: '😴' },
-      { id: 'protein', label: 'Proteína',  emoji: '🥩' },
-    ];
-    let changed = false;
-    for (const h of toSeed) {
-      if (!habits.find(x => x.id === h.id)) {
-        habits.push(h);
-        changed = true;
-      }
+  function updateUserCard() {
+    if (!currentUser) return;
+    const meta = currentUser.user_metadata || {};
+    document.getElementById('user-name').textContent  = meta.full_name || meta.name || 'Usuario';
+    document.getElementById('user-email').textContent = currentUser.email || '';
+    const avatarEl = document.getElementById('user-avatar');
+    if (meta.avatar_url) {
+      avatarEl.innerHTML = `<img src="${meta.avatar_url}" alt="avatar">`;
+    } else {
+      avatarEl.textContent = '👤';
     }
-    if (changed) saveHabits();
+  }
+
+  // ── DATA LOADING ──
+  async function loadDataFromSupabase() {
+    if (!currentUser) return;
+    try {
+      // Habits
+      const { data: habitsData, error: hErr } = await sbClient
+        .from('habits')
+        .select('habit_id, label, emoji, position')
+        .eq('user_id', currentUser.id)
+        .order('position');
+
+      if (!hErr) {
+        if (habitsData.length === 0) {
+          await migrateFromLocalStorage();
+        } else {
+          habits = habitsData.map(h => ({ id: h.habit_id, label: h.label, emoji: h.emoji }));
+          localStorage.setItem('ht_habits', JSON.stringify(habits));
+        }
+      }
+
+      // Records (last 12 months)
+      const since = new Date();
+      since.setFullYear(since.getFullYear() - 1);
+      const sinceKey = localKey(since);
+
+      const { data: recordsData, error: rErr } = await sbClient
+        .from('records')
+        .select('date, habit_id')
+        .eq('user_id', currentUser.id)
+        .gte('date', sinceKey);
+
+      if (!rErr) {
+        records = {};
+        for (const r of recordsData) {
+          if (!records[r.date]) records[r.date] = {};
+          records[r.date][r.habit_id] = true;
+        }
+        localStorage.setItem('ht_records', JSON.stringify(records));
+      }
+
+      // Settings
+      const { data: sData } = await sbClient
+        .from('settings')
+        .select('notif_enabled, notif_time')
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+
+      if (sData) {
+        settings = { notifEnabled: sData.notif_enabled, notifTime: sData.notif_time };
+        localStorage.setItem('ht_settings', JSON.stringify(settings));
+      }
+
+    } catch {
+      // Offline: use cached localStorage data
+      loadFromLocalStorageCache();
+    }
+  }
+
+  function loadFromLocalStorageCache() {
+    try {
+      const h = JSON.parse(localStorage.getItem('ht_habits'));
+      const r = JSON.parse(localStorage.getItem('ht_records'));
+      const s = JSON.parse(localStorage.getItem('ht_settings'));
+      if (h && h.length > 0) habits  = h;
+      if (r) records  = r;
+      if (s) settings = s;
+    } catch {}
+    if (habits.length === 0) habits = DEFAULT_HABITS;
+  }
+
+  async function migrateFromLocalStorage() {
+    try {
+      const localHabits  = JSON.parse(localStorage.getItem('ht_habits'));
+      const localRecords = JSON.parse(localStorage.getItem('ht_records'));
+
+      habits = (localHabits && localHabits.length > 0) ? localHabits : DEFAULT_HABITS;
+
+      await sbClient.from('habits').upsert(
+        habits.map((h, i) => ({
+          user_id:  currentUser.id,
+          habit_id: h.id,
+          label:    h.label,
+          emoji:    h.emoji,
+          position: i
+        })),
+        { onConflict: 'user_id,habit_id' }
+      );
+
+      if (localRecords) {
+        records = localRecords;
+        const rows = [];
+        for (const [date, dayRec] of Object.entries(localRecords)) {
+          for (const [habitId, done] of Object.entries(dayRec)) {
+            if (done) rows.push({ user_id: currentUser.id, date, habit_id: habitId });
+          }
+        }
+        for (let i = 0; i < rows.length; i += 100) {
+          await sbClient.from('records').upsert(
+            rows.slice(i, i + 100),
+            { onConflict: 'user_id,date,habit_id' }
+          );
+        }
+      }
+
+      if (localHabits && localHabits.length > 0) {
+        showToast('Datos migrados a la nube ☁️');
+      }
+    } catch (e) {
+      console.error('Migration error:', e);
+    }
+  }
+
+  // ── DATA SAVING ──
+  async function saveHabits() {
+    localStorage.setItem('ht_habits', JSON.stringify(habits));
+    if (!currentUser) return;
+    try {
+      if (habits.length > 0) {
+        await sbClient.from('habits').upsert(
+          habits.map((h, i) => ({
+            user_id:  currentUser.id,
+            habit_id: h.id,
+            label:    h.label,
+            emoji:    h.emoji,
+            position: i
+          })),
+          { onConflict: 'user_id,habit_id' }
+        );
+      }
+    } catch (e) { console.error('Error saving habits:', e); }
+  }
+
+  async function deleteHabitData(habitId) {
+    if (!currentUser) return;
+    try {
+      await Promise.all([
+        sbClient.from('habits').delete()
+          .match({ user_id: currentUser.id, habit_id: habitId }),
+        sbClient.from('records').delete()
+          .match({ user_id: currentUser.id, habit_id: habitId })
+      ]);
+    } catch (e) { console.error('Error deleting habit data:', e); }
+  }
+
+  async function toggleHabit(habitId, dateKey) {
+    const key = dateKey || todayKey();
+    if (!records[key]) records[key] = {};
+    const newValue = !records[key][habitId];
+
+    if (newValue) {
+      records[key][habitId] = true;
+    } else {
+      delete records[key][habitId];
+      if (Object.keys(records[key]).length === 0) delete records[key];
+    }
+    localStorage.setItem('ht_records', JSON.stringify(records));
+
+    if (currentUser) {
+      try {
+        if (newValue) {
+          await sbClient.from('records').upsert(
+            { user_id: currentUser.id, date: key, habit_id: habitId },
+            { onConflict: 'user_id,date,habit_id' }
+          );
+        } else {
+          await sbClient.from('records').delete()
+            .match({ user_id: currentUser.id, date: key, habit_id: habitId });
+        }
+      } catch (e) { console.error('Error syncing record:', e); }
+    }
+  }
+
+  function loadSettings() {
+    return settings;
+  }
+
+  async function saveSettings(s) {
+    settings = s;
+    localStorage.setItem('ht_settings', JSON.stringify(s));
+    if (!currentUser) return;
+    try {
+      await sbClient.from('settings').upsert(
+        { user_id: currentUser.id, notif_enabled: s.notifEnabled, notif_time: s.notifTime },
+        { onConflict: 'user_id' }
+      );
+    } catch (e) { console.error('Error saving settings:', e); }
   }
 
   // ── DOMAIN ──
@@ -665,13 +955,6 @@
     const [y, m, d] = key.split('-').map(Number);
     const date = new Date(y, m - 1, d);
     return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-  }
-
-  function toggleHabit(habitId, dateKey) {
-    const key = dateKey || todayKey();
-    if (!records[key]) records[key] = {};
-    records[key][habitId] = !records[key][habitId];
-    saveRecords();
   }
 
   function getStreak(habitId) {
@@ -783,20 +1066,19 @@
 
   // ── RENDER: CHARTS ──
   function localKey(d) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const y   = d.getFullYear();
+    const m   = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
 
   function getChartData(habitId) {
-    const now = new Date();
+    const now   = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    let points = [];
+    let points  = [];
     let doneDays = 0, totalDays = 0;
 
     if (chartFilter === 'week') {
-      // Semana actual: lunes → hoy
       const dow = today.getDay();
       const daysFromMon = dow === 0 ? 6 : dow - 1;
       const monday = new Date(today);
@@ -804,22 +1086,21 @@
 
       for (let d = new Date(monday); d <= today; d.setDate(d.getDate() + 1)) {
         if (d < START_DATE) continue;
-        const key = localKey(d);
+        const key   = localKey(d);
         const label = d.toLocaleDateString('es-ES', { weekday: 'short' });
-        const val = records[key]?.[habitId] ? 1 : 0;
+        const val   = records[key]?.[habitId] ? 1 : 0;
         points.push({ label, value: val });
         totalDays++;
         if (val) doneDays++;
       }
     } else if (chartFilter === 'month') {
-      // Mes actual: día 1 → hoy
       const first = new Date(today.getFullYear(), today.getMonth(), 1);
 
       for (let d = new Date(first); d <= today; d.setDate(d.getDate() + 1)) {
         if (d < START_DATE) continue;
-        const key = localKey(d);
+        const key   = localKey(d);
         const label = d.toLocaleDateString('es-ES', { day: 'numeric' });
-        const val = records[key]?.[habitId] ? 1 : 0;
+        const val   = records[key]?.[habitId] ? 1 : 0;
         points.push({ label, value: val });
         totalDays++;
         if (val) doneDays++;
@@ -834,20 +1115,20 @@
 
       for (let d = new Date(fromDate); d <= end; d.setDate(d.getDate() + 1)) {
         if (d < START_DATE) continue;
-        const key = localKey(d);
+        const key   = localKey(d);
         const label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-        const val = records[key]?.[habitId] ? 1 : 0;
+        const val   = records[key]?.[habitId] ? 1 : 0;
         points.push({ label, value: val });
         totalDays++;
         if (val) doneDays++;
       }
     } else { // year — últimos 12 meses agrupados por mes
       for (let m = 11; m >= 0; m--) {
-        const ref = new Date(now.getFullYear(), now.getMonth() - m, 1);
-        const year = ref.getFullYear();
-        const month = ref.getMonth();
+        const ref        = new Date(now.getFullYear(), now.getMonth() - m, 1);
+        const year       = ref.getFullYear();
+        const month      = ref.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const label = ref.toLocaleDateString('es-ES', { month: 'short' });
+        const label      = ref.toLocaleDateString('es-ES', { month: 'short' });
         let done = 0, total = 0;
         for (let d = 1; d <= daysInMonth; d++) {
           const day = new Date(year, month, d);
@@ -857,10 +1138,9 @@
           total++;
           if (records[key]?.[habitId]) done++;
         }
-        doneDays += done;
+        doneDays  += done;
         totalDays += total;
-        if (total > 0) points.push({ label, value: done / total });
-        else points.push({ label, value: 0 });
+        points.push({ label, value: total > 0 ? done / total : 0 });
       }
     }
 
@@ -876,7 +1156,6 @@
       return;
     }
 
-    // Update filter button states
     ['week', 'month', 'year', 'custom'].forEach(f => {
       document.getElementById(`filter-${f}`).classList.toggle('active', f === chartFilter);
     });
@@ -891,7 +1170,6 @@
         return `<div class="chart-bar" style="height:${heightPct}%;background:${bg}" title="${p.label}"></div>`;
       }).join('');
 
-      // Show first, middle, last x-labels
       const n = points.length;
       const xLabels = n > 1
         ? `<div class="chart-x-labels">
@@ -924,7 +1202,6 @@
     chartFilter = f;
     const row = document.getElementById('date-range-row');
     if (f === 'custom') {
-      // Pre-fill with current month range if empty
       const today = new Date();
       if (!chartFrom) {
         const first = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -947,7 +1224,7 @@
     chartFrom = document.getElementById('chart-from').value;
     chartTo   = document.getElementById('chart-to').value;
     if (!chartFrom || !chartTo) { showToast('Selecciona las dos fechas'); return; }
-    if (chartFrom > chartTo) { showToast('La fecha inicio debe ser anterior al fin'); return; }
+    if (chartFrom > chartTo)    { showToast('La fecha inicio debe ser anterior al fin'); return; }
     renderCharts();
   }
 
@@ -993,21 +1270,21 @@
     }
 
     const atLimit = count >= 10;
-    document.getElementById('add-form').style.display  = atLimit ? 'none' : 'flex';
+    document.getElementById('add-form').style.display   = atLimit ? 'none' : 'flex';
     document.getElementById('limit-note').style.display = atLimit ? 'block' : 'none';
   }
 
   // ── ACTIONS ──
   function onHabitTap(habitId) {
-    toggleHabit(habitId);
+    toggleHabit(habitId); // async, fire-and-forget; local state updates synchronously
     renderToday();
   }
 
   function toggleHistoryHabit(dateKey, habitId) {
     if (dateKey !== todayKey()) {
-      const habit = habits.find(h => h.id === habitId);
-      const dayRecord = records[dateKey] || {};
-      const wasDone = !!dayRecord[habitId];
+      const habit      = habits.find(h => h.id === habitId);
+      const dayRecord  = records[dateKey] || {};
+      const wasDone    = !!dayRecord[habitId];
       const currentState = wasDone ? '✓ Cumplido' : '✗ No cumplido';
       const newState     = wasDone ? '✗ No cumplido' : '✓ Cumplido';
       const formattedDay = formatDate(dateKey);
@@ -1046,6 +1323,12 @@
       'Se eliminará el hábito y se perderá todo su historial.',
       () => {
         habits = habits.filter(h => h.id !== habitId);
+        for (const key of Object.keys(records)) {
+          delete records[key][habitId];
+        }
+        localStorage.setItem('ht_habits', JSON.stringify(habits));
+        localStorage.setItem('ht_records', JSON.stringify(records));
+        deleteHabitData(habitId);
         saveHabits();
         renderManage();
         showToast(`"${habit.label}" eliminado`);
@@ -1155,12 +1438,6 @@
   // ── NOTIFICATIONS ──
   let notifTimeout = null;
 
-  function loadSettings() {
-    try { return JSON.parse(localStorage.getItem('ht_settings')) || { notifEnabled: false, notifTime: '22:00' }; }
-    catch { return { notifEnabled: false, notifTime: '22:00' }; }
-  }
-  function saveSettings(s) { localStorage.setItem('ht_settings', JSON.stringify(s)); }
-
   function scheduleNotification() {
     clearTimeout(notifTimeout);
     const s = loadSettings();
@@ -1180,16 +1457,14 @@
       ? '¡Todos los hábitos completados hoy! 🎉'
       : `${done}/${total} hábitos completados hoy. ¡Sigue adelante!`;
     if (Notification.permission !== 'granted') return;
-    // ServiceWorkerRegistration.showNotification es la única API que funciona en
-    // Android Chrome y PWAs instaladas. new Notification() no es soportado en Android.
     navigator.serviceWorker.ready
       .then(reg => reg.showNotification('Habit Tracker', {
         body,
-        icon: './icons/icon-192.png',
-        badge: './icons/icon-192.png',
-        tag: 'daily-reminder',
+        icon:     './icons/icon-192.png',
+        badge:    './icons/icon-192.png',
+        tag:      'daily-reminder',
         renotify: true,
-        data: { url: './' },
+        data:     { url: './' },
       }))
       .catch(err => showToast('Error al mostrar notificación: ' + err.message));
   }
@@ -1238,7 +1513,7 @@
   }
 
   function renderNotifSettings() {
-    const s = loadSettings();
+    const s  = loadSettings();
     const cb = document.getElementById('notif-enabled');
     if (!cb) return;
     const granted = 'Notification' in window && Notification.permission === 'granted';
@@ -1277,9 +1552,9 @@
   }
 
   function exportCSV() {
-    const days = getDaysSinceStart().reverse(); // cronológico
+    const days   = getDaysSinceStart().reverse();
     const header = ['Fecha', ...habits.map(h => `${h.emoji} ${h.label}`)].join(',');
-    const rows = days.map(key => {
+    const rows   = days.map(key => {
       const rec = records[key] || {};
       return [key, ...habits.map(h => rec[h.id] ? '1' : '0')].join(',');
     });
@@ -1288,21 +1563,35 @@
   }
 
   // ── INIT ──
-  loadData();
-  renderToday();
-
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 
-  // Schedule notification on startup (if already granted)
-  if ('Notification' in window && Notification.permission === 'granted') {
-    scheduleNotification();
-  }
-
-  // Reschedule when the page becomes visible again (el timer puede perderse si el SO suspende la app)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') scheduleNotification();
+  });
+
+  // Auth state listener — fires immediately with current session, then on every change
+  sbClient.auth.onAuthStateChange(async (event, session) => {
+    currentUser = session?.user || null;
+
+    if (currentUser) {
+      document.getElementById('auth-overlay').style.display = 'none';
+      document.getElementById('loading-overlay').style.display = 'flex';
+      await loadDataFromSupabase();
+      updateUserCard();
+      document.getElementById('loading-overlay').style.display = 'none';
+      renderToday();
+      if ('Notification' in window && Notification.permission === 'granted') {
+        scheduleNotification();
+      }
+    } else {
+      habits   = [];
+      records  = {};
+      settings = { notifEnabled: false, notifTime: '22:00' };
+      document.getElementById('loading-overlay').style.display = 'none';
+      document.getElementById('auth-overlay').style.display = 'flex';
+    }
   });
 </script>
 </body>
