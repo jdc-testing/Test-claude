@@ -2,14 +2,14 @@
 
 ## Qué es este proyecto
 
-PWA de seguimiento de hábitos diarios con autenticación Google y sincronización en la nube vía Supabase. Stack: un solo `index.html` + `sw.js` + Supabase JS client (CDN). Sin frameworks, sin build. Se despliega en GitHub Pages.
+PWA de seguimiento de hábitos diarios con autenticación Google y sincronización en la nube vía Supabase. Incluye una segunda funcionalidad: un horario semanal con "cajas" arrastrables (Trabajo, Gym, Tenis...) para planificar la semana hora a hora. Stack: un solo `index.html` + `sw.js` + Supabase JS client (CDN). Sin frameworks, sin build. Se despliega en GitHub Pages.
 
 ## Archivos
 
 ```
 habit-tracker/
 ├── index.html        # Toda la app: HTML + CSS + JS
-├── sw.js             # Service Worker (cache network-first, v5)
+├── sw.js             # Service Worker (cache network-first, v6)
 ├── manifest.json     # Config PWA (nombre, iconos, colores)
 ├── icons/
 │   ├── icon-192.png
@@ -17,7 +17,15 @@ habit-tracker/
 └── REQUIREMENTS.md   # Spec completa de funcionalidades
 ```
 
-## Arquitectura de datos
+## Pantallas
+
+1. **Hoy** — tracking diario de hábitos (funcionalidad principal)
+2. **Historial** — editar días anteriores
+3. **Gráficos** — estadísticas por hábito
+4. **Hábitos** — gestión de hábitos, notificaciones, exportar datos, cuenta
+5. **Horario** — planificador semanal con cajas arrastrables (funcionalidad secundaria, independiente de los hábitos)
+
+## Arquitectura de datos — Hábitos
 
 ### Estado en memoria
 ```js
@@ -27,21 +35,43 @@ let settings    = { notifEnabled: false, notifTime: '22:00' }
 let currentUser = null // objeto de Supabase auth
 ```
 
-### Supabase (fuente de verdad)
+### Tablas Supabase
 | Tabla      | Columnas clave                                    |
 |------------|---------------------------------------------------|
 | `habits`   | `user_id`, `habit_id`, `label`, `emoji`, `position` |
 | `records`  | `user_id`, `date` (YYYY-MM-DD), `habit_id`        |
 | `settings` | `user_id`, `notif_enabled`, `notif_time`          |
 
-RLS activo en las tres tablas. Los usuarios solo acceden a sus propios datos.
+## Arquitectura de datos — Horario semanal
+
+### Estado en memoria
+```js
+let scheduleTypes    = []   // catálogo de cajas: [{ id, label, emoji, color }]
+let scheduleEvents   = {}   // { "YYYY-MM-DD": [{ id, typeId, start, duration }] }
+                             // start y duration en minutos (start=0 → 00:00)
+let currentWeekStart = null // "YYYY-MM-DD" del lunes de la semana visible
+```
+
+- Cada semana es independiente (no es una plantilla fija): se navega con ‹ › y los eventos se cargan/guardan por rango de fechas, igual que el historial de hábitos.
+- El catálogo de cajas (`scheduleTypes`) es común a todas las semanas y lo edita el usuario libremente (máx. 12), igual que los hábitos.
+- El horario **no** está vinculado al sistema de hábitos: son datos y pantallas independientes.
+
+### Tablas Supabase
+| Tabla             | Columnas clave                                                        |
+|-------------------|------------------------------------------------------------------------|
+| `schedule_types`  | `user_id`, `type_id`, `label`, `emoji`, `color`, `position`            |
+| `schedule_events` | `user_id`, `event_id`, `date` (YYYY-MM-DD), `type_id`, `start_min`, `duration_min` |
+
+RLS activo en las cinco tablas. Los usuarios solo acceden a sus propios datos.
 
 ### localStorage (caché offline)
-| Clave         | Contenido                          |
-|---------------|------------------------------------|
-| `ht_habits`   | Copia local de habits              |
-| `ht_records`  | Copia local de records             |
-| `ht_settings` | Copia local de settings            |
+| Clave                  | Contenido                          |
+|-------------------------|------------------------------------|
+| `ht_habits`             | Copia local de habits              |
+| `ht_records`            | Copia local de records             |
+| `ht_settings`           | Copia local de settings            |
+| `ht_schedule_types`     | Copia local del catálogo de cajas  |
+| `ht_schedule_events`    | Copia local de eventos cargados (por semanas ya visitadas) |
 
 ### Configuración Supabase
 ```js
@@ -86,22 +116,62 @@ create table public.settings (
 alter table public.settings enable row level security;
 create policy "own settings" on public.settings for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Schedule types (catálogo de cajas: Trabajo, Gym, Tenis...)
+create table public.schedule_types (
+  user_id  uuid references auth.users(id) on delete cascade not null,
+  type_id  text not null,
+  label    text not null,
+  emoji    text not null default '📦',
+  color    text not null default '#4caf50',
+  position integer not null default 0,
+  primary key (user_id, type_id)
+);
+alter table public.schedule_types enable row level security;
+create policy "own schedule types" on public.schedule_types for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Schedule events (bloques colocados en el horario semanal)
+create table public.schedule_events (
+  user_id      uuid references auth.users(id) on delete cascade not null,
+  event_id     text not null,
+  date         text not null, -- YYYY-MM-DD
+  type_id      text not null,
+  start_min    integer not null, -- minutos desde las 00:00 (0-1439)
+  duration_min integer not null default 60,
+  primary key (user_id, event_id)
+);
+create index schedule_events_user_date_idx on public.schedule_events(user_id, date);
+alter table public.schedule_events enable row level security;
+create policy "own schedule events" on public.schedule_events for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
 
 ## Flujo de autenticación
 
 1. App carga → `onAuthStateChange` se registra (muestra spinner)
 2. Sin sesión → pantalla de login con botón "Continuar con Google"
-3. Con sesión → carga datos de Supabase → renderiza app
-4. Primera vez con datos locales → migración automática a Supabase
-5. Cerrar sesión → pantalla de login
+3. Con sesión → carga hábitos/registros/ajustes/catálogo de cajas desde Supabase → renderiza app
+4. Primera vez con datos locales de hábitos → migración automática a Supabase
+5. Primera vez sin catálogo de cajas → se siembran 3 tipos por defecto (Trabajo, Gym, Tenis)
+6. Cerrar sesión → pantalla de login
 
 ## Flujo de datos
 
-- **Lectura:** siempre desde estado en memoria (`habits`, `records`, `settings`)
+- **Lectura:** siempre desde estado en memoria (`habits`, `records`, `settings`, `scheduleTypes`, `scheduleEvents`)
 - **Escritura local:** actualiza estado en memoria + localStorage (síncrono, inmediato)
-- **Escritura remota:** `saveHabits()`, `toggleHabit()`, `saveSettings()` son async; el upsert a Supabase ocurre en background sin bloquear la UI
+- **Escritura remota:** funciones async (`saveHabits()`, `toggleHabit()`, `saveSettings()`, `addScheduleEvent()`, `updateScheduleEvent()`, `deleteScheduleEvent()`, `saveScheduleTypes()`) hacen upsert/delete a Supabase en background sin bloquear la UI
+- **Eventos del horario:** se cargan por semana (`loadWeekEvents(mondayKey)`) al navegar a la pantalla Horario o cambiar de semana, no se cargan todos de golpe
 - **Offline:** si Supabase falla, se usa la caché de localStorage
+
+## Interacción del horario (drag & drop)
+
+Implementado con Pointer Events nativos (sin librerías):
+- **Crear bloque:** `pointerdown` sobre una caja del catálogo (`.chip-drag-handle`) → aparece un "ghost" que sigue el dedo/cursor → al soltar sobre una columna de día, se calcula día + hora (ajustada a `SNAP_MIN` = 15 min) y se crea el evento.
+- **Mover bloque:** igual pero arrastrando un `.event-block` ya existente; puede cambiar de día y de hora.
+- **Editar/eliminar bloque:** un toque sin arrastre (`moved === false`) sobre un bloque abre el modal `#event-form-overlay` con selects de tipo/día/hora/duración y botón eliminar.
+- **Añadir/editar tipo de caja:** botón "+ Añadir" o el lápiz ✏️ de cada chip abren `#type-form-overlay` (emoji, nombre, color de una paleta fija `SCHEDULE_COLORS`).
+- No hay detección de solapamientos entre bloques (si dos eventos coinciden en hora, se dibujan superpuestos). No implementado por estar fuera del alcance inicial.
 
 ## Convenciones
 
@@ -109,13 +179,14 @@ create policy "own settings" on public.settings for all
 - Las secciones del JS están separadas por comentarios `// ── NOMBRE ──`
 - Las IDs del DOM siguen el patrón: `screen-X`, `nav-X`, `filter-X`
 - Las fechas se manejan siempre como strings `YYYY-MM-DD`
-- `START_DATE = new Date(2026, 2, 1)` — no mostrar datos anteriores a esta fecha
+- `START_DATE = new Date(2026, 2, 1)` — no mostrar datos de hábitos anteriores a esta fecha (no aplica al horario, que no tiene fecha de inicio)
+- El horario usa minutos desde medianoche (`start`, `duration`) en vez de strings de hora
 
 ## Restricciones importantes
 
 - **Supabase CDN permitido** — excepción justificada para auth + sync en la nube
 - **No fragmentar en múltiples archivos JS/CSS** salvo que sea estrictamente necesario
-- **Máximo 10 hábitos** — límite hardcodeado, no cambiar sin actualizar la UI
+- **Máximo 10 hábitos** y **máximo 12 tipos de caja** — límites hardcodeados, no cambiar sin actualizar la UI
 - Las notificaciones usan `setTimeout` + Web Notifications API. Sin Push API (requeriría servidor)
 
 ## Tareas frecuentes
@@ -132,6 +203,12 @@ Cambiar `CACHE_NAME` en `sw.js`: `habit-tracker-vN` → `habit-tracker-v(N+1)`
 3. Añadir entrada en el objeto `titles`
 4. Añadir `if (name === 'X') renderX();` en `showScreen()`
 5. Implementar `function renderX() {}`
+
+### Cambiar la altura de hora en el horario
+Constante `HOUR_HEIGHT` (px por hora) al inicio del `<script>`. Afecta a la rejilla, al gutter de horas y al cálculo de posición al arrastrar.
+
+### Cambiar el ajuste (snap) del arrastre en el horario
+Constante `SNAP_MIN` (minutos). Por defecto 15.
 
 ## Despliegue
 

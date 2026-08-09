@@ -12,9 +12,9 @@ Carpeta principal donde iré creando y almacenando mis proyectos. Cada proyecto 
 
 ### 📱 [habit-tracker](proyectos/habit-tracker/)
 
-App web progresiva (PWA) para el seguimiento de hábitos diarios desde el móvil. Permite marcar hábitos como completados, ver rachas y consultar el historial de los últimos 30 días. Funciona offline y se puede instalar en la pantalla de inicio del móvil.
+App web progresiva (PWA) para el seguimiento de hábitos diarios desde el móvil. Permite marcar hábitos como completados, ver rachas y consultar el historial. Incluye acceso con Google y sincronización en la nube (no se pierden los datos al cambiar de dispositivo), y un horario semanal secundario con cajas arrastrables (Trabajo, Gym, Tenis...) para planificar la semana hora a hora. Funciona offline y se puede instalar en la pantalla de inicio del móvil.
 
-**Tecnología:** HTML + CSS + JS vanilla · localStorage · Service Worker
+**Tecnología:** HTML + CSS + JS vanilla · Supabase (Auth con Google + PostgreSQL) · Service Worker
 
 ### 🎾 [tennis-tracker](proyectos/tennis-tracker/)
 
