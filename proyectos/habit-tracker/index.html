@@ -10,6 +10,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Habits">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <!-- Supabase JS client (required for cloud sync + Google Auth) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     :root {
       --accent: #4caf50;
@@ -34,6 +36,49 @@
       display: flex;
       flex-direction: column;
     }
+
+    /* ── LOADING & AUTH OVERLAYS ── */
+    #loading-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .loading-spinner {
+      width: 40px; height: 40px;
+      border: 4px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #auth-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 999; padding: 32px 24px; text-align: center;
+    }
+    .auth-logo { font-size: 72px; margin-bottom: 20px; }
+    .auth-title { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+    .auth-desc {
+      font-size: 15px; color: var(--text-muted);
+      line-height: 1.6; margin-bottom: 40px;
+      max-width: 320px;
+    }
+    .google-btn {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; padding: 14px 24px;
+      background: var(--surface); border: 2px solid var(--border);
+      border-radius: 14px; font-size: 16px; font-weight: 600;
+      cursor: pointer; font-family: inherit; color: var(--text);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      transition: box-shadow 0.15s ease, transform 0.1s ease;
+      width: 100%; max-width: 320px;
+    }
+    .google-btn:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+    .google-btn:active { transform: scale(0.97); }
 
     /* ── HEADER ── */
     header {
@@ -352,6 +397,29 @@
     }
     .time-input:focus { outline: none; border-color: var(--accent); }
 
+    /* ── ACCOUNT CARD ── */
+    .account-row {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .user-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      overflow: hidden; flex-shrink: 0;
+      background: var(--accent-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 14px; font-weight: 600; }
+    .user-email { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sign-out-btn {
+      flex-shrink: 0; background: none;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 7px 14px; font-size: 13px; font-weight: 600;
+      cursor: pointer; color: var(--text-muted); font-family: inherit;
+    }
+    .sign-out-btn:active { background: var(--bg); }
+
     /* ── CONFIRM MODAL ── */
     #confirm-overlay {
       position: fixed; inset: 0;
@@ -430,6 +498,113 @@
       color: var(--text-muted); padding: 12px 20px 0;
     }
 
+    /* ── SCHEDULE (HORARIO) ── */
+    .week-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px 4px;
+    }
+    .week-nav-btn {
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 10px; width: 36px; height: 36px;
+      font-size: 18px; cursor: pointer; color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .week-nav-btn:active { background: var(--accent-light); }
+    #week-label {
+      font-weight: 700; font-size: 14px; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .type-palette {
+      display: flex; gap: 8px; padding: 10px 20px 6px;
+      overflow-x: auto;
+    }
+    .type-chip {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 10px; border-radius: 12px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .chip-drag-handle {
+      font-size: 13px; font-weight: 600; cursor: grab; user-select: none;
+      touch-action: none; -webkit-tap-highlight-color: transparent;
+    }
+    .chip-edit, .chip-del {
+      background: none; border: none; cursor: pointer; font-size: 12px;
+      padding: 2px; color: var(--text-muted); line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .add-chip {
+      border-style: dashed; color: var(--text-muted); font-weight: 700;
+      cursor: pointer; background: var(--bg);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .schedule-wrap {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      grid-template-rows: 26px auto;
+      margin: 4px 12px 16px;
+    }
+    .schedule-corner { grid-column: 1; grid-row: 1; }
+    .schedule-header-row { grid-column: 2; grid-row: 1; display: flex; }
+    .day-header { flex: 1; text-align: center; font-size: 11px; color: var(--text-muted); }
+    .day-header-label { font-weight: 700; }
+    .day-header.today .day-header-num { color: var(--accent); font-weight: 800; }
+    .schedule-gutter { grid-column: 1; grid-row: 2; position: relative; }
+    .hour-label {
+      position: absolute; left: 0; right: 2px; text-align: right;
+      font-size: 9px; color: var(--text-muted); transform: translateY(-5px);
+    }
+    .schedule-cols { grid-column: 2; grid-row: 2; display: flex; position: relative; }
+    .day-col {
+      flex: 1; position: relative; border-left: 1px solid var(--border);
+      background-image: linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+      background-repeat: repeat-y;
+    }
+    .event-block {
+      position: absolute; left: 1px; right: 1px;
+      border-radius: 6px; padding: 2px 3px; overflow: hidden;
+      color: white; font-size: 10px; font-weight: 700;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      touch-action: none; cursor: grab; -webkit-tap-highlight-color: transparent;
+      display: flex; flex-direction: column; gap: 1px; line-height: 1.15;
+    }
+    .event-block.dragging { opacity: 0.6; }
+    .event-emoji { font-size: 12px; }
+    .event-time { font-size: 8px; opacity: 0.9; }
+
+    .drag-ghost {
+      position: fixed; pointer-events: none; z-index: 500;
+      padding: 6px 10px; border-radius: 10px; color: white;
+      font-size: 12px; font-weight: 700;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      transform: translate(-50%, -120%);
+      white-space: nowrap;
+    }
+
+    /* ── GENERIC SHEET MODAL (tipo horario / evento) ── */
+    .sheet-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none; align-items: center; justify-content: center;
+      z-index: 200; padding: 24px;
+    }
+    .sheet-box {
+      background: var(--surface); border-radius: 18px; padding: 20px;
+      width: 100%; max-width: 340px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .sheet-box h3 { font-size: 16px; font-weight: 700; }
+    .color-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+    .color-swatch {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 2px solid transparent; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .color-swatch.selected { border-color: var(--text); }
+
     /* ── BOTTOM NAV ── */
     nav {
       position: fixed; bottom: 0; left: 0; right: 0;
@@ -470,6 +645,27 @@
   </style>
 </head>
 <body>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay">
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- AUTH OVERLAY -->
+<div id="auth-overlay">
+  <div class="auth-logo">📋</div>
+  <h1 class="auth-title">Habit Tracker</h1>
+  <p class="auth-desc">Inicia sesión con Google para guardar tus hábitos en la nube y acceder desde cualquier dispositivo.</p>
+  <button class="google-btn" onclick="signInWithGoogle()">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+    </svg>
+    Continuar con Google
+  </button>
+</div>
 
 <header>
   <h1 id="screen-title">Hoy</h1>
@@ -549,7 +745,7 @@
     <button class="apply-btn" id="notif-test-btn" onclick="testNotification()" style="display:none">Probar ahora</button>
   </div>
 
-  <div class="settings-card" style="margin-bottom:16px">
+  <div class="settings-card">
     <h3>💾 Datos</h3>
     <div class="settings-row">
       <div>
@@ -565,6 +761,34 @@
       </div>
       <button class="apply-btn" onclick="exportCSV()">Exportar</button>
     </div>
+  </div>
+
+  <div class="settings-card" style="margin-bottom:16px">
+    <h3>👤 Cuenta</h3>
+    <div class="account-row">
+      <div class="user-avatar" id="user-avatar">👤</div>
+      <div class="user-info">
+        <div class="user-name" id="user-name"></div>
+        <div class="user-email" id="user-email"></div>
+      </div>
+      <button class="sign-out-btn" onclick="signOut()">Salir</button>
+    </div>
+  </div>
+</section>
+
+<!-- SCHEDULE -->
+<section id="screen-schedule" class="screen">
+  <div class="week-nav">
+    <button class="week-nav-btn" onclick="changeWeek(-1)">‹</button>
+    <span id="week-label" onclick="resetToCurrentWeek()"></span>
+    <button class="week-nav-btn" onclick="changeWeek(1)">›</button>
+  </div>
+  <div class="type-palette" id="type-palette"></div>
+  <div class="schedule-wrap">
+    <div class="schedule-corner"></div>
+    <div class="schedule-header-row" id="schedule-header-row"></div>
+    <div class="schedule-gutter" id="schedule-gutter"></div>
+    <div class="schedule-cols" id="schedule-cols"></div>
   </div>
 </section>
 
@@ -586,6 +810,10 @@
     <span class="nav-icon">⚙️</span>
     <span class="nav-label">Hábitos</span>
   </button>
+  <button class="nav-btn" id="nav-schedule" onclick="showScreen('schedule')">
+    <span class="nav-icon">🗓️</span>
+    <span class="nav-label">Horario</span>
+  </button>
 </nav>
 
 <div id="toast"></div>
@@ -602,14 +830,75 @@
   </div>
 </div>
 
+<!-- TYPE (CAJA) FORM -->
+<div id="type-form-overlay" class="sheet-overlay">
+  <div class="sheet-box">
+    <h3 id="type-form-title">Nuevo tipo</h3>
+    <div class="form-row">
+      <input class="emoji-input" id="type-emoji" type="text" maxlength="2" placeholder="📦">
+      <input class="text-input" id="type-label" type="text" maxlength="20" placeholder="Nombre (ej. Gym)">
+    </div>
+    <div class="color-swatches" id="type-color-swatches"></div>
+    <div class="edit-actions">
+      <button class="cancel-edit-btn" onclick="closeTypeForm()">Cancelar</button>
+      <button class="save-edit-btn" onclick="saveTypeForm()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EVENT (BLOQUE) FORM -->
+<div id="event-form-overlay" class="sheet-overlay">
+  <div class="sheet-box">
+    <h3>Editar bloque</h3>
+    <div class="settings-row">
+      <div class="settings-label">Tipo</div>
+      <select id="event-type-select" class="time-input"></select>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">Día</div>
+      <select id="event-day-select" class="time-input"></select>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">Hora inicio</div>
+      <input type="time" id="event-start-input" class="time-input">
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">Duración</div>
+      <select id="event-duration-select" class="time-input">
+        <option value="15">15 min</option>
+        <option value="30">30 min</option>
+        <option value="45">45 min</option>
+        <option value="60">1 h</option>
+        <option value="90">1h 30</option>
+        <option value="120">2 h</option>
+        <option value="180">3 h</option>
+        <option value="240">4 h</option>
+      </select>
+    </div>
+    <div class="edit-actions">
+      <button class="cancel-edit-btn" onclick="closeEventForm()">Cerrar</button>
+      <button class="cancel-edit-btn" style="color:var(--danger)" onclick="deleteEventFromForm()">Eliminar</button>
+    </div>
+    <button class="save-edit-btn" onclick="saveEventForm()">Guardar</button>
+  </div>
+</div>
+
 <script>
+  // ── SUPABASE CONFIG ──
+  // Replace with your actual Supabase project values
+  const SUPABASE_URL      = 'YOUR_SUPABASE_URL';
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+  const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   // ── STATE ──
-  let habits = [];
-  let records = {};
+  let habits      = [];
+  let records     = {};
+  let settings    = { notifEnabled: false, notifTime: '22:00' };
+  let currentUser = null;
   let chartFilter = 'week';
-  let chartFrom = null; // 'YYYY-MM-DD'
-  let chartTo   = null;
-  const START_DATE = new Date(2026, 2, 1); // 1 de marzo de 2026
+  let chartFrom   = null;
+  let chartTo     = null;
+  const START_DATE = new Date(2026, 2, 1);
 
   const DEFAULT_HABITS = [
     { id: 'creatine', label: 'Tomar creatina', emoji: '💊' },
@@ -621,39 +910,243 @@
     { id: 'protein',  label: 'Proteína',          emoji: '🥩' },
   ];
 
-  // ── STORAGE ──
-  function loadData() {
-    try {
-      habits  = JSON.parse(localStorage.getItem('ht_habits'))  || DEFAULT_HABITS;
-      records = JSON.parse(localStorage.getItem('ht_records')) || {};
-    } catch { habits = DEFAULT_HABITS; records = {}; }
+  // ── SCHEDULE STATE ──
+  let scheduleTypes    = [];  // [{ id, label, emoji, color }]
+  let scheduleEvents   = {};  // { "YYYY-MM-DD": [{ id, typeId, start, duration }] }
+  let currentWeekStart = null; // "YYYY-MM-DD" (lunes)
+
+  const DEFAULT_SCHEDULE_TYPES = [
+    { id: 'work',   label: 'Trabajo', emoji: '💼', color: '#42a5f5' },
+    { id: 'gym',    label: 'Gym',     emoji: '🏋️', color: '#ef5350' },
+    { id: 'tennis', label: 'Tenis',   emoji: '🎾', color: '#66bb6a' },
+  ];
+  const SCHEDULE_COLORS = ['#42a5f5', '#ef5350', '#66bb6a', '#ffa726', '#ab47bc', '#26c6da', '#8d6e63', '#ec407a'];
+  const HOUR_HEIGHT = 44; // px por hora en la rejilla
+  const SNAP_MIN = 15;    // minutos a los que se ajusta el arrastre
+  const DAY_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+  // ── AUTH ──
+  async function signInWithGoogle() {
+    const { error } = await sbClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href }
+    });
+    if (error) showToast('Error al iniciar sesión');
   }
 
-  function saveHabits() {
-    try { localStorage.setItem('ht_habits', JSON.stringify(habits)); }
-    catch { showToast('Error al guardar. Almacenamiento lleno.'); }
+  function signOut() {
+    customConfirm('Cerrar sesión', '¿Seguro que quieres cerrar sesión?', async () => {
+      await sbClient.auth.signOut();
+    }, true);
   }
 
-  function saveRecords() {
-    try { localStorage.setItem('ht_records', JSON.stringify(records)); }
-    catch { showToast('Error al guardar. Almacenamiento lleno.'); }
-  }
-
-  // Adds new default habits that don't exist yet (migration for existing users)
-  function seedNewHabits() {
-    const toSeed = [
-      { id: 'tennis',  label: 'Tenis',     emoji: '🎾' },
-      { id: 'sleep8h', label: 'Dormir 8h', emoji: '😴' },
-      { id: 'protein', label: 'Proteína',  emoji: '🥩' },
-    ];
-    let changed = false;
-    for (const h of toSeed) {
-      if (!habits.find(x => x.id === h.id)) {
-        habits.push(h);
-        changed = true;
-      }
+  function updateUserCard() {
+    if (!currentUser) return;
+    const meta = currentUser.user_metadata || {};
+    document.getElementById('user-name').textContent  = meta.full_name || meta.name || 'Usuario';
+    document.getElementById('user-email').textContent = currentUser.email || '';
+    const avatarEl = document.getElementById('user-avatar');
+    if (meta.avatar_url) {
+      avatarEl.innerHTML = `<img src="${meta.avatar_url}" alt="avatar">`;
+    } else {
+      avatarEl.textContent = '👤';
     }
-    if (changed) saveHabits();
+  }
+
+  // ── DATA LOADING ──
+  async function loadDataFromSupabase() {
+    if (!currentUser) return;
+    try {
+      // Habits
+      const { data: habitsData, error: hErr } = await sbClient
+        .from('habits')
+        .select('habit_id, label, emoji, position')
+        .eq('user_id', currentUser.id)
+        .order('position');
+
+      if (!hErr) {
+        if (habitsData.length === 0) {
+          await migrateFromLocalStorage();
+        } else {
+          habits = habitsData.map(h => ({ id: h.habit_id, label: h.label, emoji: h.emoji }));
+          localStorage.setItem('ht_habits', JSON.stringify(habits));
+        }
+      }
+
+      // Records (last 12 months)
+      const since = new Date();
+      since.setFullYear(since.getFullYear() - 1);
+      const sinceKey = localKey(since);
+
+      const { data: recordsData, error: rErr } = await sbClient
+        .from('records')
+        .select('date, habit_id')
+        .eq('user_id', currentUser.id)
+        .gte('date', sinceKey);
+
+      if (!rErr) {
+        records = {};
+        for (const r of recordsData) {
+          if (!records[r.date]) records[r.date] = {};
+          records[r.date][r.habit_id] = true;
+        }
+        localStorage.setItem('ht_records', JSON.stringify(records));
+      }
+
+      // Settings
+      const { data: sData } = await sbClient
+        .from('settings')
+        .select('notif_enabled, notif_time')
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+
+      if (sData) {
+        settings = { notifEnabled: sData.notif_enabled, notifTime: sData.notif_time };
+        localStorage.setItem('ht_settings', JSON.stringify(settings));
+      }
+
+      // Schedule types (catálogo de cajas)
+      await loadScheduleTypes();
+
+    } catch {
+      // Offline: use cached localStorage data
+      loadFromLocalStorageCache();
+    }
+  }
+
+  function loadFromLocalStorageCache() {
+    try {
+      const h  = JSON.parse(localStorage.getItem('ht_habits'));
+      const r  = JSON.parse(localStorage.getItem('ht_records'));
+      const s  = JSON.parse(localStorage.getItem('ht_settings'));
+      const st = JSON.parse(localStorage.getItem('ht_schedule_types'));
+      const se = JSON.parse(localStorage.getItem('ht_schedule_events'));
+      if (h && h.length > 0) habits  = h;
+      if (r) records  = r;
+      if (s) settings = s;
+      if (st && st.length > 0) scheduleTypes  = st;
+      if (se) scheduleEvents = se;
+    } catch {}
+    if (habits.length === 0)        habits        = DEFAULT_HABITS;
+    if (scheduleTypes.length === 0) scheduleTypes  = DEFAULT_SCHEDULE_TYPES.map(t => ({ ...t }));
+  }
+
+  async function migrateFromLocalStorage() {
+    try {
+      const localHabits  = JSON.parse(localStorage.getItem('ht_habits'));
+      const localRecords = JSON.parse(localStorage.getItem('ht_records'));
+
+      habits = (localHabits && localHabits.length > 0) ? localHabits : DEFAULT_HABITS;
+
+      await sbClient.from('habits').upsert(
+        habits.map((h, i) => ({
+          user_id:  currentUser.id,
+          habit_id: h.id,
+          label:    h.label,
+          emoji:    h.emoji,
+          position: i
+        })),
+        { onConflict: 'user_id,habit_id' }
+      );
+
+      if (localRecords) {
+        records = localRecords;
+        const rows = [];
+        for (const [date, dayRec] of Object.entries(localRecords)) {
+          for (const [habitId, done] of Object.entries(dayRec)) {
+            if (done) rows.push({ user_id: currentUser.id, date, habit_id: habitId });
+          }
+        }
+        for (let i = 0; i < rows.length; i += 100) {
+          await sbClient.from('records').upsert(
+            rows.slice(i, i + 100),
+            { onConflict: 'user_id,date,habit_id' }
+          );
+        }
+      }
+
+      if (localHabits && localHabits.length > 0) {
+        showToast('Datos migrados a la nube ☁️');
+      }
+    } catch (e) {
+      console.error('Migration error:', e);
+    }
+  }
+
+  // ── DATA SAVING ──
+  async function saveHabits() {
+    localStorage.setItem('ht_habits', JSON.stringify(habits));
+    if (!currentUser) return;
+    try {
+      if (habits.length > 0) {
+        await sbClient.from('habits').upsert(
+          habits.map((h, i) => ({
+            user_id:  currentUser.id,
+            habit_id: h.id,
+            label:    h.label,
+            emoji:    h.emoji,
+            position: i
+          })),
+          { onConflict: 'user_id,habit_id' }
+        );
+      }
+    } catch (e) { console.error('Error saving habits:', e); }
+  }
+
+  async function deleteHabitData(habitId) {
+    if (!currentUser) return;
+    try {
+      await Promise.all([
+        sbClient.from('habits').delete()
+          .match({ user_id: currentUser.id, habit_id: habitId }),
+        sbClient.from('records').delete()
+          .match({ user_id: currentUser.id, habit_id: habitId })
+      ]);
+    } catch (e) { console.error('Error deleting habit data:', e); }
+  }
+
+  async function toggleHabit(habitId, dateKey) {
+    const key = dateKey || todayKey();
+    if (!records[key]) records[key] = {};
+    const newValue = !records[key][habitId];
+
+    if (newValue) {
+      records[key][habitId] = true;
+    } else {
+      delete records[key][habitId];
+      if (Object.keys(records[key]).length === 0) delete records[key];
+    }
+    localStorage.setItem('ht_records', JSON.stringify(records));
+
+    if (currentUser) {
+      try {
+        if (newValue) {
+          await sbClient.from('records').upsert(
+            { user_id: currentUser.id, date: key, habit_id: habitId },
+            { onConflict: 'user_id,date,habit_id' }
+          );
+        } else {
+          await sbClient.from('records').delete()
+            .match({ user_id: currentUser.id, date: key, habit_id: habitId });
+        }
+      } catch (e) { console.error('Error syncing record:', e); }
+    }
+  }
+
+  function loadSettings() {
+    return settings;
+  }
+
+  async function saveSettings(s) {
+    settings = s;
+    localStorage.setItem('ht_settings', JSON.stringify(s));
+    if (!currentUser) return;
+    try {
+      await sbClient.from('settings').upsert(
+        { user_id: currentUser.id, notif_enabled: s.notifEnabled, notif_time: s.notifTime },
+        { onConflict: 'user_id' }
+      );
+    } catch (e) { console.error('Error saving settings:', e); }
   }
 
   // ── DOMAIN ──
@@ -665,13 +1158,6 @@
     const [y, m, d] = key.split('-').map(Number);
     const date = new Date(y, m - 1, d);
     return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-  }
-
-  function toggleHabit(habitId, dateKey) {
-    const key = dateKey || todayKey();
-    if (!records[key]) records[key] = {};
-    records[key][habitId] = !records[key][habitId];
-    saveRecords();
   }
 
   function getStreak(habitId) {
@@ -783,20 +1269,19 @@
 
   // ── RENDER: CHARTS ──
   function localKey(d) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const y   = d.getFullYear();
+    const m   = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
 
   function getChartData(habitId) {
-    const now = new Date();
+    const now   = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    let points = [];
+    let points  = [];
     let doneDays = 0, totalDays = 0;
 
     if (chartFilter === 'week') {
-      // Semana actual: lunes → hoy
       const dow = today.getDay();
       const daysFromMon = dow === 0 ? 6 : dow - 1;
       const monday = new Date(today);
@@ -804,22 +1289,21 @@
 
       for (let d = new Date(monday); d <= today; d.setDate(d.getDate() + 1)) {
         if (d < START_DATE) continue;
-        const key = localKey(d);
+        const key   = localKey(d);
         const label = d.toLocaleDateString('es-ES', { weekday: 'short' });
-        const val = records[key]?.[habitId] ? 1 : 0;
+        const val   = records[key]?.[habitId] ? 1 : 0;
         points.push({ label, value: val });
         totalDays++;
         if (val) doneDays++;
       }
     } else if (chartFilter === 'month') {
-      // Mes actual: día 1 → hoy
       const first = new Date(today.getFullYear(), today.getMonth(), 1);
 
       for (let d = new Date(first); d <= today; d.setDate(d.getDate() + 1)) {
         if (d < START_DATE) continue;
-        const key = localKey(d);
+        const key   = localKey(d);
         const label = d.toLocaleDateString('es-ES', { day: 'numeric' });
-        const val = records[key]?.[habitId] ? 1 : 0;
+        const val   = records[key]?.[habitId] ? 1 : 0;
         points.push({ label, value: val });
         totalDays++;
         if (val) doneDays++;
@@ -834,20 +1318,20 @@
 
       for (let d = new Date(fromDate); d <= end; d.setDate(d.getDate() + 1)) {
         if (d < START_DATE) continue;
-        const key = localKey(d);
+        const key   = localKey(d);
         const label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-        const val = records[key]?.[habitId] ? 1 : 0;
+        const val   = records[key]?.[habitId] ? 1 : 0;
         points.push({ label, value: val });
         totalDays++;
         if (val) doneDays++;
       }
     } else { // year — últimos 12 meses agrupados por mes
       for (let m = 11; m >= 0; m--) {
-        const ref = new Date(now.getFullYear(), now.getMonth() - m, 1);
-        const year = ref.getFullYear();
-        const month = ref.getMonth();
+        const ref        = new Date(now.getFullYear(), now.getMonth() - m, 1);
+        const year       = ref.getFullYear();
+        const month      = ref.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const label = ref.toLocaleDateString('es-ES', { month: 'short' });
+        const label      = ref.toLocaleDateString('es-ES', { month: 'short' });
         let done = 0, total = 0;
         for (let d = 1; d <= daysInMonth; d++) {
           const day = new Date(year, month, d);
@@ -857,10 +1341,9 @@
           total++;
           if (records[key]?.[habitId]) done++;
         }
-        doneDays += done;
+        doneDays  += done;
         totalDays += total;
-        if (total > 0) points.push({ label, value: done / total });
-        else points.push({ label, value: 0 });
+        points.push({ label, value: total > 0 ? done / total : 0 });
       }
     }
 
@@ -876,7 +1359,6 @@
       return;
     }
 
-    // Update filter button states
     ['week', 'month', 'year', 'custom'].forEach(f => {
       document.getElementById(`filter-${f}`).classList.toggle('active', f === chartFilter);
     });
@@ -891,7 +1373,6 @@
         return `<div class="chart-bar" style="height:${heightPct}%;background:${bg}" title="${p.label}"></div>`;
       }).join('');
 
-      // Show first, middle, last x-labels
       const n = points.length;
       const xLabels = n > 1
         ? `<div class="chart-x-labels">
@@ -924,7 +1405,6 @@
     chartFilter = f;
     const row = document.getElementById('date-range-row');
     if (f === 'custom') {
-      // Pre-fill with current month range if empty
       const today = new Date();
       if (!chartFrom) {
         const first = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -947,7 +1427,7 @@
     chartFrom = document.getElementById('chart-from').value;
     chartTo   = document.getElementById('chart-to').value;
     if (!chartFrom || !chartTo) { showToast('Selecciona las dos fechas'); return; }
-    if (chartFrom > chartTo) { showToast('La fecha inicio debe ser anterior al fin'); return; }
+    if (chartFrom > chartTo)    { showToast('La fecha inicio debe ser anterior al fin'); return; }
     renderCharts();
   }
 
@@ -993,21 +1473,21 @@
     }
 
     const atLimit = count >= 10;
-    document.getElementById('add-form').style.display  = atLimit ? 'none' : 'flex';
+    document.getElementById('add-form').style.display   = atLimit ? 'none' : 'flex';
     document.getElementById('limit-note').style.display = atLimit ? 'block' : 'none';
   }
 
   // ── ACTIONS ──
   function onHabitTap(habitId) {
-    toggleHabit(habitId);
+    toggleHabit(habitId); // async, fire-and-forget; local state updates synchronously
     renderToday();
   }
 
   function toggleHistoryHabit(dateKey, habitId) {
     if (dateKey !== todayKey()) {
-      const habit = habits.find(h => h.id === habitId);
-      const dayRecord = records[dateKey] || {};
-      const wasDone = !!dayRecord[habitId];
+      const habit      = habits.find(h => h.id === habitId);
+      const dayRecord  = records[dateKey] || {};
+      const wasDone    = !!dayRecord[habitId];
       const currentState = wasDone ? '✓ Cumplido' : '✗ No cumplido';
       const newState     = wasDone ? '✗ No cumplido' : '✓ Cumplido';
       const formattedDay = formatDate(dateKey);
@@ -1046,6 +1526,12 @@
       'Se eliminará el hábito y se perderá todo su historial.',
       () => {
         habits = habits.filter(h => h.id !== habitId);
+        for (const key of Object.keys(records)) {
+          delete records[key][habitId];
+        }
+        localStorage.setItem('ht_habits', JSON.stringify(habits));
+        localStorage.setItem('ht_records', JSON.stringify(records));
+        deleteHabitData(habitId);
         saveHabits();
         renderManage();
         showToast(`"${habit.label}" eliminado`);
@@ -1112,7 +1598,7 @@
 
   // ── NAVIGATION ──
   let currentScreen = 'today';
-  const titles = { today: 'Hoy', history: 'Historial', charts: 'Gráficos', manage: 'Hábitos' };
+  const titles = { today: 'Hoy', history: 'Historial', charts: 'Gráficos', manage: 'Hábitos', schedule: 'Horario' };
 
   function showScreen(name) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1128,7 +1614,21 @@
     if (name === 'history') renderHistory();
     if (name === 'charts')  renderCharts();
     if (name === 'manage')  { renderManage(); renderNotifSettings(); }
+    if (name === 'schedule') {
+      if (!currentWeekStart) currentWeekStart = getMondayKey(new Date());
+      renderWeekLabel();
+      renderSchedulePalette();
+      renderScheduleGrid();
+      loadWeekEvents(currentWeekStart);
+      if (!scheduleScrolledOnce) {
+        scheduleScrolledOnce = true;
+        requestAnimationFrame(() => {
+          document.getElementById('screen-schedule').scrollTop = Math.max(0, 6 * HOUR_HEIGHT - 40);
+        });
+      }
+    }
   }
+  let scheduleScrolledOnce = false;
 
   // ── TOAST ──
   let toastTimer;
@@ -1155,12 +1655,6 @@
   // ── NOTIFICATIONS ──
   let notifTimeout = null;
 
-  function loadSettings() {
-    try { return JSON.parse(localStorage.getItem('ht_settings')) || { notifEnabled: false, notifTime: '22:00' }; }
-    catch { return { notifEnabled: false, notifTime: '22:00' }; }
-  }
-  function saveSettings(s) { localStorage.setItem('ht_settings', JSON.stringify(s)); }
-
   function scheduleNotification() {
     clearTimeout(notifTimeout);
     const s = loadSettings();
@@ -1180,16 +1674,14 @@
       ? '¡Todos los hábitos completados hoy! 🎉'
       : `${done}/${total} hábitos completados hoy. ¡Sigue adelante!`;
     if (Notification.permission !== 'granted') return;
-    // ServiceWorkerRegistration.showNotification es la única API que funciona en
-    // Android Chrome y PWAs instaladas. new Notification() no es soportado en Android.
     navigator.serviceWorker.ready
       .then(reg => reg.showNotification('Habit Tracker', {
         body,
-        icon: './icons/icon-192.png',
-        badge: './icons/icon-192.png',
-        tag: 'daily-reminder',
+        icon:     './icons/icon-192.png',
+        badge:    './icons/icon-192.png',
+        tag:      'daily-reminder',
         renotify: true,
-        data: { url: './' },
+        data:     { url: './' },
       }))
       .catch(err => showToast('Error al mostrar notificación: ' + err.message));
   }
@@ -1238,7 +1730,7 @@
   }
 
   function renderNotifSettings() {
-    const s = loadSettings();
+    const s  = loadSettings();
     const cb = document.getElementById('notif-enabled');
     if (!cb) return;
     const granted = 'Notification' in window && Notification.permission === 'granted';
@@ -1261,6 +1753,449 @@
     }
   }
 
+  // ── SCHEDULE: DATA ──
+  function persistScheduleEventsCache() {
+    localStorage.setItem('ht_schedule_events', JSON.stringify(scheduleEvents));
+  }
+
+  async function loadScheduleTypes() {
+    if (!currentUser) return;
+    const { data, error } = await sbClient
+      .from('schedule_types')
+      .select('type_id, label, emoji, color, position')
+      .eq('user_id', currentUser.id)
+      .order('position');
+
+    if (error) return;
+
+    if (data.length === 0) {
+      scheduleTypes = DEFAULT_SCHEDULE_TYPES.map(t => ({ ...t }));
+      await sbClient.from('schedule_types').upsert(
+        scheduleTypes.map((t, i) => ({
+          user_id: currentUser.id, type_id: t.id, label: t.label, emoji: t.emoji, color: t.color, position: i
+        })),
+        { onConflict: 'user_id,type_id' }
+      );
+    } else {
+      scheduleTypes = data.map(t => ({ id: t.type_id, label: t.label, emoji: t.emoji, color: t.color }));
+    }
+    localStorage.setItem('ht_schedule_types', JSON.stringify(scheduleTypes));
+  }
+
+  async function saveScheduleTypes() {
+    localStorage.setItem('ht_schedule_types', JSON.stringify(scheduleTypes));
+    if (!currentUser || scheduleTypes.length === 0) return;
+    try {
+      await sbClient.from('schedule_types').upsert(
+        scheduleTypes.map((t, i) => ({
+          user_id: currentUser.id, type_id: t.id, label: t.label, emoji: t.emoji, color: t.color, position: i
+        })),
+        { onConflict: 'user_id,type_id' }
+      );
+    } catch (e) { console.error('Error saving schedule types:', e); }
+  }
+
+  async function deleteScheduleType(typeId) {
+    scheduleTypes = scheduleTypes.filter(t => t.id !== typeId);
+    for (const date of Object.keys(scheduleEvents)) {
+      scheduleEvents[date] = scheduleEvents[date].filter(e => e.typeId !== typeId);
+    }
+    persistScheduleEventsCache();
+    saveScheduleTypes();
+    renderSchedulePalette();
+    renderScheduleGrid();
+    if (!currentUser) return;
+    try {
+      await Promise.all([
+        sbClient.from('schedule_types').delete().match({ user_id: currentUser.id, type_id: typeId }),
+        sbClient.from('schedule_events').delete().match({ user_id: currentUser.id, type_id: typeId })
+      ]);
+    } catch (e) { console.error('Error deleting schedule type:', e); }
+  }
+
+  function getMondayKey(d) {
+    const date = new Date(d);
+    const dow = date.getDay();
+    const diff = dow === 0 ? -6 : 1 - dow;
+    date.setDate(date.getDate() + diff);
+    return localKey(date);
+  }
+
+  function getWeekDates(mondayKey) {
+    const [y, m, d] = mondayKey.split('-').map(Number);
+    const start = new Date(y, m - 1, d);
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+      const dd = new Date(start);
+      dd.setDate(start.getDate() + i);
+      dates.push(localKey(dd));
+    }
+    return dates;
+  }
+
+  async function loadWeekEvents(mondayKey) {
+    if (!currentUser) { renderScheduleGrid(); return; }
+    const dates = getWeekDates(mondayKey);
+    try {
+      const { data, error } = await sbClient
+        .from('schedule_events')
+        .select('event_id, date, type_id, start_min, duration_min')
+        .eq('user_id', currentUser.id)
+        .gte('date', dates[0])
+        .lte('date', dates[6]);
+
+      if (!error) {
+        for (const dateKey of dates) scheduleEvents[dateKey] = [];
+        for (const ev of data) {
+          if (!scheduleEvents[ev.date]) scheduleEvents[ev.date] = [];
+          scheduleEvents[ev.date].push({ id: ev.event_id, typeId: ev.type_id, start: ev.start_min, duration: ev.duration_min });
+        }
+        persistScheduleEventsCache();
+      }
+    } catch (e) { console.error('Error loading week events:', e); }
+    renderScheduleGrid();
+  }
+
+  async function addScheduleEvent(dateKey, typeId, startMin, durationMin) {
+    const id = 'evt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    const start = Math.max(0, Math.min(startMin, 24 * 60 - SNAP_MIN));
+    const ev = { id, typeId, start, duration: durationMin };
+    if (!scheduleEvents[dateKey]) scheduleEvents[dateKey] = [];
+    scheduleEvents[dateKey].push(ev);
+    persistScheduleEventsCache();
+    renderScheduleGrid();
+    if (!currentUser) return;
+    try {
+      await sbClient.from('schedule_events').insert({
+        user_id: currentUser.id, event_id: id, date: dateKey, type_id: typeId, start_min: start, duration_min: durationMin
+      });
+    } catch (e) { console.error('Error creating schedule event:', e); }
+  }
+
+  async function updateScheduleEvent(oldDateKey, eventId, changes) {
+    const arr = scheduleEvents[oldDateKey] || [];
+    const idx = arr.findIndex(e => e.id === eventId);
+    if (idx === -1) return;
+    const ev = arr[idx];
+    const newDate = changes.date ?? oldDateKey;
+    const updated = { id: ev.id, typeId: changes.typeId ?? ev.typeId, start: changes.start ?? ev.start, duration: changes.duration ?? ev.duration };
+
+    if (newDate !== oldDateKey) {
+      arr.splice(idx, 1);
+      if (!scheduleEvents[newDate]) scheduleEvents[newDate] = [];
+      scheduleEvents[newDate].push(updated);
+    } else {
+      arr[idx] = updated;
+    }
+    persistScheduleEventsCache();
+    renderScheduleGrid();
+    if (!currentUser) return;
+    try {
+      await sbClient.from('schedule_events').update({
+        date: newDate, type_id: updated.typeId, start_min: updated.start, duration_min: updated.duration
+      }).match({ user_id: currentUser.id, event_id: eventId });
+    } catch (e) { console.error('Error updating schedule event:', e); }
+  }
+
+  async function deleteScheduleEvent(dateKey, eventId) {
+    scheduleEvents[dateKey] = (scheduleEvents[dateKey] || []).filter(e => e.id !== eventId);
+    persistScheduleEventsCache();
+    renderScheduleGrid();
+    if (!currentUser) return;
+    try {
+      await sbClient.from('schedule_events').delete().match({ user_id: currentUser.id, event_id: eventId });
+    } catch (e) { console.error('Error deleting schedule event:', e); }
+  }
+
+  // ── SCHEDULE: RENDER ──
+  function minToHHMM(min) {
+    min = ((min % 1440) + 1440) % 1440;
+    const h = Math.floor(min / 60), m = min % 60;
+    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  }
+
+  function renderWeekLabel() {
+    const dates = getWeekDates(currentWeekStart);
+    const [fy, fm, fd] = dates[0].split('-').map(Number);
+    const [ly, lm, ld] = dates[6].split('-').map(Number);
+    const fStr = new Date(fy, fm - 1, fd).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    const lStr = new Date(ly, lm - 1, ld).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    const isCurrentWeek = currentWeekStart === getMondayKey(new Date());
+    document.getElementById('week-label').textContent = `${fStr} – ${lStr}` + (isCurrentWeek ? ' · Esta semana' : '');
+  }
+
+  function changeWeek(dir) {
+    const [y, m, d] = currentWeekStart.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() + dir * 7);
+    currentWeekStart = localKey(date);
+    renderWeekLabel();
+    renderScheduleGrid();
+    loadWeekEvents(currentWeekStart);
+  }
+
+  function resetToCurrentWeek() {
+    currentWeekStart = getMondayKey(new Date());
+    renderWeekLabel();
+    renderScheduleGrid();
+    loadWeekEvents(currentWeekStart);
+  }
+
+  function renderSchedulePalette() {
+    const wrap = document.getElementById('type-palette');
+    const chips = scheduleTypes.map(t => `
+      <div class="type-chip" style="border-color:${t.color}">
+        <span class="chip-drag-handle" onpointerdown="onChipPointerDown(event,'${t.id}')">${t.emoji} ${t.label}</span>
+        <button class="chip-edit" onclick="openEditTypeForm('${t.id}')" title="Editar">✏️</button>
+        <button class="chip-del" onclick="deleteTypeConfirm('${t.id}')" title="Eliminar">✕</button>
+      </div>`).join('');
+    wrap.innerHTML = chips + `<button class="type-chip add-chip" onclick="openAddTypeForm()">+ Añadir</button>`;
+  }
+
+  function deleteTypeConfirm(typeId) {
+    const t = scheduleTypes.find(x => x.id === typeId);
+    if (!t) return;
+    customConfirm(`Eliminar "${t.label}"`, 'Se eliminará el tipo y todos sus bloques del horario en todas las semanas.', () => deleteScheduleType(typeId));
+  }
+
+  function renderScheduleGrid() {
+    if (!currentWeekStart) return;
+    const dates = getWeekDates(currentWeekStart);
+    const todayK = todayKey();
+
+    const headerHtml = dates.map((dateKey, i) => {
+      const [y, m, d] = dateKey.split('-').map(Number);
+      const isToday = dateKey === todayK;
+      return `<div class="day-header ${isToday ? 'today' : ''}">
+        <div class="day-header-label">${DAY_LABELS[i]}</div>
+        <div class="day-header-num">${d}</div>
+      </div>`;
+    }).join('');
+
+    let gutterHtml = '';
+    for (let h = 0; h < 24; h++) {
+      gutterHtml += `<div class="hour-label" style="top:${h * HOUR_HEIGHT}px">${String(h).padStart(2, '0')}:00</div>`;
+    }
+
+    const colsHtml = dates.map(dateKey => {
+      const events = (scheduleEvents[dateKey] || []).slice().sort((a, b) => a.start - b.start);
+      const evHtml = events.map(ev => {
+        const type = scheduleTypes.find(t => t.id === ev.typeId) || { emoji: '❓', label: '?', color: '#9e9e9e' };
+        const top = (ev.start / 60) * HOUR_HEIGHT;
+        const height = Math.max((ev.duration / 60) * HOUR_HEIGHT, 18);
+        const timeLabel = minToHHMM(ev.start) + '–' + minToHHMM(ev.start + ev.duration);
+        return `<div class="event-block" style="top:${top}px;height:${height}px;background:${type.color}"
+                     onpointerdown="onEventPointerDown(event,'${dateKey}','${ev.id}')">
+                  <span class="event-emoji">${type.emoji}</span>
+                  ${height >= 30 ? `<span class="event-time">${timeLabel}</span>` : ''}
+                </div>`;
+      }).join('');
+      return `<div class="day-col" data-date="${dateKey}" style="background-size:100% ${HOUR_HEIGHT}px">${evHtml}</div>`;
+    }).join('');
+
+    const gridHeight = 24 * HOUR_HEIGHT;
+    document.getElementById('schedule-header-row').innerHTML = headerHtml;
+    document.getElementById('schedule-gutter').innerHTML = gutterHtml;
+    document.getElementById('schedule-gutter').style.height = gridHeight + 'px';
+    document.getElementById('schedule-cols').innerHTML = colsHtml;
+    document.getElementById('schedule-cols').style.height = gridHeight + 'px';
+  }
+
+  // ── SCHEDULE: DRAG & DROP (crear y mover cajas) ──
+  let dragState = null;
+
+  function positionGhost(ghost, x, y) {
+    ghost.style.left = x + 'px';
+    ghost.style.top = y + 'px';
+  }
+
+  function makeGhost(emoji, label, color) {
+    const ghost = document.createElement('div');
+    ghost.className = 'drag-ghost';
+    ghost.style.background = color;
+    ghost.textContent = `${emoji} ${label}`;
+    document.body.appendChild(ghost);
+    return ghost;
+  }
+
+  function onChipPointerDown(e, typeId) {
+    e.preventDefault();
+    const type = scheduleTypes.find(t => t.id === typeId);
+    if (!type) return;
+    const ghost = makeGhost(type.emoji, type.label, type.color);
+    positionGhost(ghost, e.clientX, e.clientY);
+    dragState = { mode: 'create', typeId, ghost, moved: false, startX: e.clientX, startY: e.clientY };
+    window.addEventListener('pointermove', onDragMove);
+    window.addEventListener('pointerup', onDragEnd);
+  }
+
+  function onEventPointerDown(e, dateKey, eventId) {
+    e.preventDefault();
+    e.stopPropagation();
+    const ev = (scheduleEvents[dateKey] || []).find(x => x.id === eventId);
+    if (!ev) return;
+    const type = scheduleTypes.find(t => t.id === ev.typeId) || { emoji: '❓', label: '?', color: '#9e9e9e' };
+    const ghost = makeGhost(type.emoji, type.label, type.color);
+    positionGhost(ghost, e.clientX, e.clientY);
+    dragState = {
+      mode: 'move', eventId, origDate: dateKey, typeId: ev.typeId, duration: ev.duration,
+      ghost, moved: false, startX: e.clientX, startY: e.clientY
+    };
+    window.addEventListener('pointermove', onDragMove);
+    window.addEventListener('pointerup', onDragEnd);
+  }
+
+  function onDragMove(e) {
+    if (!dragState) return;
+    const dx = e.clientX - dragState.startX, dy = e.clientY - dragState.startY;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) dragState.moved = true;
+    positionGhost(dragState.ghost, e.clientX, e.clientY);
+  }
+
+  function onDragEnd(e) {
+    if (!dragState) return;
+    window.removeEventListener('pointermove', onDragMove);
+    window.removeEventListener('pointerup', onDragEnd);
+    dragState.ghost.remove();
+
+    const state = dragState;
+    dragState = null;
+
+    if (!state.moved) {
+      if (state.mode === 'move') openEventForm(state.origDate, state.eventId);
+      return;
+    }
+
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const col = el ? el.closest('.day-col') : null;
+    if (!col) {
+      if (state.mode === 'move') showToast('Suelta el bloque sobre el horario');
+      return;
+    }
+
+    const rect = col.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    let minutes = Math.round((y / HOUR_HEIGHT * 60) / SNAP_MIN) * SNAP_MIN;
+    minutes = Math.max(0, Math.min(minutes, 24 * 60 - SNAP_MIN));
+    const dateKey = col.dataset.date;
+
+    if (state.mode === 'create') {
+      addScheduleEvent(dateKey, state.typeId, minutes, 60);
+    } else {
+      updateScheduleEvent(state.origDate, state.eventId, { date: dateKey, typeId: state.typeId, start: minutes, duration: state.duration });
+    }
+  }
+
+  // ── SCHEDULE: FORM CAJA (crear/editar tipo) ──
+  let typeFormMode = 'add';
+  let typeFormEditingId = null;
+  let typeFormColor = SCHEDULE_COLORS[0];
+
+  function renderColorSwatches() {
+    const wrap = document.getElementById('type-color-swatches');
+    wrap.innerHTML = SCHEDULE_COLORS.map(c =>
+      `<button class="color-swatch ${c === typeFormColor ? 'selected' : ''}" style="background:${c}" onclick="selectTypeColor('${c}')"></button>`
+    ).join('');
+  }
+
+  function selectTypeColor(c) { typeFormColor = c; renderColorSwatches(); }
+
+  function openAddTypeForm() {
+    if (scheduleTypes.length >= 12) { showToast('Máximo 12 tipos de caja'); return; }
+    typeFormMode = 'add';
+    typeFormEditingId = null;
+    typeFormColor = SCHEDULE_COLORS[scheduleTypes.length % SCHEDULE_COLORS.length];
+    document.getElementById('type-form-title').textContent = 'Nuevo tipo';
+    document.getElementById('type-emoji').value = '';
+    document.getElementById('type-label').value = '';
+    renderColorSwatches();
+    document.getElementById('type-form-overlay').style.display = 'flex';
+  }
+
+  function openEditTypeForm(typeId) {
+    const t = scheduleTypes.find(x => x.id === typeId);
+    if (!t) return;
+    typeFormMode = 'edit';
+    typeFormEditingId = typeId;
+    typeFormColor = t.color;
+    document.getElementById('type-form-title').textContent = 'Editar tipo';
+    document.getElementById('type-emoji').value = t.emoji;
+    document.getElementById('type-label').value = t.label;
+    renderColorSwatches();
+    document.getElementById('type-form-overlay').style.display = 'flex';
+  }
+
+  function closeTypeForm() {
+    document.getElementById('type-form-overlay').style.display = 'none';
+  }
+
+  function saveTypeForm() {
+    const emoji = document.getElementById('type-emoji').value.trim() || '📦';
+    const label = document.getElementById('type-label').value.trim();
+    if (!label) { showToast('Escribe un nombre'); return; }
+
+    if (typeFormMode === 'add') {
+      scheduleTypes.push({ id: 'type_' + Date.now(), label, emoji, color: typeFormColor });
+    } else {
+      const t = scheduleTypes.find(x => x.id === typeFormEditingId);
+      if (t) { t.label = label; t.emoji = emoji; t.color = typeFormColor; }
+    }
+    saveScheduleTypes();
+    renderSchedulePalette();
+    renderScheduleGrid();
+    closeTypeForm();
+    showToast('Tipo guardado');
+  }
+
+  // ── SCHEDULE: FORM EVENTO (editar/eliminar bloque) ──
+  let eventFormDate = null;
+  let eventFormId   = null;
+
+  function openEventForm(dateKey, eventId) {
+    const ev = (scheduleEvents[dateKey] || []).find(e => e.id === eventId);
+    if (!ev) return;
+    eventFormDate = dateKey;
+    eventFormId   = eventId;
+
+    document.getElementById('event-type-select').innerHTML = scheduleTypes.map(t =>
+      `<option value="${t.id}" ${t.id === ev.typeId ? 'selected' : ''}>${t.emoji} ${t.label}</option>`
+    ).join('');
+
+    const dates = getWeekDates(currentWeekStart);
+    document.getElementById('event-day-select').innerHTML = dates.map((dk, i) => {
+      const [y, m, d] = dk.split('-').map(Number);
+      const label = new Date(y, m - 1, d).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
+      return `<option value="${dk}" ${dk === dateKey ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+
+    document.getElementById('event-start-input').value = minToHHMM(ev.start);
+    document.getElementById('event-duration-select').value = String(ev.duration);
+    document.getElementById('event-form-overlay').style.display = 'flex';
+  }
+
+  function closeEventForm() {
+    document.getElementById('event-form-overlay').style.display = 'none';
+    eventFormDate = null;
+    eventFormId   = null;
+  }
+
+  function saveEventForm() {
+    if (!eventFormId) return;
+    const typeId   = document.getElementById('event-type-select').value;
+    const newDate  = document.getElementById('event-day-select').value;
+    const [hh, mm] = document.getElementById('event-start-input').value.split(':').map(Number);
+    const duration = Number(document.getElementById('event-duration-select').value);
+    updateScheduleEvent(eventFormDate, eventFormId, { date: newDate, typeId, start: hh * 60 + mm, duration });
+    closeEventForm();
+  }
+
+  function deleteEventFromForm() {
+    if (!eventFormId) return;
+    const dateKey = eventFormDate, id = eventFormId;
+    closeEventForm();
+    deleteScheduleEvent(dateKey, id);
+  }
+
   // ── EXPORT ──
   function triggerDownload(content, filename, mime) {
     const blob = new Blob([content], { type: mime });
@@ -1277,9 +2212,9 @@
   }
 
   function exportCSV() {
-    const days = getDaysSinceStart().reverse(); // cronológico
+    const days   = getDaysSinceStart().reverse();
     const header = ['Fecha', ...habits.map(h => `${h.emoji} ${h.label}`)].join(',');
-    const rows = days.map(key => {
+    const rows   = days.map(key => {
       const rec = records[key] || {};
       return [key, ...habits.map(h => rec[h.id] ? '1' : '0')].join(',');
     });
@@ -1288,21 +2223,38 @@
   }
 
   // ── INIT ──
-  loadData();
-  renderToday();
-
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 
-  // Schedule notification on startup (if already granted)
-  if ('Notification' in window && Notification.permission === 'granted') {
-    scheduleNotification();
-  }
-
-  // Reschedule when the page becomes visible again (el timer puede perderse si el SO suspende la app)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') scheduleNotification();
+  });
+
+  // Auth state listener — fires immediately with current session, then on every change
+  sbClient.auth.onAuthStateChange(async (event, session) => {
+    currentUser = session?.user || null;
+
+    if (currentUser) {
+      document.getElementById('auth-overlay').style.display = 'none';
+      document.getElementById('loading-overlay').style.display = 'flex';
+      await loadDataFromSupabase();
+      updateUserCard();
+      document.getElementById('loading-overlay').style.display = 'none';
+      renderToday();
+      if ('Notification' in window && Notification.permission === 'granted') {
+        scheduleNotification();
+      }
+    } else {
+      habits          = [];
+      records         = {};
+      settings        = { notifEnabled: false, notifTime: '22:00' };
+      scheduleTypes   = [];
+      scheduleEvents  = {};
+      currentWeekStart = null;
+      document.getElementById('loading-overlay').style.display = 'none';
+      document.getElementById('auth-overlay').style.display = 'flex';
+    }
   });
 </script>
 </body>
