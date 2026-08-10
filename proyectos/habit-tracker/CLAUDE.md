@@ -19,11 +19,13 @@ habit-tracker/
 
 ## Pantallas
 
-1. **Hoy** — tracking diario de hábitos (funcionalidad principal)
-2. **Historial** — editar días anteriores
-3. **Gráficos** — estadísticas por hábito
+Barra de navegación (4 pestañas, en este orden): **Hoy · Horario · Gráficos · Hábitos**
+
+1. **Hoy** — tracking diario de hábitos (funcionalidad principal). Incluye el botón "Ver y editar historial".
+2. **Horario** — planificador semanal con cajas arrastrables (funcionalidad secundaria, independiente de los hábitos)
+3. **Gráficos** — panel de estadísticas (resumen global, patrón semanal, rachas, ranking y detalle por hábito)
 4. **Hábitos** — gestión de hábitos, notificaciones, exportar datos, cuenta
-5. **Horario** — planificador semanal con cajas arrastrables (funcionalidad secundaria, independiente de los hábitos)
+5. **Historial** — editar días anteriores. **No es pestaña principal**: se accede con el botón de la pantalla Hoy y vuelve con "‹ Volver a Hoy". En `showScreen()` mantiene activo el botón `nav-today`.
 
 ## Arquitectura de datos — Hábitos
 
@@ -55,6 +57,19 @@ let currentWeekStart = null // "YYYY-MM-DD" del lunes de la semana visible
 - Cada semana es independiente (no es una plantilla fija): se navega con ‹ › y los eventos se cargan/guardan por rango de fechas, igual que el historial de hábitos.
 - El catálogo de cajas (`scheduleTypes`) es común a todas las semanas y lo edita el usuario libremente (máx. 12), igual que los hábitos.
 - El horario **no** está vinculado al sistema de hábitos: son datos y pantallas independientes.
+
+### Rango horario visible (rejilla)
+
+```js
+const DEFAULT_GRID_START = 7 * 60;   // 07:00 — arranque visible por defecto
+const DEFAULT_GRID_END   = 26 * 60;  // 02:00 del día siguiente
+const MAX_DURATION       = 480;      // 8 h máximo por bloque
+let gridStartMin, gridEndMin;        // rango real, calculado por semana
+```
+
+- `computeGridRange()` recorre los bloques de la semana visible y **amplía** el rango si hay algo antes de las 07:00 o después de las 02:00. Por defecto la rejilla arranca a las 07:00.
+- `scrollScheduleToDefaultStart()` deja las 07:00 arriba aunque el rango se haya ampliado hacia atrás.
+- Los bloques nocturnos se guardan como minutos desde medianoche del **mismo día**, pudiendo superar 1440 (p. ej. `1500` = 01:00 del día siguiente). `minToHHMM()` hace el módulo para mostrarlos y el selector de hora los etiqueta como `01:00 (+1 día)`.
 
 ### Tablas Supabase
 | Tabla             | Columnas clave                                                        |
@@ -164,14 +179,30 @@ create policy "own schedule events" on public.schedule_events for all
 - **Eventos del horario:** se cargan por semana (`loadWeekEvents(mondayKey)`) al navegar a la pantalla Horario o cambiar de semana, no se cargan todos de golpe
 - **Offline:** si Supabase falla, se usa la caché de localStorage
 
-## Interacción del horario (drag & drop)
+## Interacción del horario
 
-Implementado con Pointer Events nativos (sin librerías):
-- **Crear bloque:** `pointerdown` sobre una caja del catálogo (`.chip-drag-handle`) → aparece un "ghost" que sigue el dedo/cursor → al soltar sobre una columna de día, se calcula día + hora (ajustada a `SNAP_MIN` = 15 min) y se crea el evento.
-- **Mover bloque:** igual pero arrastrando un `.event-block` ya existente; puede cambiar de día y de hora.
-- **Editar/eliminar bloque:** un toque sin arrastre (`moved === false`) sobre un bloque abre el modal `#event-form-overlay` con selects de tipo/día/hora/duración y botón eliminar.
-- **Añadir/editar tipo de caja:** botón "+ Añadir" o el lápiz ✏️ de cada chip abren `#type-form-overlay` (emoji, nombre, color de una paleta fija `SCHEDULE_COLORS`).
+Implementado con Pointer Events nativos (sin librerías). Hay **dos formas de crear** un bloque, la táctil es la principal:
+
+- **Tocar y colocar (principal, más intuitivo):** un toque en una caja de la paleta la deja "armada" (`armedTypeId`, chip con clase `.armed`); el siguiente toque en la rejilla la coloca ahí con 1 h de duración. El texto de `#schedule-hint` refleja el estado.
+- **Arrastrar:** `pointerdown` sobre una caja → "ghost" que sigue el dedo/cursor → al soltar sobre una columna se calcula día + hora (ajustada a `SNAP_MIN` = 15 min). Un `pointerup` sin desplazamiento (`moved === false`) se interpreta como toque, no como arrastre.
+- **Hueco vacío:** tocar la rejilla sin ninguna caja armada abre `#event-form-overlay` en modo "Nuevo bloque" con día y hora ya rellenados.
+- **Mover bloque:** arrastrar un `.event-block` existente; puede cambiar de día y de hora.
+- **Editar/eliminar bloque:** un toque sobre un bloque abre el mismo modal en modo edición (caja/día/hora/duración + botón eliminar).
+- **Gestión de cajas:** tarjeta bajo la rejilla con la **misma UX que la pantalla Hábitos** (filas con ▲▼ para reordenar, ✏️ para editar inline, ✕ para borrar, y formulario "Añadir caja" con emoji, nombre y paleta de colores `SCHEDULE_COLORS`).
+- Los chips usan `touch-action: pan-x` para que la paleta siga desplazándose en horizontal; `pointercancel` limpia el ghost si el navegador se queda el gesto.
 - No hay detección de solapamientos entre bloques (si dos eventos coinciden en hora, se dibujan superpuestos). No implementado por estar fuera del alcance inicial.
+
+## Pantalla de Gráficos
+
+`renderCharts()` pinta dos zonas: `#charts-summary` (paneles de análisis) y `#charts-list` (detalle por hábito).
+
+Funciones de cálculo:
+- `getPeriodDates()` — array de días `YYYY-MM-DD` del periodo del filtro activo (semana/mes/año/rango). Base de todas las estadísticas globales.
+- `getPeriodStats(dates)` — `{ pct, totalDone, totalPossible, perfectDays, perHabit[] }`.
+- `getWeekdayStats(dates)` — array de 7 posiciones (0 = lunes) con el % medio de cumplimiento por día de la semana; `null` si no hay datos ese día.
+- `getBestStreak(habitId)` — récord histórico de días consecutivos (complementa a `getStreak()`, que da la racha actual).
+
+Paneles renderizados, en orden: **Cumplimiento global** (anillo SVG + días perfectos + mejor/peor hábito) → **Patrón semanal** (barras L-D, verde el mejor día, rojo el peor) → **Rachas** (actual + récord por hábito) → **Ranking del periodo** (barras ordenadas) → **Detalle por hábito** (gráfico de barras diario existente).
 
 ## Convenciones
 
@@ -209,6 +240,9 @@ Constante `HOUR_HEIGHT` (px por hora) al inicio del `<script>`. Afecta a la reji
 
 ### Cambiar el ajuste (snap) del arrastre en el horario
 Constante `SNAP_MIN` (minutos). Por defecto 15.
+
+### Cambiar el rango horario visible o la duración máxima
+Constantes `DEFAULT_GRID_START` (07:00), `DEFAULT_GRID_END` (26:00 = 02:00 del día siguiente) y `MAX_DURATION` (480 min = 8 h). Si se cambia `MAX_DURATION` hay que actualizar también las `<option>` de `#event-duration-select` en el HTML.
 
 ## Despliegue
 
