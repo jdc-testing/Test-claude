@@ -2,14 +2,14 @@
 
 ## Qué es este proyecto
 
-PWA de seguimiento de hábitos diarios con autenticación Google y sincronización en la nube vía Supabase. Incluye una segunda funcionalidad: un horario semanal con "cajas" arrastrables (Trabajo, Gym, Tenis...) para planificar la semana hora a hora. Stack: un solo `index.html` + `sw.js` + Supabase JS client (CDN). Sin frameworks, sin build. Se despliega en GitHub Pages.
+PWA de seguimiento de hábitos diarios con autenticación Google y sincronización en la nube vía Supabase. Incluye una segunda funcionalidad: una lista de tareas por día para organizar la semana, con categorías, franjas del día y tareas recurrentes. Stack: un solo `index.html` + `sw.js` + Supabase JS client (CDN). Sin frameworks, sin build. Se despliega en GitHub Pages.
 
 ## Archivos
 
 ```
 habit-tracker/
 ├── index.html        # Toda la app: HTML + CSS + JS
-├── sw.js             # Service Worker (cache network-first, v6)
+├── sw.js             # Service Worker (cache network-first, v8)
 ├── manifest.json     # Config PWA (nombre, iconos, colores)
 ├── icons/
 │   ├── icon-192.png
@@ -19,10 +19,10 @@ habit-tracker/
 
 ## Pantallas
 
-Barra de navegación (4 pestañas, en este orden): **Hoy · Horario · Gráficos · Hábitos**
+Barra de navegación (4 pestañas, en este orden): **Hoy · Semana · Gráficos · Hábitos**
 
-1. **Hoy** — tracking diario de hábitos (funcionalidad principal). Incluye el botón "Ver y editar historial".
-2. **Horario** — planificador semanal con cajas arrastrables (funcionalidad secundaria, independiente de los hábitos)
+1. **Hoy** — hábitos del día (uso principal) + tareas de hoy agrupadas por franja, en secciones separadas. Incluye el botón "Ver y editar historial".
+2. **Semana** — lista de tareas día a día para organizar la semana (independiente de los hábitos) + gestión de categorías
 3. **Gráficos** — panel de estadísticas (resumen global, patrón semanal, rachas, ranking y detalle por hábito)
 4. **Hábitos** — gestión de hábitos, notificaciones, exportar datos, cuenta
 5. **Historial** — editar días anteriores. **No es pestaña principal**: se accede con el botón de la pantalla Hoy y vuelve con "‹ Volver a Hoy". En `showScreen()` mantiene activo el botón `nav-today`.
@@ -44,40 +44,37 @@ let currentUser = null // objeto de Supabase auth
 | `records`  | `user_id`, `date` (YYYY-MM-DD), `habit_id`        |
 | `settings` | `user_id`, `notif_enabled`, `notif_time`          |
 
-## Arquitectura de datos — Horario semanal
+## Arquitectura de datos — Tareas y semana
 
 ### Estado en memoria
 ```js
-let scheduleTypes    = []   // catálogo de cajas: [{ id, label, emoji, color }]
-let scheduleEvents   = {}   // { "YYYY-MM-DD": [{ id, typeId, start, duration }] }
-                             // start y duration en minutos (start=0 → 00:00)
-let currentWeekStart = null // "YYYY-MM-DD" del lunes de la semana visible
+let scheduleTypes = []   // categorías: [{ id, label, emoji, color }]
+let tasks         = []   // [{ id, title, categoryId, slot, startMin, date, recurrence, position }]
+let taskStates    = {}   // { "taskId|YYYY-MM-DD": { done, skipped } }
+let currentWeekStart = null // "YYYY-MM-DD" del lunes visible
 ```
 
-- Cada semana es independiente (no es una plantilla fija): se navega con ‹ › y los eventos se cargan/guardan por rango de fechas, igual que el historial de hábitos.
-- El catálogo de cajas (`scheduleTypes`) es común a todas las semanas y lo edita el usuario libremente (máx. 12), igual que los hábitos.
-- El horario **no** está vinculado al sistema de hábitos: son datos y pantallas independientes.
+**Modelo:** una tarea es *puntual* (`recurrence === null`, vive en `date`) o *recurrente*
+(`recurrence === '1,3,5'`, con 1=lunes … 7=domingo; `date` marca desde cuándo aplica).
+Las recurrentes **no se materializan**: `getTasksForDate()` las calcula al vuelo para cada día.
+Todo el estado por día (hecha / quitada de ese día) vive en `taskStates`, así que hay un único
+camino de lectura para ambos tipos de tarea.
 
-### Rango horario visible (rejilla)
-
-```js
-const DEFAULT_GRID_START = 7 * 60;   // 07:00 — arranque visible por defecto
-const DEFAULT_GRID_END   = 26 * 60;  // 02:00 del día siguiente
-const MAX_DURATION       = 480;      // 8 h máximo por bloque
-let gridStartMin, gridEndMin;        // rango real, calculado por semana
-```
-
-- `computeGridRange()` recorre los bloques de la semana visible y **amplía** el rango si hay algo antes de las 07:00 o después de las 02:00. Por defecto la rejilla arranca a las 07:00.
-- `scrollScheduleToDefaultStart()` deja las 07:00 arriba aunque el rango se haya ampliado hacia atrás.
-- Los bloques nocturnos se guardan como minutos desde medianoche del **mismo día**, pudiendo superar 1440 (p. ej. `1500` = 01:00 del día siguiente). `minToHHMM()` hace el módulo para mostrarlos y el selector de hora los etiqueta como `01:00 (+1 día)`.
+- `slot`: `'manana' | 'tarde' | 'noche'`. Es obligatorio y define la agrupación visual.
+- `startMin`: hora opcional en minutos desde medianoche (`null` = sin hora). Si el usuario pone
+  hora y no toca la franja, la franja se deduce con `slotFromMinutes()`.
+- Ordenación dentro de un día: franja → hora (las que no tienen, al final) → `position`.
+- Borrar una categoría **no borra sus tareas**: quedan con `categoryId = null`.
 
 ### Tablas Supabase
-| Tabla             | Columnas clave                                                        |
-|-------------------|------------------------------------------------------------------------|
-| `schedule_types`  | `user_id`, `type_id`, `label`, `emoji`, `color`, `position`            |
-| `schedule_events` | `user_id`, `event_id`, `date` (YYYY-MM-DD), `type_id`, `start_min`, `duration_min` |
+| Tabla             | Columnas clave                                                                 |
+|-------------------|--------------------------------------------------------------------------------|
+| `schedule_types`  | `user_id`, `type_id`, `label`, `emoji`, `color`, `position` (categorías)         |
+| `tasks`           | `user_id`, `task_id`, `title`, `category_id`, `slot`, `start_min`, `date`, `recurrence`, `position` |
+| `task_instances`  | `user_id`, `task_id`, `date`, `done`, `skipped`                                 |
 
-RLS activo en las cinco tablas. Los usuarios solo acceden a sus propios datos.
+RLS activo en todas. `schedule_events` (la vieja rejilla) queda obsoleta: `migrateScheduleEvents()`
+la convierte en tareas la primera vez y después se puede borrar la tabla.
 
 ### localStorage (caché offline)
 | Clave                  | Contenido                          |
@@ -85,8 +82,9 @@ RLS activo en las cinco tablas. Los usuarios solo acceden a sus propios datos.
 | `ht_habits`             | Copia local de habits              |
 | `ht_records`            | Copia local de records             |
 | `ht_settings`           | Copia local de settings            |
-| `ht_schedule_types`     | Copia local del catálogo de cajas  |
-| `ht_schedule_events`    | Copia local de eventos cargados (por semanas ya visitadas) |
+| `ht_schedule_types`     | Copia local de las categorías      |
+| `ht_tasks`              | Copia local de las tareas          |
+| `ht_task_states`        | Copia local del estado por día (hecha/quitada) |
 
 ### Configuración Supabase
 ```js
@@ -146,19 +144,36 @@ alter table public.schedule_types enable row level security;
 create policy "own schedule types" on public.schedule_types for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- Schedule events (bloques colocados en el horario semanal)
-create table public.schedule_events (
-  user_id      uuid references auth.users(id) on delete cascade not null,
-  event_id     text not null,
-  date         text not null, -- YYYY-MM-DD
-  type_id      text not null,
-  start_min    integer not null, -- minutos desde las 00:00 (0-1439)
-  duration_min integer not null default 60,
-  primary key (user_id, event_id)
+-- Tareas (puntuales y recurrentes)
+create table public.tasks (
+  user_id     uuid references auth.users(id) on delete cascade not null,
+  task_id     text not null,
+  title       text not null,
+  category_id text,             -- referencia lógica a schedule_types.type_id (puede ser null)
+  slot        text default 'manana',  -- 'manana' | 'tarde' | 'noche'
+  start_min   integer,          -- hora opcional, minutos desde 00:00
+  date        text,             -- puntual: el día; recurrente: desde cuándo aplica
+  recurrence  text,             -- null = puntual | '1,3,5' (1=lunes … 7=domingo)
+  position    integer not null default 0,
+  primary key (user_id, task_id)
 );
-create index schedule_events_user_date_idx on public.schedule_events(user_id, date);
-alter table public.schedule_events enable row level security;
-create policy "own schedule events" on public.schedule_events for all
+create index tasks_user_date_idx on public.tasks(user_id, date);
+alter table public.tasks enable row level security;
+create policy "own tasks" on public.tasks for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Estado de cada tarea en cada día concreto
+create table public.task_instances (
+  user_id uuid references auth.users(id) on delete cascade not null,
+  task_id text not null,
+  date    text not null,
+  done    boolean not null default false,
+  skipped boolean not null default false,  -- quitada solo de ese día (series)
+  primary key (user_id, task_id, date)
+);
+create index task_instances_user_date_idx on public.task_instances(user_id, date);
+alter table public.task_instances enable row level security;
+create policy "own task instances" on public.task_instances for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
 
@@ -173,24 +188,27 @@ create policy "own schedule events" on public.schedule_events for all
 
 ## Flujo de datos
 
-- **Lectura:** siempre desde estado en memoria (`habits`, `records`, `settings`, `scheduleTypes`, `scheduleEvents`)
+- **Lectura:** siempre desde estado en memoria (`habits`, `records`, `settings`, `scheduleTypes`, `tasks`, `taskStates`)
 - **Escritura local:** actualiza estado en memoria + localStorage (síncrono, inmediato)
-- **Escritura remota:** funciones async (`saveHabits()`, `toggleHabit()`, `saveSettings()`, `addScheduleEvent()`, `updateScheduleEvent()`, `deleteScheduleEvent()`, `saveScheduleTypes()`) hacen upsert/delete a Supabase en background sin bloquear la UI
-- **Eventos del horario:** se cargan por semana (`loadWeekEvents(mondayKey)`) al navegar a la pantalla Horario o cambiar de semana, no se cargan todos de golpe
+- **Escritura remota:** funciones async (`saveHabits()`, `toggleHabit()`, `saveSettings()`, `persistTask()`, `setTaskState()`, `deleteTaskFull()`, `saveScheduleTypes()`) hacen upsert/delete a Supabase en background sin bloquear la UI
+- **Tareas:** se cargan todas de una vez en `loadTasks()` (son pocas). Si algún día crecen mucho, el punto a ventanear es esa consulta y la de `task_instances`
 - **Offline:** si Supabase falla, se usa la caché de localStorage
 
-## Interacción del horario
+## Interacción de las tareas
 
-Implementado con Pointer Events nativos (sin librerías). Hay **dos formas de crear** un bloque, la táctil es la principal:
+No hay rejilla de horas: en móvil cada día tenía 47 px y solo se leía el emoji. El modelo es
+**lista por día**, que ocupa el ancho completo.
 
-- **Tocar y colocar (principal, más intuitivo):** un toque en una caja de la paleta la deja "armada" (`armedTypeId`, chip con clase `.armed`); el siguiente toque en la rejilla la coloca ahí con 1 h de duración. El texto de `#schedule-hint` refleja el estado.
-- **Arrastrar:** `pointerdown` sobre una caja → "ghost" que sigue el dedo/cursor → al soltar sobre una columna se calcula día + hora (ajustada a `SNAP_MIN` = 15 min). Un `pointerup` sin desplazamiento (`moved === false`) se interpreta como toque, no como arrastre.
-- **Hueco vacío:** tocar la rejilla sin ninguna caja armada abre `#event-form-overlay` en modo "Nuevo bloque" con día y hora ya rellenados.
-- **Mover bloque:** arrastrar un `.event-block` existente; puede cambiar de día y de hora.
-- **Editar/eliminar bloque:** un toque sobre un bloque abre el mismo modal en modo edición (caja/día/hora/duración + botón eliminar).
-- **Gestión de cajas:** tarjeta bajo la rejilla con la **misma UX que la pantalla Hábitos** (filas con ▲▼ para reordenar, ✏️ para editar inline, ✕ para borrar, y formulario "Añadir caja" con emoji, nombre y paleta de colores `SCHEDULE_COLORS`).
-- Los chips usan `touch-action: pan-x` para que la paleta siga desplazándose en horizontal; `pointercancel` limpia el ghost si el navegador se queda el gesto.
-- No hay detección de solapamientos entre bloques (si dos eventos coinciden en hora, se dibujan superpuestos). No implementado por estar fuera del alcance inicial.
+- **Pantalla Hoy:** hábitos arriba (sin cambios) y debajo la sección "Tareas de hoy", agrupada
+  por franja (🌅 Mañana / 🌆 Tarde / 🌙 Noche). Solo se muestran las franjas con tareas.
+- **Pantalla Semana:** siete tarjetas de día apiladas, con contador hecho/total y un `+` por día
+  para añadir directamente a ese día. Navegación con ‹ › y toque en la fecha para volver a hoy.
+- **Completar:** toque en el círculo → `toggleTaskDone()` → escribe en `task_instances`.
+- **Editar:** toque en el cuerpo de la tarea → `#task-form-overlay`.
+- **Borrar una recurrente:** el diálogo ofrece tres salidas gracias al botón intermedio de
+  `customConfirm(..., okLabel, altLabel, onAlt)`: *Cancelar* / *Quitar solo este día*
+  (marca `skipped`) / *Eliminar toda la serie*.
+- **Categorías:** se gestionan al final de la pantalla Semana con la misma UX que Hábitos.
 
 ## Pantalla de Gráficos
 
@@ -235,14 +253,12 @@ Cambiar `CACHE_NAME` en `sw.js`: `habit-tracker-vN` → `habit-tracker-v(N+1)`
 4. Añadir `if (name === 'X') renderX();` en `showScreen()`
 5. Implementar `function renderX() {}`
 
-### Cambiar la altura de hora en el horario
-Constante `HOUR_HEIGHT` (px por hora) al inicio del `<script>`. Afecta a la rejilla, al gutter de horas y al cálculo de posición al arrastrar.
+### Añadir una franja del día
+Constante `SLOTS` al inicio del `<script>`. El orden del array define el orden visual y el de
+ordenación de tareas. `slotFromMinutes()` decide la franja automática según la hora.
 
-### Cambiar el ajuste (snap) del arrastre en el horario
-Constante `SNAP_MIN` (minutos). Por defecto 15.
-
-### Cambiar el rango horario visible o la duración máxima
-Constantes `DEFAULT_GRID_START` (07:00), `DEFAULT_GRID_END` (26:00 = 02:00 del día siguiente) y `MAX_DURATION` (480 min = 8 h). Si se cambia `MAX_DURATION` hay que actualizar también las `<option>` de `#event-duration-select` en el HTML.
+### Cambiar el límite de categorías
+Está fijado a 12 en `renderTypeManage()` y `addScheduleType()`.
 
 ## Despliegue
 

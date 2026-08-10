@@ -594,78 +594,126 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    .schedule-hint {
-      font-size: 12px; color: var(--text-muted);
-      padding: 2px 20px 0;
-    }
-    .type-palette {
-      display: flex; gap: 8px; padding: 8px 20px 6px;
-      overflow-x: auto;
-    }
-    .type-chip {
-      display: flex; align-items: center; gap: 6px;
-      padding: 9px 12px; border-radius: 12px;
-      border: 2px solid var(--border); background: var(--surface);
-      white-space: nowrap; flex-shrink: 0;
-      font-size: 13px; font-weight: 600;
-      cursor: pointer; user-select: none;
-      touch-action: pan-x; -webkit-tap-highlight-color: transparent;
-    }
-    .type-chip.armed {
-      box-shadow: 0 0 0 3px rgba(76,175,80,0.25);
-      transform: translateY(-1px);
-    }
-    .type-chip.armed::after { content: '✓'; font-size: 12px; }
-
-    /* tipos de caja: gestión (misma estética que Hábitos) */
+    /* categorías: gestión (misma estética que Hábitos) */
     .type-color-dot {
       width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
     }
 
-    .schedule-wrap {
-      display: grid;
-      grid-template-columns: 34px 1fr;
-      grid-template-rows: 26px auto;
-      margin: 4px 12px 16px;
+    /* ── TASK LIST ── */
+    .section-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 8px; gap: 10px;
     }
-    .schedule-corner { grid-column: 1; grid-row: 1; }
-    .schedule-header-row { grid-column: 2; grid-row: 1; display: flex; }
-    .day-header { flex: 1; text-align: center; font-size: 11px; color: var(--text-muted); }
-    .day-header-label { font-weight: 700; }
-    .day-header.today .day-header-num { color: var(--accent); font-weight: 800; }
-    .schedule-gutter { grid-column: 1; grid-row: 2; position: relative; }
-    .hour-label {
-      position: absolute; left: 0; right: 2px; text-align: right;
-      font-size: 9px; color: var(--text-muted); transform: translateY(-5px);
+    .section-head h2 { font-size: 14px; font-weight: 800; letter-spacing: 0.02em; }
+    .add-task-btn {
+      background: var(--accent); color: white; border: none;
+      border-radius: 10px; padding: 7px 13px;
+      font-family: inherit; font-size: 13px; font-weight: 700;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
     }
-    .schedule-cols { grid-column: 2; grid-row: 2; display: flex; position: relative; }
-    .day-col {
-      flex: 1; position: relative; border-left: 1px solid var(--border);
-      background-image: linear-gradient(to bottom, var(--border) 1px, transparent 1px);
-      background-repeat: repeat-y;
-    }
-    .event-block {
-      position: absolute; left: 1px; right: 1px;
-      border-radius: 6px; padding: 2px 3px; overflow: hidden;
-      color: white; font-size: 10px; font-weight: 700;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-      touch-action: none; cursor: grab; -webkit-tap-highlight-color: transparent;
-      display: flex; flex-direction: column; gap: 1px; line-height: 1.15;
-    }
-    .event-block.dragging { opacity: 0.6; }
-    .event-emoji { font-size: 12px; }
-    .event-time { font-size: 8px; opacity: 0.9; }
+    .add-task-btn:active { opacity: 0.85; }
 
-    .drag-ghost {
-      position: fixed; pointer-events: none; z-index: 500;
-      padding: 6px 10px; border-radius: 10px; color: white;
-      font-size: 12px; font-weight: 700;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-      transform: translate(-50%, -120%);
-      white-space: nowrap;
+    .slot-group { padding: 0 20px; }
+    .slot-title {
+      font-size: 12px; font-weight: 700; color: var(--text-muted);
+      margin: 10px 0 6px; display: flex; align-items: center; gap: 5px;
     }
+    .task-list { display: flex; flex-direction: column; gap: 8px; }
 
-    /* ── GENERIC SHEET MODAL (tipo horario / evento) ── */
+    .task-row {
+      background: var(--surface); border-radius: 12px;
+      display: flex; align-items: center; gap: 11px;
+      padding: 12px 13px; min-height: 56px;
+      border-left: 4px solid var(--border);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .task-check {
+      width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%;
+      border: 2.5px solid var(--border); background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.15s ease;
+      font-size: 14px; font-weight: 700; color: transparent;
+    }
+    .task-row.done .task-check {
+      background: var(--accent); border-color: var(--accent); color: white;
+    }
+    .task-body { flex: 1; min-width: 0; cursor: pointer; }
+    .task-title {
+      font-size: 15px; font-weight: 600; word-break: break-word;
+    }
+    .task-row.done .task-title {
+      text-decoration: line-through; color: var(--text-muted);
+    }
+    .task-meta {
+      font-size: 11px; color: var(--text-muted); margin-top: 2px;
+      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+    }
+    .task-time { font-weight: 700; color: var(--text); }
+    .task-row.done .task-time { color: var(--text-muted); font-weight: 600; }
+    .task-cat { display: inline-flex; align-items: center; gap: 3px; }
+    .task-repeat { font-size: 10px; }
+    .task-emoji { font-size: 19px; flex-shrink: 0; }
+
+    /* ── WEEK VIEW ── */
+    .day-card {
+      background: var(--surface); border-radius: 14px;
+      margin: 0 20px 10px; padding: 12px 14px;
+    }
+    .day-card.is-today { border: 2px solid var(--accent); }
+    .day-card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; margin-bottom: 4px;
+    }
+    .day-card-name { font-size: 14px; font-weight: 700; }
+    .day-card.is-today .day-card-name { color: var(--accent); }
+    .day-card-count { font-size: 12px; color: var(--text-muted); }
+    .day-add-btn {
+      background: none; border: 1.5px solid var(--border);
+      border-radius: 8px; width: 26px; height: 26px;
+      font-size: 15px; line-height: 1; color: var(--text-muted);
+      cursor: pointer; flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .day-add-btn:active { background: var(--accent-light); color: var(--accent); }
+    .day-card .task-row {
+      padding: 9px 10px; min-height: 44px; gap: 9px;
+      background: var(--bg); border-radius: 10px;
+    }
+    .day-card .task-title { font-size: 14px; }
+    .day-card .task-list { gap: 6px; margin-top: 8px; }
+    .day-empty { font-size: 12px; color: var(--text-muted); padding: 4px 0 2px; }
+
+    /* ── TASK FORM ── */
+    .field-label { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+    .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pick-chip {
+      padding: 8px 12px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: var(--bg);
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      color: var(--text); cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pick-chip.selected {
+      border-color: var(--accent); background: var(--accent-light); color: var(--accent);
+    }
+    .dow-chip {
+      width: 34px; padding: 8px 0; text-align: center;
+      border-radius: 10px; border: 1.5px solid var(--border);
+      background: var(--bg); font-family: inherit;
+      font-size: 13px; font-weight: 700; color: var(--text-muted);
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .dow-chip.selected { border-color: var(--accent); background: var(--accent); color: white; }
+    .clear-time-btn {
+      background: none; border: none; color: var(--text-muted);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; text-decoration: underline;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sheet-scroll { max-height: 78vh; overflow-y: auto; }
+
+    /* ── GENERIC SHEET MODAL ── */
     .sheet-overlay {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.45);
@@ -766,6 +814,13 @@
     </div>
   </div>
   <div class="habit-list" id="today-list"></div>
+
+  <div class="section-head">
+    <h2>📋 TAREAS DE HOY</h2>
+    <button class="add-task-btn" onclick="openNewTaskForm(todayKey())">+ Añadir</button>
+  </div>
+  <div id="today-tasks"></div>
+
   <div class="today-actions">
     <button class="history-link-btn" onclick="showScreen('history')">
       <span>📅</span> Ver y editar historial
@@ -872,21 +927,18 @@
     <span id="week-label" onclick="resetToCurrentWeek()"></span>
     <button class="week-nav-btn" onclick="changeWeek(1)">›</button>
   </div>
-  <p class="schedule-hint" id="schedule-hint">Toca una caja y luego el horario para colocarla</p>
-  <div class="type-palette" id="type-palette"></div>
-  <div class="schedule-wrap">
-    <div class="schedule-corner"></div>
-    <div class="schedule-header-row" id="schedule-header-row"></div>
-    <div class="schedule-gutter" id="schedule-gutter"></div>
-    <div class="schedule-cols" id="schedule-cols"></div>
+  <div class="section-head">
+    <h2 id="week-summary"></h2>
+    <button class="add-task-btn" onclick="openNewTaskForm(null)">+ Nueva tarea</button>
   </div>
+  <div id="week-days"></div>
 
-  <div class="manage-header">
-    <span id="type-count-label">0 / 12 cajas</span>
+  <div class="manage-header" style="padding-top:22px">
+    <span id="type-count-label">0 / 12 categorías</span>
   </div>
   <div class="manage-list" id="type-manage-list"></div>
   <div class="add-form" id="type-add-form">
-    <h3>Añadir caja</h3>
+    <h3>Añadir categoría</h3>
     <div class="form-row">
       <input class="emoji-input" id="new-type-emoji" type="text" maxlength="2" placeholder="📦">
       <input class="text-input" id="new-type-label" type="text" maxlength="20" placeholder="Nombre (ej. Gym)">
@@ -894,7 +946,7 @@
     <div class="color-swatches" id="new-type-colors"></div>
     <button class="add-btn" onclick="addScheduleType()">Añadir</button>
   </div>
-  <p class="limit-note" id="type-limit-note" style="display:none">Máximo 12 cajas alcanzado</p>
+  <p class="limit-note" id="type-limit-note" style="display:none">Máximo 12 categorías alcanzado</p>
 </section>
 
 <!-- NAV -->
@@ -905,7 +957,7 @@
   </button>
   <button class="nav-btn" id="nav-schedule" onclick="showScreen('schedule')">
     <span class="nav-icon">🗓️</span>
-    <span class="nav-label">Horario</span>
+    <span class="nav-label">Semana</span>
   </button>
   <button class="nav-btn" id="nav-charts" onclick="showScreen('charts')">
     <span class="nav-icon">📊</span>
@@ -924,6 +976,7 @@
   <div id="confirm-box">
     <div id="confirm-title"></div>
     <div id="confirm-msg"></div>
+    <button class="confirm-btn confirm-btn-cancel" id="confirm-alt" style="display:none;width:100%;margin-bottom:10px"></button>
     <div class="confirm-btns">
       <button class="confirm-btn confirm-btn-cancel" id="confirm-cancel">Cancelar</button>
       <button class="confirm-btn confirm-btn-ok"    id="confirm-ok">Confirmar</button>
@@ -931,45 +984,54 @@
   </div>
 </div>
 
-<!-- EVENT (BLOQUE) FORM -->
-<div id="event-form-overlay" class="sheet-overlay">
-  <div class="sheet-box">
-    <h3 id="event-form-title">Editar bloque</h3>
-    <div class="settings-row">
-      <div class="settings-label">Caja</div>
-      <select id="event-type-select" class="time-input"></select>
+<!-- TASK FORM -->
+<div id="task-form-overlay" class="sheet-overlay">
+  <div class="sheet-box sheet-scroll">
+    <h3 id="task-form-title">Nueva tarea</h3>
+
+    <div>
+      <div class="field-label">¿Qué hay que hacer?</div>
+      <input class="text-input" id="task-title" type="text" maxlength="60"
+             placeholder="Ej. Llamar al fontanero" style="width:100%">
     </div>
-    <div class="settings-row">
-      <div class="settings-label">Día</div>
-      <select id="event-day-select" class="time-input"></select>
+
+    <div>
+      <div class="field-label">Categoría</div>
+      <div class="chip-row" id="task-category-chips"></div>
     </div>
-    <div class="settings-row">
-      <div class="settings-label">Hora inicio</div>
-      <select id="event-start-select" class="time-input"></select>
+
+    <div>
+      <div class="field-label">Momento del día</div>
+      <div class="chip-row" id="task-slot-chips"></div>
     </div>
-    <div class="settings-row">
-      <div class="settings-label">Duración</div>
-      <select id="event-duration-select" class="time-input">
-        <option value="15">15 min</option>
-        <option value="30">30 min</option>
-        <option value="45">45 min</option>
-        <option value="60">1 h</option>
-        <option value="90">1 h 30</option>
-        <option value="120">2 h</option>
-        <option value="150">2 h 30</option>
-        <option value="180">3 h</option>
-        <option value="240">4 h</option>
-        <option value="300">5 h</option>
-        <option value="360">6 h</option>
-        <option value="420">7 h</option>
-        <option value="480">8 h</option>
-      </select>
+
+    <div>
+      <div class="field-label">Hora (opcional)</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="time" id="task-time" class="time-input" style="flex:1">
+        <button class="clear-time-btn" onclick="clearTaskTime()">Quitar</button>
+      </div>
     </div>
+
+    <div id="task-date-field">
+      <div class="field-label">Día</div>
+      <select id="task-date-select" class="time-input" style="width:100%"></select>
+    </div>
+
+    <div>
+      <div class="field-label">Repetir cada semana</div>
+      <div class="chip-row" id="task-dow-chips"></div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:6px" id="task-repeat-hint">
+        Sin días marcados = tarea puntual
+      </div>
+    </div>
+
     <div class="edit-actions">
-      <button class="cancel-edit-btn" onclick="closeEventForm()">Cancelar</button>
-      <button class="save-edit-btn" onclick="saveEventForm()">Guardar</button>
+      <button class="cancel-edit-btn" onclick="closeTaskForm()">Cancelar</button>
+      <button class="save-edit-btn" onclick="saveTaskForm()">Guardar</button>
     </div>
-    <button class="cancel-edit-btn" id="event-delete-btn" style="color:var(--danger)" onclick="deleteEventFromForm()">Eliminar bloque</button>
+    <button class="cancel-edit-btn" id="task-delete-btn" style="color:var(--danger)"
+            onclick="deleteTaskFromForm()">Eliminar tarea</button>
   </div>
 </div>
 
@@ -1000,10 +1062,12 @@
     { id: 'protein',  label: 'Proteína',          emoji: '🥩' },
   ];
 
-  // ── SCHEDULE STATE ──
-  let scheduleTypes    = [];  // [{ id, label, emoji, color }]
-  let scheduleEvents   = {};  // { "YYYY-MM-DD": [{ id, typeId, start, duration }] }
-  let currentWeekStart = null; // "YYYY-MM-DD" (lunes)
+  // ── TAREAS / SEMANA ──
+  let scheduleTypes    = [];   // categorías: [{ id, label, emoji, color }]
+  let tasks            = [];   // [{ id, title, categoryId, slot, startMin, date, recurrence, position }]
+                               //   recurrence: null (puntual) | '1,3,5' (1=lunes … 7=domingo)
+  let taskStates       = {};   // { "taskId|YYYY-MM-DD": { done, skipped } }
+  let currentWeekStart = null; // "YYYY-MM-DD" (lunes de la semana visible)
 
   const DEFAULT_SCHEDULE_TYPES = [
     { id: 'work',   label: 'Trabajo', emoji: '💼', color: '#42a5f5' },
@@ -1011,15 +1075,12 @@
     { id: 'tennis', label: 'Tenis',   emoji: '🎾', color: '#66bb6a' },
   ];
   const SCHEDULE_COLORS = ['#42a5f5', '#ef5350', '#66bb6a', '#ffa726', '#ab47bc', '#26c6da', '#8d6e63', '#ec407a'];
-  const HOUR_HEIGHT = 44; // px por hora en la rejilla
-  const SNAP_MIN = 15;    // minutos a los que se ajusta el arrastre
   const DAY_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-  const MAX_DURATION = 480;          // 8 h
-  const DEFAULT_GRID_START = 7 * 60;  // 07:00 visible por defecto
-  const DEFAULT_GRID_END   = 26 * 60; // hasta las 02:00 del día siguiente
-  // Rango visible real de la rejilla (se amplía si hay bloques fuera del rango por defecto)
-  let gridStartMin = DEFAULT_GRID_START;
-  let gridEndMin   = DEFAULT_GRID_END;
+  const SLOTS = [
+    { id: 'manana', label: 'Mañana', icon: '🌅' },
+    { id: 'tarde',  label: 'Tarde',  icon: '🌆' },
+    { id: 'noche',  label: 'Noche',  icon: '🌙' },
+  ];
 
   // ── AUTH ──
   async function signInWithGoogle() {
@@ -1101,30 +1162,34 @@
         localStorage.setItem('ht_settings', JSON.stringify(settings));
       }
 
-      // Schedule types (catálogo de cajas)
+      // Categorías y tareas
       await loadScheduleTypes();
+      await loadTasks();
 
     } catch {
       // Offline: use cached localStorage data
       loadFromLocalStorageCache();
     }
+    if (!currentWeekStart) currentWeekStart = getMondayKey(new Date());
   }
 
   function loadFromLocalStorageCache() {
     try {
-      const h  = JSON.parse(localStorage.getItem('ht_habits'));
-      const r  = JSON.parse(localStorage.getItem('ht_records'));
-      const s  = JSON.parse(localStorage.getItem('ht_settings'));
-      const st = JSON.parse(localStorage.getItem('ht_schedule_types'));
-      const se = JSON.parse(localStorage.getItem('ht_schedule_events'));
+      const h   = JSON.parse(localStorage.getItem('ht_habits'));
+      const r   = JSON.parse(localStorage.getItem('ht_records'));
+      const s   = JSON.parse(localStorage.getItem('ht_settings'));
+      const st  = JSON.parse(localStorage.getItem('ht_schedule_types'));
+      const tk  = JSON.parse(localStorage.getItem('ht_tasks'));
+      const ts  = JSON.parse(localStorage.getItem('ht_task_states'));
       if (h && h.length > 0) habits  = h;
       if (r) records  = r;
       if (s) settings = s;
-      if (st && st.length > 0) scheduleTypes  = st;
-      if (se) scheduleEvents = se;
+      if (st && st.length > 0) scheduleTypes = st;
+      if (tk) tasks      = tk;
+      if (ts) taskStates = ts;
     } catch {}
     if (habits.length === 0)        habits        = DEFAULT_HABITS;
-    if (scheduleTypes.length === 0) scheduleTypes  = DEFAULT_SCHEDULE_TYPES.map(t => ({ ...t }));
+    if (scheduleTypes.length === 0) scheduleTypes = DEFAULT_SCHEDULE_TYPES.map(t => ({ ...t }));
   }
 
   async function migrateFromLocalStorage() {
@@ -1881,11 +1946,26 @@
   }
 
   // ── CUSTOM CONFIRM ──
-  function customConfirm(title, msg, onOk, safe = false) {
+  // altLabel/onAlt añaden una tercera opción (p. ej. "Solo este día" en tareas que se repiten)
+  function customConfirm(title, msg, onOk, safe = false, okLabel = null, altLabel = null, onAlt = null) {
     document.getElementById('confirm-title').textContent = title;
     document.getElementById('confirm-msg').textContent   = msg;
-    const okBtn = document.getElementById('confirm-ok');
-    okBtn.className = 'confirm-btn confirm-btn-ok' + (safe ? ' safe' : '');
+    const okBtn  = document.getElementById('confirm-ok');
+    const altBtn = document.getElementById('confirm-alt');
+    okBtn.className   = 'confirm-btn confirm-btn-ok' + (safe ? ' safe' : '');
+    okBtn.textContent = okLabel || 'Confirmar';
+
+    if (altLabel) {
+      altBtn.style.display = 'block';
+      altBtn.textContent   = altLabel;
+      altBtn.onclick = () => {
+        document.getElementById('confirm-overlay').style.display = 'none';
+        if (onAlt) onAlt();
+      };
+    } else {
+      altBtn.style.display = 'none';
+    }
+
     document.getElementById('confirm-overlay').style.display = 'flex';
     okBtn.onclick = () => {
       document.getElementById('confirm-overlay').style.display = 'none';
@@ -1903,7 +1983,7 @@
 
   // ── NAVIGATION ──
   let currentScreen = 'today';
-  const titles = { today: 'Hoy', history: 'Historial', charts: 'Gráficos', manage: 'Hábitos', schedule: 'Horario' };
+  const titles = { today: 'Hoy', history: 'Historial', charts: 'Gráficos', manage: 'Hábitos', schedule: 'Semana' };
 
   function showScreen(name) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1919,19 +1999,15 @@
     document.getElementById(`screen-${name}`).scrollTop = 0;
 
     currentScreen = name;
-    if (name === 'today')   renderToday();
+    if (name === 'today')   { renderToday(); renderTodayTasks(); }
     if (name === 'history') renderHistory();
     if (name === 'charts')  renderCharts();
     if (name === 'manage')  { renderManage(); renderNotifSettings(); }
     if (name === 'schedule') {
       if (!currentWeekStart) currentWeekStart = getMondayKey(new Date());
       renderWeekLabel();
-      renderSchedulePalette();
+      renderWeek();
       renderTypeManage();
-      renderScheduleGrid();
-      loadWeekEvents(currentWeekStart).then(() => {
-        requestAnimationFrame(scrollScheduleToDefaultStart);
-      });
     }
   }
 
@@ -1959,8 +2035,11 @@
     }
     if (e.key === 'Escape' && editingTypeId) cancelTypeEdit();
   });
-  document.getElementById('event-form-overlay').addEventListener('click', e => {
-    if (e.target.id === 'event-form-overlay') closeEventForm();
+  document.getElementById('task-form-overlay').addEventListener('click', e => {
+    if (e.target.id === 'task-form-overlay') closeTaskForm();
+  });
+  document.getElementById('task-title').addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveTaskForm();
   });
   document.getElementById('manage-list').addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.id === 'edit-label') {
@@ -2071,11 +2150,7 @@
     }
   }
 
-  // ── SCHEDULE: DATA ──
-  function persistScheduleEventsCache() {
-    localStorage.setItem('ht_schedule_events', JSON.stringify(scheduleEvents));
-  }
-
+  // ── CATEGORÍAS (antes "cajas") ──
   async function loadScheduleTypes() {
     if (!currentUser) return;
     const { data, error } = await sbClient
@@ -2110,131 +2185,274 @@
         })),
         { onConflict: 'user_id,type_id' }
       );
-    } catch (e) { console.error('Error saving schedule types:', e); }
+    } catch (e) { console.error('Error saving categories:', e); }
   }
 
+  // Al borrar una categoría las tareas no se pierden: quedan sin categoría
   async function deleteScheduleType(typeId) {
     scheduleTypes = scheduleTypes.filter(t => t.id !== typeId);
-    for (const date of Object.keys(scheduleEvents)) {
-      scheduleEvents[date] = scheduleEvents[date].filter(e => e.typeId !== typeId);
+    let touched = [];
+    for (const t of tasks) {
+      if (t.categoryId === typeId) { t.categoryId = null; touched.push(t); }
     }
-    persistScheduleEventsCache();
+    persistTasksCache();
     saveScheduleTypes();
     renderSchedulePalette();
-    renderScheduleGrid();
     if (!currentUser) return;
     try {
-      await Promise.all([
-        sbClient.from('schedule_types').delete().match({ user_id: currentUser.id, type_id: typeId }),
-        sbClient.from('schedule_events').delete().match({ user_id: currentUser.id, type_id: typeId })
-      ]);
-    } catch (e) { console.error('Error deleting schedule type:', e); }
+      await sbClient.from('schedule_types').delete().match({ user_id: currentUser.id, type_id: typeId });
+      for (const t of touched) await persistTask(t);
+    } catch (e) { console.error('Error deleting category:', e); }
   }
 
-  function getMondayKey(d) {
-    const date = new Date(d);
-    const dow = date.getDay();
-    const diff = dow === 0 ? -6 : 1 - dow;
-    date.setDate(date.getDate() + diff);
-    return localKey(date);
+  // ── TAREAS: DATOS ──
+  function persistTasksCache() {
+    localStorage.setItem('ht_tasks', JSON.stringify(tasks));
+    localStorage.setItem('ht_task_states', JSON.stringify(taskStates));
   }
 
-  function getWeekDates(mondayKey) {
-    const [y, m, d] = mondayKey.split('-').map(Number);
-    const start = new Date(y, m - 1, d);
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
-      const dd = new Date(start);
-      dd.setDate(start.getDate() + i);
-      dates.push(localKey(dd));
-    }
-    return dates;
+  async function loadTasks() {
+    if (!currentUser) return;
+    try {
+      const { data, error } = await sbClient
+        .from('tasks')
+        .select('task_id, title, category_id, slot, start_min, date, recurrence, position')
+        .eq('user_id', currentUser.id);
+
+      if (!error) {
+        tasks = data.map(r => ({
+          id: r.task_id, title: r.title, categoryId: r.category_id,
+          slot: r.slot || 'manana', startMin: r.start_min,
+          date: r.date, recurrence: r.recurrence, position: r.position || 0
+        }));
+        if (tasks.length === 0) await migrateScheduleEvents();
+      }
+
+      const { data: st, error: e2 } = await sbClient
+        .from('task_instances')
+        .select('task_id, date, done, skipped')
+        .eq('user_id', currentUser.id);
+
+      if (!e2) {
+        taskStates = {};
+        for (const r of st) taskStates[r.task_id + '|' + r.date] = { done: !!r.done, skipped: !!r.skipped };
+      }
+      persistTasksCache();
+    } catch (e) { console.error('Error loading tasks:', e); }
   }
 
-  async function loadWeekEvents(mondayKey) {
-    if (!currentUser) { renderScheduleGrid(); return; }
-    const dates = getWeekDates(mondayKey);
+  // Convierte los bloques del antiguo horario de rejilla en tareas
+  async function migrateScheduleEvents() {
     try {
       const { data, error } = await sbClient
         .from('schedule_events')
-        .select('event_id, date, type_id, start_min, duration_min')
-        .eq('user_id', currentUser.id)
-        .gte('date', dates[0])
-        .lte('date', dates[6]);
+        .select('event_id, date, type_id, start_min')
+        .eq('user_id', currentUser.id);
+      if (error || !data || data.length === 0) return;
 
-      if (!error) {
-        for (const dateKey of dates) scheduleEvents[dateKey] = [];
-        for (const ev of data) {
-          if (!scheduleEvents[ev.date]) scheduleEvents[ev.date] = [];
-          scheduleEvents[ev.date].push({ id: ev.event_id, typeId: ev.type_id, start: ev.start_min, duration: ev.duration_min });
-        }
-        persistScheduleEventsCache();
-      }
-    } catch (e) { console.error('Error loading week events:', e); }
-    renderScheduleGrid();
-  }
-
-  async function addScheduleEvent(dateKey, typeId, startMin, durationMin) {
-    const id = 'evt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-    const start = Math.max(0, Math.min(startMin, DEFAULT_GRID_END - SNAP_MIN));
-    const ev = { id, typeId, start, duration: Math.min(durationMin, MAX_DURATION) };
-    if (!scheduleEvents[dateKey]) scheduleEvents[dateKey] = [];
-    scheduleEvents[dateKey].push(ev);
-    persistScheduleEventsCache();
-    renderScheduleGrid();
-    if (!currentUser) return;
-    try {
-      await sbClient.from('schedule_events').insert({
-        user_id: currentUser.id, event_id: id, date: dateKey, type_id: typeId, start_min: start, duration_min: ev.duration
+      tasks = data.map((ev, i) => {
+        const cat = scheduleTypes.find(c => c.id === ev.type_id);
+        return {
+          id: 'task_mig_' + ev.event_id,
+          title: cat ? cat.label : 'Bloque',
+          categoryId: ev.type_id,
+          slot: slotFromMinutes(ev.start_min),
+          startMin: ev.start_min,
+          date: ev.date,
+          recurrence: null,
+          position: i
+        };
       });
-    } catch (e) { console.error('Error creating schedule event:', e); }
+      for (const t of tasks) await persistTask(t);
+      showToast('Bloques del horario convertidos en tareas');
+    } catch (e) { console.error('Migration error:', e); }
   }
 
-  async function updateScheduleEvent(oldDateKey, eventId, changes) {
-    const arr = scheduleEvents[oldDateKey] || [];
-    const idx = arr.findIndex(e => e.id === eventId);
-    if (idx === -1) return;
-    const ev = arr[idx];
-    const newDate = changes.date ?? oldDateKey;
-    const updated = {
-      id: ev.id,
-      typeId: changes.typeId ?? ev.typeId,
-      start: changes.start ?? ev.start,
-      duration: Math.min(changes.duration ?? ev.duration, MAX_DURATION)
-    };
+  async function persistTask(t) {
+    persistTasksCache();
+    if (!currentUser) return;
+    try {
+      await sbClient.from('tasks').upsert({
+        user_id: currentUser.id, task_id: t.id, title: t.title,
+        category_id: t.categoryId, slot: t.slot, start_min: t.startMin,
+        date: t.date, recurrence: t.recurrence, position: t.position
+      }, { onConflict: 'user_id,task_id' });
+    } catch (e) { console.error('Error saving task:', e); }
+  }
 
-    if (newDate !== oldDateKey) {
-      arr.splice(idx, 1);
-      if (!scheduleEvents[newDate]) scheduleEvents[newDate] = [];
-      scheduleEvents[newDate].push(updated);
-    } else {
-      arr[idx] = updated;
+  async function setTaskState(taskId, dateKey, patch) {
+    const key = taskId + '|' + dateKey;
+    const next = { done: false, skipped: false, ...(taskStates[key] || {}), ...patch };
+    taskStates[key] = next;
+    persistTasksCache();
+    if (!currentUser) return;
+    try {
+      await sbClient.from('task_instances').upsert({
+        user_id: currentUser.id, task_id: taskId, date: dateKey,
+        done: next.done, skipped: next.skipped
+      }, { onConflict: 'user_id,task_id,date' });
+    } catch (e) { console.error('Error saving task state:', e); }
+  }
+
+  async function deleteTaskFull(taskId) {
+    tasks = tasks.filter(t => t.id !== taskId);
+    for (const k of Object.keys(taskStates)) {
+      if (k.startsWith(taskId + '|')) delete taskStates[k];
     }
-    persistScheduleEventsCache();
-    renderScheduleGrid();
+    persistTasksCache();
+    refreshTaskViews();
     if (!currentUser) return;
     try {
-      await sbClient.from('schedule_events').update({
-        date: newDate, type_id: updated.typeId, start_min: updated.start, duration_min: updated.duration
-      }).match({ user_id: currentUser.id, event_id: eventId });
-    } catch (e) { console.error('Error updating schedule event:', e); }
+      await Promise.all([
+        sbClient.from('tasks').delete().match({ user_id: currentUser.id, task_id: taskId }),
+        sbClient.from('task_instances').delete().match({ user_id: currentUser.id, task_id: taskId })
+      ]);
+    } catch (e) { console.error('Error deleting task:', e); }
   }
 
-  async function deleteScheduleEvent(dateKey, eventId) {
-    scheduleEvents[dateKey] = (scheduleEvents[dateKey] || []).filter(e => e.id !== eventId);
-    persistScheduleEventsCache();
-    renderScheduleGrid();
-    if (!currentUser) return;
-    try {
-      await sbClient.from('schedule_events').delete().match({ user_id: currentUser.id, event_id: eventId });
-    } catch (e) { console.error('Error deleting schedule event:', e); }
+  // ── TAREAS: CONSULTAS ──
+  function dowOf(dateKey) {
+    const [y, m, d] = dateKey.split('-').map(Number);
+    const dow = new Date(y, m - 1, d).getDay();
+    return dow === 0 ? 7 : dow; // 1=lunes … 7=domingo
   }
 
-  // ── SCHEDULE: RENDER ──
-  function minToHHMM(min) {
-    min = ((min % 1440) + 1440) % 1440;
-    const h = Math.floor(min / 60), m = min % 60;
-    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  function slotFromMinutes(min) {
+    if (min == null) return 'manana';
+    if (min < 13 * 60) return 'manana';
+    if (min < 20 * 60) return 'tarde';
+    return 'noche';
+  }
+
+  function slotIndex(slotId) {
+    const i = SLOTS.findIndex(s => s.id === slotId);
+    return i === -1 ? 0 : i;
+  }
+
+  function isTaskOnDate(t, dateKey) {
+    if (t.recurrence) {
+      if (!t.recurrence.split(',').includes(String(dowOf(dateKey)))) return false;
+      if (t.date && dateKey < t.date) return false; // no antes de crearla
+      return true;
+    }
+    return t.date === dateKey;
+  }
+
+  function getTasksForDate(dateKey) {
+    return tasks
+      .filter(t => isTaskOnDate(t, dateKey))
+      .filter(t => !taskStates[t.id + '|' + dateKey]?.skipped)
+      .map(t => ({ ...t, done: !!taskStates[t.id + '|' + dateKey]?.done }))
+      .sort((a, b) => {
+        const s = slotIndex(a.slot) - slotIndex(b.slot);
+        if (s !== 0) return s;
+        const at = a.startMin == null ? 99999 : a.startMin;
+        const bt = b.startMin == null ? 99999 : b.startMin;
+        if (at !== bt) return at - bt;
+        return (a.position || 0) - (b.position || 0);
+      });
+  }
+
+  function toggleTaskDone(taskId, dateKey) {
+    const done = !taskStates[taskId + '|' + dateKey]?.done;
+    setTaskState(taskId, dateKey, { done });
+    refreshTaskViews();
+  }
+
+  function refreshTaskViews() {
+    if (currentScreen === 'today')    renderTodayTasks();
+    if (currentScreen === 'schedule') renderWeek();
+  }
+
+  function recurrenceLabel(rec) {
+    const days = rec.split(',').map(Number).sort();
+    if (days.length === 7) return 'Cada día';
+    if (days.length === 5 && days.join() === '1,2,3,4,5') return 'L a V';
+    return days.map(d => DAY_LABELS[d - 1]).join('·');
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // ── TAREAS: RENDER ──
+  function taskRowHtml(t, dateKey) {
+    const cat   = scheduleTypes.find(c => c.id === t.categoryId);
+    const color = cat ? cat.color : 'var(--border)';
+    const slot  = SLOTS[slotIndex(t.slot)];
+    const meta  = [];
+    if (t.startMin != null) meta.push(`<span class="task-time">${minToHHMM(t.startMin)}</span>`);
+    if (cat)                meta.push(`<span class="task-cat">${cat.emoji} ${escapeHtml(cat.label)}</span>`);
+    if (t.recurrence)       meta.push(`<span class="task-repeat">🔁 ${recurrenceLabel(t.recurrence)}</span>`);
+
+    return `
+      <div class="task-row ${t.done ? 'done' : ''}" style="border-left-color:${color}">
+        <div class="task-check" onclick="toggleTaskDone('${t.id}','${dateKey}')">✓</div>
+        <div class="task-body" onclick="openEditTaskForm('${t.id}','${dateKey}')">
+          <div class="task-title">${escapeHtml(t.title)}</div>
+          ${meta.length ? `<div class="task-meta">${meta.join('')}</div>` : ''}
+        </div>
+        <span class="task-emoji">${slot.icon}</span>
+      </div>`;
+  }
+
+  function renderTodayTasks() {
+    const wrap = document.getElementById('today-tasks');
+    const dateKey = todayKey();
+    const list = getTasksForDate(dateKey);
+
+    if (list.length === 0) {
+      wrap.innerHTML = `<div class="empty-state" style="padding:26px 20px">
+        <div class="icon">🗒️</div>
+        <p>Sin tareas para hoy.<br>Pulsa <strong>+ Añadir</strong> para crear una.</p>
+      </div>`;
+      return;
+    }
+
+    wrap.innerHTML = SLOTS.map(s => {
+      const inSlot = list.filter(t => t.slot === s.id);
+      if (inSlot.length === 0) return '';
+      const done = inSlot.filter(t => t.done).length;
+      return `
+        <div class="slot-group">
+          <div class="slot-title">${s.icon} ${s.label.toUpperCase()} · ${done}/${inSlot.length}</div>
+          <div class="task-list">${inSlot.map(t => taskRowHtml(t, dateKey)).join('')}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderWeek() {
+    if (!currentWeekStart) currentWeekStart = getMondayKey(new Date());
+    const dates  = getWeekDates(currentWeekStart);
+    const todayK = todayKey();
+
+    let totalDone = 0, total = 0;
+    const cards = dates.map(dateKey => {
+      const list = getTasksForDate(dateKey);
+      const done = list.filter(t => t.done).length;
+      totalDone += done; total += list.length;
+
+      const [y, m, d] = dateKey.split('-').map(Number);
+      const dayName = new Date(y, m - 1, d).toLocaleDateString('es-ES', { weekday: 'long' });
+      const isToday = dateKey === todayK;
+
+      return `
+        <div class="day-card ${isToday ? 'is-today' : ''}">
+          <div class="day-card-head">
+            <span class="day-card-name">${dayName.charAt(0).toUpperCase() + dayName.slice(1)} ${d}${isToday ? ' · Hoy' : ''}</span>
+            <span class="day-card-count">${list.length ? done + '/' + list.length : ''}</span>
+            <button class="day-add-btn" onclick="openNewTaskForm('${dateKey}')" title="Añadir tarea">+</button>
+          </div>
+          ${list.length
+            ? `<div class="task-list">${list.map(t => taskRowHtml(t, dateKey)).join('')}</div>`
+            : `<div class="day-empty">Sin tareas</div>`}
+        </div>`;
+    }).join('');
+
+    document.getElementById('week-days').innerHTML = cards;
+    document.getElementById('week-summary').textContent =
+      total ? `${totalDone} de ${total} tareas hechas` : 'Semana sin tareas';
   }
 
   function renderWeekLabel() {
@@ -2253,255 +2471,211 @@
     date.setDate(date.getDate() + dir * 7);
     currentWeekStart = localKey(date);
     renderWeekLabel();
-    renderScheduleGrid();
-    loadWeekEvents(currentWeekStart).then(() => requestAnimationFrame(scrollScheduleToDefaultStart));
+    renderWeek();
   }
 
   function resetToCurrentWeek() {
     currentWeekStart = getMondayKey(new Date());
     renderWeekLabel();
-    renderScheduleGrid();
-    loadWeekEvents(currentWeekStart).then(() => requestAnimationFrame(scrollScheduleToDefaultStart));
+    renderWeek();
   }
 
-  // Caja "armada": al tocar una caja queda seleccionada y el siguiente toque
-  // en la rejilla la coloca (alternativa táctil al arrastre).
-  let armedTypeId = null;
+  function getMondayKey(d) {
+    const date = new Date(d);
+    const dow = date.getDay();
+    date.setDate(date.getDate() + (dow === 0 ? -6 : 1 - dow));
+    return localKey(date);
+  }
 
-  function renderSchedulePalette() {
-    const wrap = document.getElementById('type-palette');
-    if (scheduleTypes.length === 0) {
-      wrap.innerHTML = `<span style="font-size:13px;color:var(--text-muted)">Crea tu primera caja abajo ↓</span>`;
-      return;
+  function getWeekDates(mondayKey) {
+    const [y, m, d] = mondayKey.split('-').map(Number);
+    const start = new Date(y, m - 1, d);
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+      const dd = new Date(start);
+      dd.setDate(start.getDate() + i);
+      dates.push(localKey(dd));
     }
-    wrap.innerHTML = scheduleTypes.map(t => `
-      <div class="type-chip ${t.id === armedTypeId ? 'armed' : ''}"
-           style="border-color:${t.color}${t.id === armedTypeId ? ';background:' + t.color + '22' : ''}"
-           onpointerdown="onChipPointerDown(event,'${t.id}')">
-        ${t.emoji} ${t.label}
-      </div>`).join('');
-    updateScheduleHint();
+    return dates;
   }
 
-  function updateScheduleHint() {
-    const hint = document.getElementById('schedule-hint');
-    if (!hint) return;
-    if (armedTypeId) {
-      const t = scheduleTypes.find(x => x.id === armedTypeId);
-      hint.innerHTML = `<strong style="color:var(--accent)">${t.emoji} ${t.label} seleccionada</strong> — toca el horario para colocarla`;
-    } else {
-      hint.textContent = 'Toca una caja y luego el horario para colocarla · Toca un hueco vacío para crear';
-    }
+  function minToHHMM(min) {
+    min = ((min % 1440) + 1440) % 1440;
+    return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0');
   }
 
-  function toggleArmedType(typeId) {
-    armedTypeId = (armedTypeId === typeId) ? null : typeId;
-    renderSchedulePalette();
+  // ── TAREAS: FORMULARIO ──
+  let taskFormId       = null;   // null = tarea nueva
+  let taskFormDate     = null;   // fecha de contexto
+  let taskFormCategory = null;
+  let taskFormSlot     = 'manana';
+  let taskFormDows     = new Set();
+  let taskFormSlotTouched = false;
+
+  function renderTaskFormChips() {
+    document.getElementById('task-category-chips').innerHTML =
+      `<button class="pick-chip ${taskFormCategory === null ? 'selected' : ''}" onclick="pickTaskCategory(null)">Sin categoría</button>` +
+      scheduleTypes.map(c =>
+        `<button class="pick-chip ${taskFormCategory === c.id ? 'selected' : ''}"
+                 onclick="pickTaskCategory('${c.id}')">${c.emoji} ${escapeHtml(c.label)}</button>`).join('');
+
+    document.getElementById('task-slot-chips').innerHTML = SLOTS.map(s =>
+      `<button class="pick-chip ${taskFormSlot === s.id ? 'selected' : ''}"
+               onclick="pickTaskSlot('${s.id}')">${s.icon} ${s.label}</button>`).join('');
+
+    document.getElementById('task-dow-chips').innerHTML = DAY_LABELS.map((lbl, i) =>
+      `<button class="dow-chip ${taskFormDows.has(i + 1) ? 'selected' : ''}"
+               onclick="toggleTaskDow(${i + 1})">${lbl}</button>`).join('');
+
+    const repeating = taskFormDows.size > 0;
+    document.getElementById('task-date-field').style.display = repeating ? 'none' : 'block';
+    document.getElementById('task-repeat-hint').textContent = repeating
+      ? `Se repetirá ${recurrenceLabel([...taskFormDows].sort((a, b) => a - b).join(','))}`
+      : 'Sin días marcados = tarea puntual';
   }
 
-  // Amplía el rango visible si hay bloques antes de las 07:00 o después de las 02:00
-  function computeGridRange() {
-    let start = DEFAULT_GRID_START;
-    let end   = DEFAULT_GRID_END;
-    if (currentWeekStart) {
-      for (const dateKey of getWeekDates(currentWeekStart)) {
-        for (const ev of (scheduleEvents[dateKey] || [])) {
-          if (ev.start < start)               start = Math.floor(ev.start / 60) * 60;
-          if (ev.start + ev.duration > end)   end   = Math.ceil((ev.start + ev.duration) / 60) * 60;
-        }
-      }
-    }
-    gridStartMin = start;
-    gridEndMin   = end;
+  function pickTaskCategory(id) { taskFormCategory = id; renderTaskFormChips(); }
+  function pickTaskSlot(id)     { taskFormSlot = id; taskFormSlotTouched = true; renderTaskFormChips(); }
+  function toggleTaskDow(d) {
+    if (taskFormDows.has(d)) taskFormDows.delete(d); else taskFormDows.add(d);
+    renderTaskFormChips();
   }
+  function clearTaskTime() { document.getElementById('task-time').value = ''; }
 
-  function renderScheduleGrid() {
-    if (!currentWeekStart) return;
-    computeGridRange();
+  function fillDateSelect(selected) {
     const dates = getWeekDates(currentWeekStart);
-    const todayK = todayKey();
-
-    const headerHtml = dates.map((dateKey, i) => {
-      const d = Number(dateKey.split('-')[2]);
-      const isToday = dateKey === todayK;
-      return `<div class="day-header ${isToday ? 'today' : ''}">
-        <div class="day-header-label">${DAY_LABELS[i]}</div>
-        <div class="day-header-num">${d}</div>
-      </div>`;
+    if (selected && !dates.includes(selected)) dates.push(selected);
+    dates.sort();
+    document.getElementById('task-date-select').innerHTML = dates.map(dk => {
+      const [y, m, d] = dk.split('-').map(Number);
+      const label = new Date(y, m - 1, d).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
+      return `<option value="${dk}" ${dk === selected ? 'selected' : ''}>${label.charAt(0).toUpperCase() + label.slice(1)}</option>`;
     }).join('');
+  }
 
-    let gutterHtml = '';
-    for (let m = gridStartMin; m < gridEndMin; m += 60) {
-      gutterHtml += `<div class="hour-label" style="top:${((m - gridStartMin) / 60) * HOUR_HEIGHT}px">${minToHHMM(m)}</div>`;
+  function openNewTaskForm(dateKey) {
+    if (!currentWeekStart) currentWeekStart = getMondayKey(new Date());
+    const target = dateKey || todayKey();
+    taskFormId       = null;
+    taskFormDate     = target;
+    taskFormCategory = null;
+    taskFormSlot     = 'manana';
+    taskFormDows     = new Set();
+    taskFormSlotTouched = false;
+
+    document.getElementById('task-form-title').textContent = 'Nueva tarea';
+    document.getElementById('task-title').value = '';
+    document.getElementById('task-time').value  = '';
+    document.getElementById('task-delete-btn').style.display = 'none';
+    fillDateSelect(target);
+    renderTaskFormChips();
+    document.getElementById('task-form-overlay').style.display = 'flex';
+    setTimeout(() => document.getElementById('task-title').focus(), 60);
+  }
+
+  function openEditTaskForm(taskId, dateKey) {
+    const t = tasks.find(x => x.id === taskId);
+    if (!t) return;
+    taskFormId       = taskId;
+    taskFormDate     = dateKey;
+    taskFormCategory = t.categoryId || null;
+    taskFormSlot     = t.slot || 'manana';
+    taskFormDows     = new Set(t.recurrence ? t.recurrence.split(',').map(Number) : []);
+    taskFormSlotTouched = true;
+
+    document.getElementById('task-form-title').textContent = 'Editar tarea';
+    document.getElementById('task-title').value = t.title;
+    document.getElementById('task-time').value  = t.startMin != null ? minToHHMM(t.startMin) : '';
+    const delBtn = document.getElementById('task-delete-btn');
+    delBtn.style.display = 'block';
+    delBtn.textContent   = t.recurrence ? 'Eliminar…' : 'Eliminar tarea';
+    fillDateSelect(t.date || dateKey);
+    renderTaskFormChips();
+    document.getElementById('task-form-overlay').style.display = 'flex';
+  }
+
+  function closeTaskForm() {
+    document.getElementById('task-form-overlay').style.display = 'none';
+    taskFormId = null;
+  }
+
+  function saveTaskForm() {
+    const title = document.getElementById('task-title').value.trim();
+    if (!title) { showToast('Escribe qué hay que hacer'); return; }
+
+    const timeVal = document.getElementById('task-time').value;
+    const startMin = timeVal ? Number(timeVal.split(':')[0]) * 60 + Number(timeVal.split(':')[1]) : null;
+    const recurrence = taskFormDows.size > 0
+      ? [...taskFormDows].sort((a, b) => a - b).join(',')
+      : null;
+    // Si hay hora y el usuario no eligió franja, se deduce de la hora
+    const slot = (!taskFormSlotTouched && startMin != null) ? slotFromMinutes(startMin) : taskFormSlot;
+    const date = recurrence
+      ? (taskFormId ? (tasks.find(t => t.id === taskFormId)?.date || taskFormDate) : taskFormDate)
+      : document.getElementById('task-date-select').value;
+
+    if (taskFormId) {
+      const t = tasks.find(x => x.id === taskFormId);
+      if (t) {
+        Object.assign(t, { title, categoryId: taskFormCategory, slot, startMin, date, recurrence });
+        persistTask(t);
+      }
+    } else {
+      const t = {
+        id: 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        title, categoryId: taskFormCategory, slot, startMin, date, recurrence,
+        position: tasks.length
+      };
+      tasks.push(t);
+      persistTask(t);
     }
-
-    const colsHtml = dates.map(dateKey => {
-      const events = (scheduleEvents[dateKey] || []).slice().sort((a, b) => a.start - b.start);
-      const evHtml = events.map(ev => {
-        const type = scheduleTypes.find(t => t.id === ev.typeId) || { emoji: '❓', label: '?', color: '#9e9e9e' };
-        const top = ((ev.start - gridStartMin) / 60) * HOUR_HEIGHT;
-        const height = Math.max((ev.duration / 60) * HOUR_HEIGHT, 18);
-        const timeLabel = minToHHMM(ev.start) + '–' + minToHHMM(ev.start + ev.duration);
-        return `<div class="event-block" style="top:${top}px;height:${height}px;background:${type.color}"
-                     onpointerdown="onEventPointerDown(event,'${dateKey}','${ev.id}')"
-                     onclick="event.stopPropagation()">
-                  <span class="event-emoji">${type.emoji}</span>
-                  ${height >= 30 ? `<span class="event-time">${timeLabel}</span>` : ''}
-                </div>`;
-      }).join('');
-      return `<div class="day-col" data-date="${dateKey}" onclick="onColumnClick(event,'${dateKey}')"
-                   style="background-size:100% ${HOUR_HEIGHT}px">${evHtml}</div>`;
-    }).join('');
-
-    const gridHeight = ((gridEndMin - gridStartMin) / 60) * HOUR_HEIGHT;
-    document.getElementById('schedule-header-row').innerHTML = headerHtml;
-    document.getElementById('schedule-gutter').innerHTML = gutterHtml;
-    document.getElementById('schedule-gutter').style.height = gridHeight + 'px';
-    document.getElementById('schedule-cols').innerHTML = colsHtml;
-    document.getElementById('schedule-cols').style.height = gridHeight + 'px';
+    closeTaskForm();
+    refreshTaskViews();
+    showToast('Tarea guardada');
   }
 
-  // Deja visible el arranque por defecto (07:00) aunque el rango se haya ampliado hacia atrás
-  function scrollScheduleToDefaultStart() {
-    const offset = Math.max(0, ((DEFAULT_GRID_START - gridStartMin) / 60) * HOUR_HEIGHT);
-    document.getElementById('screen-schedule').scrollTop = offset;
-  }
+  function deleteTaskFromForm() {
+    const id = taskFormId, dateKey = taskFormDate;
+    if (!id) return;
+    const t = tasks.find(x => x.id === id);
+    if (!t) return;
 
-  // Convierte la posición Y de un toque/clic dentro de una columna en minutos ajustados
-  function yToMinutes(clientY, col) {
-    const rect = col.getBoundingClientRect();
-    let minutes = gridStartMin + Math.round(((clientY - rect.top) / HOUR_HEIGHT * 60) / SNAP_MIN) * SNAP_MIN;
-    return Math.max(gridStartMin, Math.min(minutes, gridEndMin - SNAP_MIN));
-  }
-
-  function onColumnClick(e, dateKey) {
-    const col = e.currentTarget;
-    const minutes = yToMinutes(e.clientY, col);
-    if (armedTypeId) {
-      const typeId = armedTypeId;
-      armedTypeId = null;
-      renderSchedulePalette();
-      addScheduleEvent(dateKey, typeId, minutes, 60);
+    if (t.recurrence) {
+      // Serie: permite saltar solo este día o borrarla entera
+      closeTaskForm();
+      customConfirm(
+        'Esta tarea se repite',
+        `"${t.title}" se repite ${recurrenceLabel(t.recurrence)}.\n\n¿Qué quieres hacer?`,
+        () => { deleteTaskFull(id); showToast('Serie eliminada'); },
+        false,
+        'Eliminar toda la serie',
+        'Quitar solo este día',
+        () => { setTaskState(id, dateKey, { skipped: true }); refreshTaskViews(); showToast('Quitada de este día'); }
+      );
       return;
     }
-    if (scheduleTypes.length === 0) { showToast('Crea antes una caja'); return; }
-    openNewEventForm(dateKey, minutes);
-  }
 
-  // ── SCHEDULE: DRAG & DROP (crear y mover cajas) ──
-  let dragState = null;
-
-  function positionGhost(ghost, x, y) {
-    ghost.style.left = x + 'px';
-    ghost.style.top = y + 'px';
-  }
-
-  function makeGhost(emoji, label, color) {
-    const ghost = document.createElement('div');
-    ghost.className = 'drag-ghost';
-    ghost.style.background = color;
-    ghost.textContent = `${emoji} ${label}`;
-    document.body.appendChild(ghost);
-    return ghost;
-  }
-
-  function startDrag(e, state) {
-    state.ghost = makeGhost(state.emoji, state.label, state.color);
-    positionGhost(state.ghost, e.clientX, e.clientY);
-    state.moved = false;
-    state.startX = e.clientX;
-    state.startY = e.clientY;
-    dragState = state;
-    window.addEventListener('pointermove', onDragMove);
-    window.addEventListener('pointerup', onDragEnd);
-    window.addEventListener('pointercancel', onDragCancel);
-  }
-
-  function endDragListeners() {
-    window.removeEventListener('pointermove', onDragMove);
-    window.removeEventListener('pointerup', onDragEnd);
-    window.removeEventListener('pointercancel', onDragCancel);
-  }
-
-  function onChipPointerDown(e, typeId) {
-    const type = scheduleTypes.find(t => t.id === typeId);
-    if (!type) return;
-    startDrag(e, { mode: 'create', typeId, emoji: type.emoji, label: type.label, color: type.color });
-  }
-
-  function onEventPointerDown(e, dateKey, eventId) {
-    e.preventDefault();
-    e.stopPropagation();
-    const ev = (scheduleEvents[dateKey] || []).find(x => x.id === eventId);
-    if (!ev) return;
-    const type = scheduleTypes.find(t => t.id === ev.typeId) || { emoji: '❓', label: '?', color: '#9e9e9e' };
-    startDrag(e, {
-      mode: 'move', eventId, origDate: dateKey, typeId: ev.typeId, duration: ev.duration,
-      emoji: type.emoji, label: type.label, color: type.color
+    closeTaskForm();
+    customConfirm(`Eliminar "${t.title}"`, 'La tarea se eliminará definitivamente.', () => {
+      deleteTaskFull(id);
+      showToast('Tarea eliminada');
     });
   }
 
-  function onDragMove(e) {
-    if (!dragState) return;
-    const dx = e.clientX - dragState.startX, dy = e.clientY - dragState.startY;
-    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
-      dragState.moved = true;
-      e.preventDefault();
-    }
-    positionGhost(dragState.ghost, e.clientX, e.clientY);
-  }
-
-  function onDragCancel() {
-    if (!dragState) return;
-    endDragListeners();
-    dragState.ghost.remove();
-    dragState = null;
-  }
-
-  function onDragEnd(e) {
-    if (!dragState) return;
-    endDragListeners();
-    dragState.ghost.remove();
-
-    const state = dragState;
-    dragState = null;
-
-    // Sin desplazamiento = toque simple
-    if (!state.moved) {
-      if (state.mode === 'move') openEventForm(state.origDate, state.eventId);
-      else                       toggleArmedType(state.typeId);
-      return;
-    }
-
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const col = el ? el.closest('.day-col') : null;
-    if (!col) {
-      showToast('Suelta la caja sobre el horario');
-      return;
-    }
-
-    const minutes = yToMinutes(e.clientY, col);
-    const dateKey = col.dataset.date;
-
-    if (state.mode === 'create') {
-      addScheduleEvent(dateKey, state.typeId, minutes, 60);
-    } else {
-      updateScheduleEvent(state.origDate, state.eventId, { date: dateKey, typeId: state.typeId, start: minutes, duration: state.duration });
-    }
-  }
-
-  // ── SCHEDULE: GESTIÓN DE CAJAS (misma UX que Hábitos) ──
+  // ── CATEGORÍAS: GESTIÓN (misma UX que Hábitos) ──
   let editingTypeId  = null;
   let newTypeColor   = SCHEDULE_COLORS[0];
   let editTypeColor  = SCHEDULE_COLORS[0];
 
+  function renderSchedulePalette() { renderTypeManage(); }
+
   function renderTypeManage() {
     const count = scheduleTypes.length;
-    document.getElementById('type-count-label').textContent = `${count} / 12 cajas`;
+    document.getElementById('type-count-label').textContent = `${count} / 12 categorías`;
 
     const list = document.getElementById('type-manage-list');
     if (count === 0) {
-      list.innerHTML = `<div class="empty-state"><div class="icon">📦</div><p>Aún no tienes cajas.</p></div>`;
+      list.innerHTML = `<div class="empty-state"><div class="icon">📦</div><p>Aún no tienes categorías.</p></div>`;
     } else {
       list.innerHTML = scheduleTypes.map((t, i) => {
         if (t.id === editingTypeId) {
@@ -2528,7 +2702,7 @@
           <div class="manage-row">
             <span class="type-color-dot" style="background:${t.color}"></span>
             <span class="manage-emoji">${t.emoji}</span>
-            <span class="manage-label">${t.label}</span>
+            <span class="manage-label">${escapeHtml(t.label)}</span>
             <div class="reorder-btns">
               <button class="reorder-btn" onclick="moveScheduleType(${i}, -1)" ${i === 0 ? 'disabled' : ''} title="Subir">▲</button>
               <button class="reorder-btn" onclick="moveScheduleType(${i},  1)" ${i === count - 1 ? 'disabled' : ''} title="Bajar">▼</button>
@@ -2558,7 +2732,7 @@
     if (scheduleTypes.length >= 12) return;
     const emoji = document.getElementById('new-type-emoji').value.trim() || '📦';
     const label = document.getElementById('new-type-label').value.trim();
-    if (!label) { showToast('Escribe un nombre para la caja'); return; }
+    if (!label) { showToast('Escribe un nombre para la categoría'); return; }
 
     scheduleTypes.push({ id: 'type_' + Date.now(), label, emoji, color: newTypeColor });
     saveScheduleTypes();
@@ -2566,7 +2740,6 @@
     document.getElementById('new-type-label').value = '';
     newTypeColor = SCHEDULE_COLORS[scheduleTypes.length % SCHEDULE_COLORS.length];
     renderTypeManage();
-    renderSchedulePalette();
     showToast(`"${label}" añadida`);
   }
 
@@ -2593,9 +2766,8 @@
     saveScheduleTypes();
     editingTypeId = null;
     renderTypeManage();
-    renderSchedulePalette();
-    renderScheduleGrid();
-    showToast('Caja actualizada');
+    refreshTaskViews();
+    showToast('Categoría actualizada');
   }
 
   function moveScheduleType(idx, dir) {
@@ -2604,7 +2776,6 @@
     [scheduleTypes[idx], scheduleTypes[newIdx]] = [scheduleTypes[newIdx], scheduleTypes[idx]];
     saveScheduleTypes();
     renderTypeManage();
-    renderSchedulePalette();
   }
 
   function deleteTypeConfirm(typeId) {
@@ -2612,93 +2783,9 @@
     if (!t) return;
     customConfirm(
       `Eliminar "${t.label}"`,
-      'Se eliminará la caja y todos sus bloques del horario en todas las semanas.',
-      () => {
-        if (armedTypeId === typeId) armedTypeId = null;
-        deleteScheduleType(typeId);
-        renderTypeManage();
-      }
+      'Se eliminará la categoría. Las tareas que la usaban se conservan, pero quedarán sin categoría.',
+      () => { deleteScheduleType(typeId); renderTypeManage(); refreshTaskViews(); }
     );
-  }
-
-  // ── SCHEDULE: FORM BLOQUE (crear/editar/eliminar) ──
-  let eventFormDate = null;
-  let eventFormId   = null;
-  let eventFormMode = 'edit';
-
-  // Opciones de hora en pasos de 15 min dentro del rango visible (marca las de madrugada)
-  function buildStartOptions(selectedMin) {
-    const from = Math.min(gridStartMin, selectedMin);
-    const to   = Math.max(gridEndMin, selectedMin + SNAP_MIN);
-    let html = '';
-    for (let m = from; m < to; m += SNAP_MIN) {
-      const suffix = m >= 1440 ? ' (+1 día)' : '';
-      html += `<option value="${m}" ${m === selectedMin ? 'selected' : ''}>${minToHHMM(m)}${suffix}</option>`;
-    }
-    return html;
-  }
-
-  function fillEventForm(dateKey, typeId, startMin, duration) {
-    document.getElementById('event-type-select').innerHTML = scheduleTypes.map(t =>
-      `<option value="${t.id}" ${t.id === typeId ? 'selected' : ''}>${t.emoji} ${t.label}</option>`
-    ).join('');
-
-    document.getElementById('event-day-select').innerHTML = getWeekDates(currentWeekStart).map(dk => {
-      const [y, m, d] = dk.split('-').map(Number);
-      const label = new Date(y, m - 1, d).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
-      return `<option value="${dk}" ${dk === dateKey ? 'selected' : ''}>${label}</option>`;
-    }).join('');
-
-    document.getElementById('event-start-select').innerHTML = buildStartOptions(startMin);
-    document.getElementById('event-duration-select').value  = String(duration);
-    document.getElementById('event-form-overlay').style.display = 'flex';
-  }
-
-  function openNewEventForm(dateKey, startMin) {
-    eventFormMode = 'create';
-    eventFormDate = dateKey;
-    eventFormId   = null;
-    document.getElementById('event-form-title').textContent = 'Nuevo bloque';
-    document.getElementById('event-delete-btn').style.display = 'none';
-    fillEventForm(dateKey, scheduleTypes[0].id, startMin, 60);
-  }
-
-  function openEventForm(dateKey, eventId) {
-    const ev = (scheduleEvents[dateKey] || []).find(e => e.id === eventId);
-    if (!ev) return;
-    eventFormMode = 'edit';
-    eventFormDate = dateKey;
-    eventFormId   = eventId;
-    document.getElementById('event-form-title').textContent = 'Editar bloque';
-    document.getElementById('event-delete-btn').style.display = 'block';
-    fillEventForm(dateKey, ev.typeId, ev.start, ev.duration);
-  }
-
-  function closeEventForm() {
-    document.getElementById('event-form-overlay').style.display = 'none';
-    eventFormDate = null;
-    eventFormId   = null;
-  }
-
-  function saveEventForm() {
-    const typeId   = document.getElementById('event-type-select').value;
-    const newDate  = document.getElementById('event-day-select').value;
-    const start    = Number(document.getElementById('event-start-select').value);
-    const duration = Math.min(Number(document.getElementById('event-duration-select').value), MAX_DURATION);
-
-    if (eventFormMode === 'create') {
-      addScheduleEvent(newDate, typeId, start, duration);
-    } else if (eventFormId) {
-      updateScheduleEvent(eventFormDate, eventFormId, { date: newDate, typeId, start, duration });
-    }
-    closeEventForm();
-  }
-
-  function deleteEventFromForm() {
-    if (!eventFormId) return;
-    const dateKey = eventFormDate, id = eventFormId;
-    closeEventForm();
-    deleteScheduleEvent(dateKey, id);
   }
 
   // ── EXPORT ──
@@ -2755,7 +2842,8 @@
       records         = {};
       settings        = { notifEnabled: false, notifTime: '22:00' };
       scheduleTypes   = [];
-      scheduleEvents  = {};
+      tasks           = [];
+      taskStates      = {};
       currentWeekStart = null;
       document.getElementById('loading-overlay').style.display = 'none';
       document.getElementById('auth-overlay').style.display = 'flex';
