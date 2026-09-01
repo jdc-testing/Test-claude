@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 class MainActivity : AppCompatActivity() {
 
@@ -17,6 +18,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusDescription: TextView
     private lateinit var btnAction: Button
     private lateinit var cardStatus: CardView
+    private lateinit var switchYoutube: SwitchMaterial
+    private lateinit var switchInstagram: SwitchMaterial
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,10 +30,15 @@ class MainActivity : AppCompatActivity() {
         statusDescription = findViewById(R.id.statusDescription)
         btnAction = findViewById(R.id.btnAction)
         cardStatus = findViewById(R.id.cardStatus)
+        switchYoutube = findViewById(R.id.switchYoutube)
+        switchInstagram = findViewById(R.id.switchInstagram)
 
         btnAction.setOnClickListener {
             openAccessibilitySettings()
         }
+
+        bindToggle(switchYoutube, BlockTarget.YOUTUBE)
+        bindToggle(switchInstagram, BlockTarget.INSTAGRAM)
     }
 
     override fun onResume() {
@@ -38,7 +46,18 @@ class MainActivity : AppCompatActivity() {
         updateUI()
     }
 
+    private fun bindToggle(toggle: SwitchMaterial, target: BlockTarget) {
+        toggle.isChecked = BlockerPrefs.isEnabled(this, target)
+        toggle.setOnCheckedChangeListener { _, checked ->
+            BlockerPrefs.setEnabled(this, target, checked)
+        }
+    }
+
     private fun updateUI() {
+        // Las preferencias pueden haber cambiado en otra instancia de la pantalla
+        switchYoutube.isChecked = BlockerPrefs.isEnabled(this, BlockTarget.YOUTUBE)
+        switchInstagram.isChecked = BlockerPrefs.isEnabled(this, BlockTarget.INSTAGRAM)
+
         val active = isAccessibilityServiceEnabled()
         if (active) {
             cardStatus.setCardBackgroundColor(ContextCompat.getColor(this, R.color.status_active_bg))

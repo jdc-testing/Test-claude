@@ -28,6 +28,12 @@ App web progresiva (PWA) para gestionar y cuidar plantas de interior. Registra r
 
 **Tecnología:** HTML + CSS + JS vanilla modular · localStorage · Perenual API (opcional) · Service Worker · PWA
 
+### 📵 [youtube-shorts-blocker](proyectos/youtube-shorts-blocker/)
+
+App Android que bloquea automáticamente los YouTube Shorts y los Instagram Reels. Usa un servicio de accesibilidad para detectar la pantalla de Shorts o la pestaña de Reels y volver atrás al instante, sin afectar a los videos normales de YouTube ni al muro de Instagram. Cada app se puede activar o desactivar por separado. Sin acceso a internet ni recolección de datos.
+
+**Tecnología:** Kotlin · Android 7.0+ (API 24) · Servicio de Accesibilidad · SharedPreferences · APK compilado con GitHub Actions
+
 ---
 
 ## ¿Cómo usar este repositorio?

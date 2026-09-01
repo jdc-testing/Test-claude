@@ -40,6 +40,7 @@ Test-claude/
 | Habit Tracker | `proyectos/habit-tracker/` | `https://jdc-testing.github.io/Test-claude/proyectos/habit-tracker/` |
 | Tennis Tracker | `proyectos/tennis-tracker/` | `https://jdc-testing.github.io/Test-claude/proyectos/tennis-tracker/` |
 | Plant Manager | `proyectos/plant-manager/` | `https://jdc-testing.github.io/Test-claude/proyectos/plant-manager/` |
+| Bloqueador de Shorts y Reels | `proyectos/youtube-shorts-blocker/` | — (app Android, APK vía GitHub Actions) |
 
 ---
 
